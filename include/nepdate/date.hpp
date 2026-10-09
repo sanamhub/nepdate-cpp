@@ -2,6 +2,7 @@
 #define NEPDATE_DATE_HPP
 
 #include <nepdate/detail/calendar_tables.hpp>
+#include <nepdate/detail/civil.hpp>
 #include <nepdate/detail/result.hpp> // IWYU pragma: export
 
 #include <chrono>
@@ -49,8 +50,9 @@ struct date_access {
 // Month index (y - 1901) * 12 + (m - 1) into kMonthStart.
 [[nodiscard]] constexpr std::uint32_t month_index(date d) noexcept;
 
-// Days since BS 1901-01-01 (detail/serial.hpp).
+// Days since BS 1901-01-01 and back (detail/serial.hpp).
 [[nodiscard]] constexpr std::uint32_t to_serial(date d) noexcept;
+[[nodiscard]] constexpr date from_serial(std::uint32_t s) noexcept;
 
 } // namespace detail
 
@@ -116,6 +118,18 @@ class date {
         return date{(v_ & ~0xFFU) | static_cast<std::uint32_t>(month_length())};
     }
 
+    /// Returns the AD (proleptic Gregorian) date.
+    [[nodiscard]] constexpr std::chrono::year_month_day to_year_month_day() const noexcept {
+        const detail::civil c = detail::civil_from_days(unix_days());
+        return std::chrono::year_month_day{std::chrono::year{c.year}, std::chrono::month{c.month},
+                                           std::chrono::day{c.day}};
+    }
+
+    /// Returns the AD date as days since 1970-01-01, midnight UTC.
+    [[nodiscard]] constexpr std::chrono::sys_days to_sys_days() const noexcept {
+        return std::chrono::sys_days{std::chrono::days{unix_days()}};
+    }
+
     friend constexpr bool operator==(date, date) noexcept = default;
     friend constexpr std::strong_ordering operator<=>(date, date) noexcept = default;
 
@@ -123,6 +137,10 @@ class date {
     friend struct detail::date_access;
 
     constexpr explicit date(std::uint32_t packed) noexcept : v_(packed) {}
+
+    [[nodiscard]] constexpr int unix_days() const noexcept {
+        return static_cast<int>(detail::to_serial(*this)) + detail::kEpochUnixDays;
+    }
 
     // year << 16 | month << 8 | day (ADR-0002 §1): integer order is chronological order.
     std::uint32_t v_;
@@ -223,6 +241,57 @@ static_assert(std::is_trivially_copyable_v<result<date>>);
 /// Same as make_date(int, int, int) with the month as an enumerator.
 [[nodiscard]] constexpr result<date> make_date(int year, nepdate::month m, int day) noexcept {
     return make_date(year, static_cast<int>(m), day);
+}
+
+namespace detail {
+
+// Returns the BS date of a Unix day, or out_of_range outside AD 1844-04-11..2143-04-15.
+[[nodiscard]] constexpr result<date> from_unix_days(std::int64_t days) noexcept {
+    const std::int64_t serial = days - kEpochUnixDays;
+    if (serial < 0 || serial > static_cast<std::int64_t>(kMaxSerial)) {
+        return errc::out_of_range;
+    }
+    return from_serial(static_cast<std::uint32_t>(serial));
+}
+
+} // namespace detail
+
+/// Returns the BS date of the AD (proleptic Gregorian) date year-month-day: invalid_gregorian when
+/// that isn't a real date, out_of_range outside AD 1844-04-11..2143-04-15 (ALGORITHM §3).
+[[nodiscard]] constexpr result<date> from_gregorian(int year, int month, int day) noexcept {
+    const unsigned m = static_cast<unsigned>(month) - 1U;
+    if (m >= 12U) {
+        return errc::invalid_gregorian;
+    }
+    const unsigned d = static_cast<unsigned>(day) - 1U;
+    if (d >= detail::gregorian_month_length(year, m + 1U)) {
+        return errc::invalid_gregorian;
+    }
+    // Reject far-away years before any arithmetic on them.
+    if (year < 1844 || year > 2143) {
+        return errc::out_of_range;
+    }
+    return detail::from_unix_days(detail::days_from_civil(year, m + 1U, d + 1U));
+}
+
+/// Same as from_gregorian(int, int, int); !ymd.ok() is invalid_gregorian.
+[[nodiscard]] constexpr result<date> from_gregorian(std::chrono::year_month_day ymd) noexcept {
+    if (!ymd.ok()) {
+        return errc::invalid_gregorian;
+    }
+    return from_gregorian(static_cast<int>(ymd.year()),
+                          static_cast<int>(static_cast<unsigned>(ymd.month())),
+                          static_cast<int>(static_cast<unsigned>(ymd.day())));
+}
+
+/// Returns the BS date of a day count since 1970-01-01, or out_of_range.
+[[nodiscard]] constexpr result<date> from_sys_days(std::chrono::sys_days d) noexcept {
+    return detail::from_unix_days(static_cast<std::int64_t>(d.time_since_epoch().count()));
+}
+
+/// Same as from_sys_days for a local calendar day.
+[[nodiscard]] constexpr result<date> from_local_days(std::chrono::local_days d) noexcept {
+    return detail::from_unix_days(static_cast<std::int64_t>(d.time_since_epoch().count()));
 }
 
 } // namespace nepdate

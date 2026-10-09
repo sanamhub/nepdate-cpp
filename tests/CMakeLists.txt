@@ -8,6 +8,7 @@ if(_nepdate_links)
 endif()
 
 add_executable(nepdate_tests
+    civil_test.cpp
     date_test.cpp
     result_test.cpp
     serial_test.cpp
