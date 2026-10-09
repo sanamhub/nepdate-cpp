@@ -10,12 +10,16 @@ endif()
 add_executable(nepdate_tests
     civil_test.cpp
     date_test.cpp
+    exhaustive_test.cpp
     result_test.cpp
     serial_test.cpp
     tables_test.cpp
+    vectors_test.cpp
     version_test.cpp
 )
 target_link_libraries(nepdate_tests PRIVATE nepdate::nepdate Catch2::Catch2WithMain)
+# The vectors are read at run time from shared/ (ADR-0004 section 3).
+target_compile_definitions(nepdate_tests PRIVATE NEPDATE_SHARED_DIR="${PROJECT_SOURCE_DIR}/shared")
 nepdate_set_warnings(nepdate_tests)
 nepdate_set_instrumentation(nepdate_tests)
 if(NEPDATE_NO_EXCEPTIONS)
