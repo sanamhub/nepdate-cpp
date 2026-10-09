@@ -8,6 +8,7 @@ if(_nepdate_links)
 endif()
 
 add_executable(nepdate_tests
+    result_test.cpp
     tables_test.cpp
     version_test.cpp
 )

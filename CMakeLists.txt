@@ -31,6 +31,7 @@ target_sources(nepdate
         BASE_DIRS include
         FILES
             include/nepdate/detail/calendar_tables.hpp
+            include/nepdate/detail/result.hpp
             include/nepdate/nepdate.hpp
             include/nepdate/version.hpp
 )
