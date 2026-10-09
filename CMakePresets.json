@@ -1,0 +1,202 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 25,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "description": "Ninja, vcpkg toolchain from VCPKG_ROOT, warnings as errors. The compiler is whatever CMake finds (CI picks it per job).",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_COMPILE_WARNING_AS_ERROR": "ON",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "NEPDATE_BUILD_TESTS": "ON",
+        "NEPDATE_BUILD_TOOLS": "OFF"
+      }
+    },
+    {
+      "name": "dev",
+      "inherits": "base",
+      "description": "Debug build of the core, tests and tools/codegen (gates 3 and 4)",
+      "cacheVariables": {
+        "NEPDATE_BUILD_TOOLS": "ON"
+      }
+    },
+    {
+      "name": "noexcept",
+      "inherits": "base",
+      "description": "Tests without exceptions and RTTI (gate 5)",
+      "cacheVariables": {
+        "NEPDATE_NO_EXCEPTIONS": "ON"
+      }
+    },
+    {
+      "name": "tidy",
+      "inherits": "base",
+      "description": "Build with clang-tidy on every source (gate 6)",
+      "cacheVariables": {
+        "NEPDATE_BUILD_TOOLS": "ON",
+        "CMAKE_CXX_CLANG_TIDY": "clang-tidy"
+      }
+    },
+    {
+      "name": "asan-ubsan",
+      "inherits": "base",
+      "description": "AddressSanitizer and UBSan, or /fsanitize=address on MSVC (gate 7)",
+      "cacheVariables": {
+        "NEPDATE_SANITIZE": "address,undefined"
+      }
+    },
+    {
+      "name": "tsan",
+      "inherits": "base",
+      "description": "ThreadSanitizer, Linux Clang (ADR-0004 \u00a73)",
+      "cacheVariables": {
+        "NEPDATE_SANITIZE": "thread"
+      }
+    },
+    {
+      "name": "coverage",
+      "inherits": "base",
+      "description": "GCC --coverage for gcovr (gate 8)",
+      "cacheVariables": {
+        "NEPDATE_COVERAGE": "ON"
+      }
+    },
+    {
+      "name": "fuzz",
+      "inherits": "base",
+      "description": "Clang with libFuzzer instrumentation, ASan and UBSan (fuzz targets arrive in C3)",
+      "cacheVariables": {
+        "NEPDATE_SANITIZE": "address,undefined,fuzzer-no-link"
+      }
+    },
+    {
+      "name": "release",
+      "inherits": "base",
+      "description": "Release build of the core and tests",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "dev",
+      "configurePreset": "dev"
+    },
+    {
+      "name": "noexcept",
+      "configurePreset": "noexcept"
+    },
+    {
+      "name": "tidy",
+      "configurePreset": "tidy"
+    },
+    {
+      "name": "asan-ubsan",
+      "configurePreset": "asan-ubsan"
+    },
+    {
+      "name": "tsan",
+      "configurePreset": "tsan"
+    },
+    {
+      "name": "coverage",
+      "configurePreset": "coverage"
+    },
+    {
+      "name": "fuzz",
+      "configurePreset": "fuzz"
+    },
+    {
+      "name": "release",
+      "configurePreset": "release"
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "dev",
+      "configurePreset": "dev",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "noexcept",
+      "configurePreset": "noexcept",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "tidy",
+      "configurePreset": "tidy",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "asan-ubsan",
+      "configurePreset": "asan-ubsan",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "tsan",
+      "configurePreset": "tsan",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "coverage",
+      "configurePreset": "coverage",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "fuzz",
+      "configurePreset": "fuzz",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "release",
+      "configurePreset": "release",
+      "output": {
+        "outputOnFailure": true
+      }
+    }
+  ],
+  "workflowPresets": [
+    {
+      "name": "dev",
+      "description": "Configure, build and test the dev preset (gate 4)",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "dev"
+        },
+        {
+          "type": "build",
+          "name": "dev"
+        },
+        {
+          "type": "test",
+          "name": "dev"
+        }
+      ]
+    }
+  ]
+}

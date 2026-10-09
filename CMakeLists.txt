@@ -1,0 +1,51 @@
+cmake_minimum_required(VERSION 3.25...4.1)
+
+project(nepdate VERSION 0.0.0 LANGUAGES CXX)
+
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+option(NEPDATE_BUILD_TESTS "Build the core tests (needs the vcpkg feature dev)" ${PROJECT_IS_TOP_LEVEL})
+# patro/ arrives in phase C4; the option exists now so presets and packages don't change then.
+option(NEPDATE_BUILD_PATRO "Build the nepdate::patro library" ON)
+option(NEPDATE_BUILD_TOOLS "Build tools/codegen (needs the vcpkg feature dev)" OFF)
+
+include(cmake/warnings.cmake)
+include(cmake/instrumentation.cmake)
+
+# The core is header-only and adds nothing but the standard to its users (ADR-0001 §3): no compile
+# options, no link libraries.
+add_library(nepdate INTERFACE)
+add_library(nepdate::nepdate ALIAS nepdate)
+target_compile_features(nepdate INTERFACE cxx_std_20)
+target_sources(nepdate
+    INTERFACE
+        FILE_SET HEADERS
+        BASE_DIRS include
+        FILES
+            include/nepdate/nepdate.hpp
+            include/nepdate/version.hpp
+)
+
+include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
+
+set(NEPDATE_CONFIG_INSTALL_DIR "${CMAKE_INSTALL_LIBDIR}/cmake/nepdate")
+
+install(TARGETS nepdate EXPORT nepdateTargets FILE_SET HEADERS)
+install(EXPORT nepdateTargets
+    NAMESPACE nepdate::
+    DESTINATION "${NEPDATE_CONFIG_INSTALL_DIR}"
+)
+configure_package_config_file(cmake/nepdateConfig.cmake.in
+    "${PROJECT_BINARY_DIR}/nepdateConfig.cmake"
+    INSTALL_DESTINATION "${NEPDATE_CONFIG_INSTALL_DIR}"
+)
+write_basic_package_version_file("${PROJECT_BINARY_DIR}/nepdateConfigVersion.cmake"
+    COMPATIBILITY SameMinorVersion
+    ARCH_INDEPENDENT
+)
+install(FILES
+    "${PROJECT_BINARY_DIR}/nepdateConfig.cmake"
+    "${PROJECT_BINARY_DIR}/nepdateConfigVersion.cmake"
+    DESTINATION "${NEPDATE_CONFIG_INSTALL_DIR}"
+)
