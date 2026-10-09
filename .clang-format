@@ -1,0 +1,8 @@
+# clang-format 18 (gate 1, ADR-0004 §1).
+BasedOnStyle: LLVM
+Standard: c++20
+ColumnLimit: 100
+IndentWidth: 4
+AllowShortFunctionsOnASingleLine: Inline
+# docs/API.md writes `char* first`, not LLVM's `char *first`.
+PointerAlignment: Left
