@@ -1,0 +1,30 @@
+# Weekly: replaces shared/ with the hub's main, regenerates the tables and opens one PR on
+# bot/shared-sync (ADR-0001 §5, hub ADR-0001 decision 3).
+#
+# regenerate is the command of ADR-0001 §5 plus the vcpkg toolchain and NEPDATE_BUILD_TESTS=OFF:
+# the generator needs nlohmann-json from the vcpkg feature dev, and the hub runner has no Catch2.
+name: shared-sync
+
+on:
+  schedule:
+    - cron: "15 3 * * 2"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    permissions:
+      contents: write
+      pull-requests: write
+    uses: sanamhub/nepdate/.github/workflows/shared-sync.yml@94946acd87bf4775c481811c0cdd63a7aaef2c84 # main 2026-10-09
+    with:
+      regenerate: >-
+        .github/scripts/setup-vcpkg.sh &&
+        cmake -S . -B build/codegen -DNEPDATE_BUILD_TOOLS=ON -DNEPDATE_BUILD_TESTS=OFF
+        -DVCPKG_MANIFEST_FEATURES=dev
+        -DCMAKE_TOOLCHAIN_FILE="$RUNNER_TEMP/vcpkg/scripts/buildsystems/vcpkg.cmake" &&
+        cmake --build build/codegen --target codegen
+    secrets:
+      SYNC_APP_PRIVATE_KEY: ${{ secrets.SYNC_APP_PRIVATE_KEY }}

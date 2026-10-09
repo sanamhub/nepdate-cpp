@@ -1,0 +1,46 @@
+name: Bug report
+description: The library returns a wrong result or an unexpected error, or doesn't compile.
+labels: ["bug"]
+body:
+  - type: textarea
+    id: input
+    attributes:
+      label: Input
+      description: The call and its arguments, as a short C++ snippet.
+      placeholder: nepdate::make_date(2081, 4, 32)
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual
+      description: The result, the errc value, or the compiler error.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: nepdate-cpp version
+      placeholder: 0.1.0
+    validations:
+      required: true
+  - type: input
+    id: compiler
+    attributes:
+      label: Compiler and version
+      placeholder: GCC 14.2, Clang 18.1 with libc++, MSVC 19.44
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      placeholder: Ubuntu 24.04
+    validations:
+      required: true

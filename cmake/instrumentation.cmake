@@ -16,7 +16,12 @@ if(NEPDATE_SANITIZE)
             message(FATAL_ERROR
                 "NEPDATE_SANITIZE=${NEPDATE_SANITIZE} is not supported by this compiler")
         endif()
-        set(_nepdate_sanitize_compile /fsanitize=address)
+        # /RTC1 (CMake's Debug default) can't be combined with /fsanitize=address. The vcpkg
+        # libraries are built without ASan, so the STL container annotations must be off on our
+        # side too, or the linker reports an annotation mismatch (LNK2038).
+        string(REGEX REPLACE "/RTC[1csu]+" "" CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
+        set(_nepdate_sanitize_compile /fsanitize=address /D_DISABLE_VECTOR_ANNOTATION
+            /D_DISABLE_STRING_ANNOTATION)
     else()
         set(_nepdate_sanitize_compile
             -fsanitize=${NEPDATE_SANITIZE} -fno-sanitize-recover=all -fno-omit-frame-pointer)

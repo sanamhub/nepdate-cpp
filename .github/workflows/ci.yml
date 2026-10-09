@@ -1,0 +1,239 @@
+# The jobs of ADR-0004 §4 that exist after phase C0. Each job runs its gates through
+# tools/ci.cmake with STRICT=ON, so a missing tool fails the job instead of skipping a gate.
+# fuzz, packages and isolation arrive with C3, C5 and C4.
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  msvc-2026:
+    runs-on: windows-2025-vs2026
+    timeout-minutes: 60
+    env:
+      CC: cl
+      CXX: cl
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/vcpkg-cache
+          key: vcpkg-msvc-2026-${{ hashFiles('vcpkg.json') }}
+      - name: Set up vcpkg
+        shell: bash
+        run: .github/scripts/setup-vcpkg.sh
+      - uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1.13.0
+        with:
+          arch: x64
+      - name: Gates 3 to 5 and ASan, Debug
+        run: cmake -DONLY=codegen,build-and-test,no-exceptions,sanitizers -DSTRICT=ON -P tools/ci.cmake
+      - name: Configure Release
+        run: cmake --preset release
+      - name: Build Release
+        run: cmake --build --preset release
+      - name: Test Release
+        run: ctest --preset release
+
+  msvc-2022:
+    runs-on: windows-2022
+    timeout-minutes: 60
+    env:
+      CC: cl
+      CXX: cl
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/vcpkg-cache
+          key: vcpkg-msvc-2022-${{ hashFiles('vcpkg.json') }}
+      - name: Set up vcpkg
+        shell: bash
+        run: .github/scripts/setup-vcpkg.sh
+      - uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1.13.0
+        with:
+          arch: x64
+      - name: Gates 4 and 5
+        run: cmake -DONLY=build-and-test,no-exceptions -DSTRICT=ON -P tools/ci.cmake
+
+  gcc:
+    strategy:
+      fail-fast: false
+      matrix:
+        version: [12, 14]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      CC: gcc-${{ matrix.version }}
+      CXX: g++-${{ matrix.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: sudo apt-get update && sudo apt-get install -y ninja-build g++-${{ matrix.version }}
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/vcpkg-cache
+          key: vcpkg-gcc-${{ matrix.version }}-${{ hashFiles('vcpkg.json') }}
+      - name: Set up vcpkg
+        run: .github/scripts/setup-vcpkg.sh
+      - name: Gates 4 and 5
+        run: cmake -DONLY=build-and-test,no-exceptions -DSTRICT=ON -P tools/ci.cmake
+
+  clang:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Floor: Clang 16 with the system libstdc++.
+          - version: 16
+            stdlib: libstdc++
+            flags: ""
+          - version: 18
+            stdlib: libc++
+            flags: -stdlib=libc++
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      CC: clang-${{ matrix.version }}
+      CXX: clang++-${{ matrix.version }}
+      # Also reaches the vcpkg port builds, so Catch2 uses the same standard library.
+      CXXFLAGS: ${{ matrix.flags }}
+      LDFLAGS: ${{ matrix.flags }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install Clang ${{ matrix.version }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build clang-${{ matrix.version }}
+          if [ "${{ matrix.stdlib }}" = "libc++" ]; then
+            sudo apt-get install -y libc++-${{ matrix.version }}-dev libc++abi-${{ matrix.version }}-dev
+          fi
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/vcpkg-cache
+          key: vcpkg-clang-${{ matrix.version }}-${{ matrix.stdlib }}-${{ hashFiles('vcpkg.json') }}
+      - name: Set up vcpkg
+        run: .github/scripts/setup-vcpkg.sh
+      - name: Gates 4 and 5
+        run: cmake -DONLY=build-and-test,no-exceptions -DSTRICT=ON -P tools/ci.cmake
+
+  apple:
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [macos-15, macos-26]
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: brew install ninja
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/vcpkg-cache
+          key: vcpkg-${{ matrix.runner }}-${{ hashFiles('vcpkg.json') }}
+      - name: Set up vcpkg
+        run: .github/scripts/setup-vcpkg.sh
+      - name: Gates 4, 5 and 7
+        run: cmake -DONLY=build-and-test,no-exceptions,sanitizers -DSTRICT=ON -P tools/ci.cmake
+
+  lint:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      CC: clang-18
+      CXX: clang++-18
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install Clang 18 tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build clang-18 clang-format-18 clang-tidy-18
+          # The tidy preset calls plain clang-tidy.
+          sudo ln -sf /usr/bin/clang-tidy-18 /usr/local/bin/clang-tidy
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/vcpkg-cache
+          key: vcpkg-lint-${{ hashFiles('vcpkg.json') }}
+      - name: Set up vcpkg
+        run: .github/scripts/setup-vcpkg.sh
+      - name: Gates 1, 2, 3 and 6
+        run: cmake -DONLY=format,ascii,codegen,tidy -DSTRICT=ON -P tools/ci.cmake
+
+  sanitizers:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      CC: clang-18
+      CXX: clang++-18
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install Clang 18
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build clang-18
+          # Ubuntu 24.04 kernels use 32 random mmap bits, which ASan and TSan in Clang 18 can't map.
+          sudo sysctl vm.mmap_rnd_bits=28
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/vcpkg-cache
+          key: vcpkg-sanitizers-${{ hashFiles('vcpkg.json') }}
+      - name: Set up vcpkg
+        run: .github/scripts/setup-vcpkg.sh
+      - name: Gate 7
+        run: cmake -DONLY=sanitizers -DSTRICT=ON -P tools/ci.cmake
+      - name: ThreadSanitizer
+        run: |
+          cmake --preset tsan
+          cmake --build --preset tsan
+          ctest --preset tsan
+
+  coverage:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      CC: gcc-14
+      CXX: g++-14
+      GCOV: gcov-14
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install GCC 14 and gcovr
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build g++-14
+          pipx install gcovr==8.6
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/vcpkg-cache
+          key: vcpkg-coverage-${{ hashFiles('vcpkg.json') }}
+      - name: Set up vcpkg
+        run: .github/scripts/setup-vcpkg.sh
+      - name: Gate 8
+        run: cmake -DONLY=coverage -DSTRICT=ON -P tools/ci.cmake
+
+  shared-check:
+    permissions:
+      contents: read
+    uses: sanamhub/nepdate/.github/workflows/shared-check.yml@94946acd87bf4775c481811c0cdd63a7aaef2c84 # main 2026-10-09
