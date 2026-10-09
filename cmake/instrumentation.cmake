@@ -24,11 +24,24 @@ if(NEPDATE_SANITIZE)
     endif()
 
     # Fail at configure time, with a message tools/ci.cmake recognises, instead of at link time.
+    # Some toolchains (zig 0.17 for x86_64-windows-gnu) accept -fsanitize=address and silently
+    # build without it, so the probe also asks the compiler whether ASan or TSan is really on.
+    set(_nepdate_probe "int main() { return 0; }\n")
+    foreach(_kind IN ITEMS address thread)
+        if(NEPDATE_SANITIZE MATCHES "${_kind}")
+            string(TOUPPER "${_kind}" _upper)
+            string(PREPEND _nepdate_probe
+                "#if defined(__SANITIZE_${_upper}__)\n"
+                "#elif defined(__has_feature)\n"
+                "#if !__has_feature(${_kind}_sanitizer)\n#error ${_kind} sanitizer is off\n#endif\n"
+                "#else\n#error ${_kind} sanitizer is off\n#endif\n")
+        endif()
+    endforeach()
     include(CheckCXXSourceCompiles)
     set(CMAKE_REQUIRED_FLAGS "${_nepdate_sanitize_compile}")
     list(JOIN CMAKE_REQUIRED_FLAGS " " CMAKE_REQUIRED_FLAGS)
     set(CMAKE_REQUIRED_LINK_OPTIONS ${_nepdate_sanitize_link})
-    check_cxx_source_compiles("int main() { return 0; }" NEPDATE_SANITIZE_LINKS)
+    check_cxx_source_compiles("${_nepdate_probe}" NEPDATE_SANITIZE_LINKS)
     unset(CMAKE_REQUIRED_FLAGS)
     unset(CMAKE_REQUIRED_LINK_OPTIONS)
     if(NOT NEPDATE_SANITIZE_LINKS)

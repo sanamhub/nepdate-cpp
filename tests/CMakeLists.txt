@@ -17,3 +17,8 @@ if(NEPDATE_NO_EXCEPTIONS)
     target_compile_definitions(nepdate_tests PRIVATE CATCH_CONFIG_DISABLE_EXCEPTIONS)
 endif()
 catch_discover_tests(nepdate_tests)
+
+# C0-04 AC: a version that matches nothing must fail the release check.
+add_test(NAME release_check_rejects_9.9.9
+    COMMAND "${CMAKE_COMMAND}" -DVERSION=9.9.9 -P "${PROJECT_SOURCE_DIR}/tools/release_check.cmake")
+set_tests_properties(release_check_rejects_9.9.9 PROPERTIES WILL_FAIL TRUE)
