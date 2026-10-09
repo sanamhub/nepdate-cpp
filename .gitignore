@@ -1,0 +1,29 @@
+# CMake build trees and local presets
+/build*/
+/out/
+CMakeUserPresets.json
+
+# vcpkg manifest-mode install tree
+/vcpkg_installed/
+
+# IDEs
+/.vs/
+/.vscode/
+/.idea/
+*.user
+
+# Coverage and profiling
+*.gcda
+*.gcno
+*.profraw
+*.profdata
+/coverage/
+
+# libFuzzer output (commit reproducers to tests/fuzz/corpus/ by hand)
+crash-*
+leak-*
+timeout-*
+oom-*
+
+# Benchmark raw output (published numbers go in docs/benchmarks.md)
+/bench/results/
