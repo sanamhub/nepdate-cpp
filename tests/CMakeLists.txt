@@ -8,6 +8,7 @@ if(_nepdate_links)
 endif()
 
 add_executable(nepdate_tests
+    date_test.cpp
     result_test.cpp
     tables_test.cpp
     version_test.cpp
@@ -24,3 +25,21 @@ catch_discover_tests(nepdate_tests)
 add_test(NAME release_check_rejects_9.9.9
     COMMAND "${CMAKE_COMMAND}" -DVERSION=9.9.9 -P "${PROJECT_SOURCE_DIR}/tools/release_check.cmake")
 set_tests_properties(release_check_rejects_9.9.9 PROPERTIES WILL_FAIL TRUE)
+
+# C1-02 AC: `constexpr auto d = make_date(2081, 4, 33).value();` must not compile. Both targets stay
+# out of the normal build; the tests build them. RESOURCE_LOCK keeps the two builds from running
+# the build tool in this tree at the same time.
+foreach(expect_error IN ITEMS 0 1)
+    set(target compile_fail_${expect_error})
+    add_executable(${target} EXCLUDE_FROM_ALL compile_fail/value_on_error.cpp)
+    target_link_libraries(${target} PRIVATE nepdate::nepdate)
+    target_compile_definitions(${target} PRIVATE NEPDATE_EXPECT_COMPILE_ERROR=${expect_error})
+    nepdate_set_warnings(${target})
+endforeach()
+add_test(NAME compile_fail_control
+    COMMAND "${CMAKE_COMMAND}" --build "${PROJECT_BINARY_DIR}" --target compile_fail_0)
+add_test(NAME compile_fail_value_on_error
+    COMMAND "${CMAKE_COMMAND}" --build "${PROJECT_BINARY_DIR}" --target compile_fail_1)
+set_tests_properties(compile_fail_control compile_fail_value_on_error
+    PROPERTIES RESOURCE_LOCK nepdate_build_tree)
+set_tests_properties(compile_fail_value_on_error PROPERTIES WILL_FAIL TRUE)
