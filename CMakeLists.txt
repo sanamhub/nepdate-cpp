@@ -2,6 +2,12 @@ cmake_minimum_required(VERSION 3.25...4.1)
 
 project(nepdate VERSION 0.0.0 LANGUAGES CXX)
 
+# The regenerate command is `cmake --build <dir> --target codegen` (ADR-0001 §5). CMake 3.31 and
+# later reserve that target name for their own CODEGEN commands unless this policy is OLD.
+if(POLICY CMP0171)
+    cmake_policy(SET CMP0171 OLD)
+endif()
+
 set(CMAKE_CXX_EXTENSIONS OFF)
 # No C++20 modules in v0.1 (ADR-0001 §1), so skip the dependency scan that needs clang-scan-deps.
 set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
@@ -24,6 +30,7 @@ target_sources(nepdate
         FILE_SET HEADERS
         BASE_DIRS include
         FILES
+            include/nepdate/detail/calendar_tables.hpp
             include/nepdate/nepdate.hpp
             include/nepdate/version.hpp
 )
@@ -55,4 +62,8 @@ install(FILES
 if(NEPDATE_BUILD_TESTS)
     enable_testing()
     add_subdirectory(tests)
+endif()
+
+if(NEPDATE_BUILD_TOOLS)
+    add_subdirectory(tools/codegen)
 endif()
