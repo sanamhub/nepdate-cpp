@@ -93,9 +93,15 @@ int main(int argc, char** argv) {
         return 2;
     }
 
+    const auto built = nepdate::codegen::build_tables(parsed.value);
+    if (!built.error.empty()) {
+        std::fprintf(stderr, "%s\n", built.error.c_str());
+        return 2;
+    }
+
     const std::vector<output_file> files = {
         {.relative = fs::path("include/nepdate/detail/calendar_tables.hpp"),
-         .content = nepdate::codegen::render_calendar_tables(parsed.value)},
+         .content = nepdate::codegen::render_calendar_tables(parsed.value, built.value)},
     };
 
     int status = 0;

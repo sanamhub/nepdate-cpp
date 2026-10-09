@@ -8,6 +8,7 @@ if(_nepdate_links)
 endif()
 
 add_executable(nepdate_tests
+    tables_test.cpp
     version_test.cpp
 )
 target_link_libraries(nepdate_tests PRIVATE nepdate::nepdate Catch2::Catch2WithMain)

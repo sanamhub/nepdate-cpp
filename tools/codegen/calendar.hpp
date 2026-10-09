@@ -2,6 +2,7 @@
 #define NEPDATE_CODEGEN_CALENDAR_HPP
 
 #include <array>
+#include <cstdint>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -25,8 +26,23 @@ struct parse_result {
 // year and month, so a data error points at the line to fix in the hub.
 [[nodiscard]] parse_result parse_calendar(std::string_view json_text);
 
+// The tables of ADR-0002 §2.
+struct tables {
+    std::vector<std::uint32_t> month_start; // one entry per month, then the total day count
+    std::vector<std::uint16_t> block_month; // month index holding serial 32 * b
+    std::uint64_t fingerprint = 0;          // FNV-1a 64 over the month lengths as bytes
+};
+
+struct tables_result {
+    tables value;
+    std::string error; // empty on success; names the block that needs more than two steps
+};
+
+// Checks that no 32-day block needs more than two steps from its recorded month.
+[[nodiscard]] tables_result build_tables(const calendar& cal);
+
 // The bytes of include/nepdate/detail/calendar_tables.hpp: LF line endings, no timestamps.
-[[nodiscard]] std::string render_calendar_tables(const calendar& cal);
+[[nodiscard]] std::string render_calendar_tables(const calendar& cal, const tables& t);
 
 } // namespace nepdate::codegen
 
