@@ -1,0 +1,16 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "name": "nepdate-dev",
+  "description": "Dev-only dependencies of nepdate-cpp. The libraries themselves depend on nothing (ADR-0001 §7).",
+  "builtin-baseline": "0699a19d0c6386247ce50d4dedbb8217d484d536",
+  "features": {
+    "dev": {
+      "description": "Tests, tools/codegen and benchmarks",
+      "dependencies": [
+        "benchmark",
+        "catch2",
+        "nlohmann-json"
+      ]
+    }
+  }
+}

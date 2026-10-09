@@ -18,7 +18,8 @@
         "CMAKE_COMPILE_WARNING_AS_ERROR": "ON",
         "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
         "NEPDATE_BUILD_TESTS": "ON",
-        "NEPDATE_BUILD_TOOLS": "OFF"
+        "NEPDATE_BUILD_TOOLS": "OFF",
+        "VCPKG_MANIFEST_FEATURES": "dev"
       }
     },
     {

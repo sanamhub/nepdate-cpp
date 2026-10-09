@@ -3,6 +3,8 @@ cmake_minimum_required(VERSION 3.25...4.1)
 project(nepdate VERSION 0.0.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_EXTENSIONS OFF)
+# No C++20 modules in v0.1 (ADR-0001 §1), so skip the dependency scan that needs clang-scan-deps.
+set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
 
 option(NEPDATE_BUILD_TESTS "Build the core tests (needs the vcpkg feature dev)" ${PROJECT_IS_TOP_LEVEL})
 # patro/ arrives in phase C4; the option exists now so presets and packages don't change then.
@@ -49,3 +51,8 @@ install(FILES
     "${PROJECT_BINARY_DIR}/nepdateConfigVersion.cmake"
     DESTINATION "${NEPDATE_CONFIG_INSTALL_DIR}"
 )
+
+if(NEPDATE_BUILD_TESTS)
+    enable_testing()
+    add_subdirectory(tests)
+endif()
