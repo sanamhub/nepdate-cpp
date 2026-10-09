@@ -6,3 +6,5 @@ IndentWidth: 4
 AllowShortFunctionsOnASingleLine: Inline
 # docs/API.md writes `char* first`, not LLVM's `char *first`.
 PointerAlignment: Left
+# Catalogue lines must stay on one line, or tools/check_catalog.cmake can't find the row id.
+CommentPragmas: '^ cs-(deviation|n/a):'

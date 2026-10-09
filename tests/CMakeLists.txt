@@ -9,6 +9,7 @@ endif()
 
 add_executable(nepdate_tests
     civil_test.cpp
+    cs_phase1.cpp
     date_test.cpp
     exhaustive_test.cpp
     result_test.cpp
@@ -26,6 +27,18 @@ if(NEPDATE_NO_EXCEPTIONS)
     target_compile_definitions(nepdate_tests PRIVATE CATCH_CONFIG_DISABLE_EXCEPTIONS)
 endif()
 catch_discover_tests(nepdate_tests)
+
+# C1-07: every C# catalogue row up to this phase has a test or a deviation line (ADR-0004 §3).
+# The limit rises by one in each phase.
+set(NEPDATE_CATALOG_PHASE 1)
+add_test(NAME catalog_coverage
+    COMMAND "${CMAKE_COMMAND}"
+        -DPHASE=${NEPDATE_CATALOG_PHASE}
+        -DCATALOG=${PROJECT_SOURCE_DIR}/shared/spec/vectors/csharp-tests/catalog.tsv
+        -DTEST_EXE=$<TARGET_FILE:nepdate_tests>
+        -DTEST_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+        -P "${PROJECT_SOURCE_DIR}/tools/check_catalog.cmake"
+)
 
 # C0-04 AC: a version that matches nothing must fail the release check.
 add_test(NAME release_check_rejects_9.9.9
