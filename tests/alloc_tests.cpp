@@ -74,6 +74,22 @@ TEST_CASE("comparison and std::hash allocate nothing", "[alloc]") {
     CHECK(hash == 0);
 }
 
+TEST_CASE("add_days, next, prev and days_until allocate nothing", "[alloc]") {
+    const date d = make_date(2081, 4, 15).value();
+    const auto add = allocations_of(
+        [d](int i) { sink(static_cast<std::size_t>(d.add_days(i - kRuns / 2)->day())); });
+    const auto next =
+        allocations_of([d](int /*i*/) { sink(static_cast<std::size_t>(d.next()->day())); });
+    const auto prev =
+        allocations_of([d](int /*i*/) { sink(static_cast<std::size_t>(d.prev()->day())); });
+    const auto until = allocations_of(
+        [d](int /*i*/) { sink(static_cast<std::size_t>(d.days_until(date::max()))); });
+    CHECK(add == 0);
+    CHECK(next == 0);
+    CHECK(prev == 0);
+    CHECK(until == 0);
+}
+
 TEST_CASE("the counter sees an allocation", "[alloc]") {
     // Without this the tests above would also pass with a counter that never counts.
     const auto n = allocations_of([](int /*i*/) {

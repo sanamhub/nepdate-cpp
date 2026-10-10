@@ -8,6 +8,7 @@ if(_nepdate_links)
 endif()
 
 add_executable(nepdate_tests
+    arith_test.cpp
     civil_test.cpp
     constexpr_tests.cpp
     cs_phase1.cpp

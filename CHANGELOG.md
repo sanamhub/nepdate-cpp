@@ -15,3 +15,4 @@ and versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `to_sys_days`: BS to AD and back, `constexpr` and without allocation.
 - `errc`, `to_string(errc)`, `is_parse_error` and `result<T>`; `result<date>` is 4 bytes.
 - `month` and `lang` enumerations.
+- `date::add_days`, `next`, `prev` and `days_until` (D-03, D-07).

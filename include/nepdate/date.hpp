@@ -10,6 +10,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <optional>
 
 namespace nepdate {
 
@@ -33,6 +34,7 @@ enum class month : std::uint8_t {
 };
 
 class date;
+template <> class result<date>;
 
 namespace detail {
 
@@ -130,6 +132,19 @@ class date {
         return std::chrono::sys_days{std::chrono::days{unix_days()}};
     }
 
+    /// Returns the date n days later (earlier for a negative n), or out_of_range when that is
+    /// outside 1901-01-01..2199-12-30 (D-03).
+    [[nodiscard]] constexpr result<date> add_days(int n) const noexcept;
+
+    /// Returns other minus this date in days, negative when other is earlier (D-07).
+    [[nodiscard]] constexpr int days_until(date other) const noexcept;
+
+    /// Returns the next day, or std::nullopt at max().
+    [[nodiscard]] constexpr std::optional<date> next() const noexcept;
+
+    /// Returns the previous day, or std::nullopt at min().
+    [[nodiscard]] constexpr std::optional<date> prev() const noexcept;
+
     friend constexpr bool operator==(date, date) noexcept = default;
     friend constexpr std::strong_ordering operator<=>(date, date) noexcept = default;
 
@@ -215,6 +230,38 @@ template <> class [[nodiscard]] result<date> {
 
 static_assert(sizeof(result<date>) == 4);
 static_assert(std::is_trivially_copyable_v<result<date>>);
+
+constexpr result<date> date::add_days(int n) const noexcept {
+    constexpr int max_serial = static_cast<int>(detail::kMaxSerial);
+    // No two dates are further apart than max_serial days. Rejecting a larger n first keeps the
+    // sum below from overflowing an int.
+    if (n < -max_serial || n > max_serial) {
+        return errc::out_of_range;
+    }
+    const int s = static_cast<int>(detail::to_serial(*this)) + n;
+    if (s < 0 || s > max_serial) {
+        return errc::out_of_range;
+    }
+    return detail::from_serial(static_cast<std::uint32_t>(s));
+}
+
+constexpr int date::days_until(date other) const noexcept {
+    return static_cast<int>(detail::to_serial(other)) - static_cast<int>(detail::to_serial(*this));
+}
+
+constexpr std::optional<date> date::next() const noexcept {
+    if (*this == max()) {
+        return std::nullopt;
+    }
+    return detail::from_serial(detail::to_serial(*this) + 1U);
+}
+
+constexpr std::optional<date> date::prev() const noexcept {
+    if (*this == min()) {
+        return std::nullopt;
+    }
+    return detail::from_serial(detail::to_serial(*this) - 1U);
+}
 
 /// Returns the BS date year-month-day, or out_of_range (year outside 1901..2199), invalid_month
 /// (month outside 1..12) or invalid_day (day outside 1..month length), checked in that order

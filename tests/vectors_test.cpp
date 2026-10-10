@@ -110,3 +110,28 @@ TEST_CASE("PACKED and YEAR_START from the vectors agree with the tables", "[vect
         }
     }
 }
+
+TEST_CASE("csharp-golden/add-days.tsv: every row, negative amounts included", "[vectors][arith]") {
+    const auto t = read_vectors("csharp-golden/add-days.tsv", '\t');
+    REQUIRE(t.rows.size() >= 9162);
+    const std::size_t bs = t.column("bs");
+    const std::size_t days = t.column("days");
+    const std::size_t result = t.column("result");
+    REQUIRE(result < t.header.size());
+    int errors = 0;
+    for (const auto& row : t.rows) {
+        INFO(row[bs] << " + " << row[days]);
+        const auto b = parse_ymd(row[bs]);
+        const date d = make_date(b.year, b.month, b.day).value();
+        const auto got = d.add_days(std::stoi(row[days]));
+        if (row[result] == "ERR") {
+            ++errors;
+            CHECK(got == nepdate::result<date>{nepdate::errc::out_of_range});
+        } else {
+            const auto want = parse_ymd(row[result]);
+            CHECK(got == make_date(want.year, want.month, want.day));
+        }
+    }
+    // The ERR rows are there and were compared, not skipped.
+    CHECK(errors > 0);
+}
