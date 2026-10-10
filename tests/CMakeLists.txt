@@ -9,6 +9,7 @@ endif()
 
 add_executable(nepdate_tests
     civil_test.cpp
+    constexpr_tests.cpp
     cs_phase1.cpp
     date_test.cpp
     exhaustive_test.cpp
@@ -27,6 +28,17 @@ if(NEPDATE_NO_EXCEPTIONS)
     target_compile_definitions(nepdate_tests PRIVATE CATCH_CONFIG_DISABLE_EXCEPTIONS)
 endif()
 catch_discover_tests(nepdate_tests)
+
+# C1-08: allocation counting replaces the global operator new, so it gets its own executable and
+# Catch2's own allocations stay outside the measured loops (ADR-0004 section 3).
+add_executable(nepdate_alloc_tests alloc_counter.cpp alloc_tests.cpp)
+target_link_libraries(nepdate_alloc_tests PRIVATE nepdate::nepdate Catch2::Catch2WithMain)
+nepdate_set_warnings(nepdate_alloc_tests)
+nepdate_set_instrumentation(nepdate_alloc_tests)
+if(NEPDATE_NO_EXCEPTIONS)
+    target_compile_definitions(nepdate_alloc_tests PRIVATE CATCH_CONFIG_DISABLE_EXCEPTIONS)
+endif()
+catch_discover_tests(nepdate_alloc_tests)
 
 # C1-07: every C# catalogue row up to this phase has a test or a deviation line (ADR-0004 §3).
 # The limit rises by one in each phase.
