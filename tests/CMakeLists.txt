@@ -20,6 +20,7 @@ add_executable(nepdate_tests
     format_test.cpp
     formatter_test.cpp
     names_test.cpp
+    parse_test.cpp
     pattern_test.cpp
     result_test.cpp
     serial_test.cpp

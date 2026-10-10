@@ -7,13 +7,13 @@
 // rows build the same dates through fiscal_year and quarter_range.
 //
 // Following the hub PORT-PLAN rule, rows that need a later task's API carry a pending marker: the
-// AutoAdjust row builds its date with make_date until parse (C3-05), the DateTime rows convert
-// with from_sys_days(floor<days>(t)) until from_sys_time (C4-05), and the Current* rows use a
-// fixed date until today() (C4-05).
+// DateTime rows convert with from_sys_days(floor<days>(t)) until from_sys_time (C4-05), and the
+// Current* rows use a fixed date until today() (C4-05).
 
 #include <nepdate/date.hpp>
 #include <nepdate/date_range.hpp>
 #include <nepdate/fiscal_year.hpp>
+#include <nepdate/parse.hpp>
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -536,8 +536,7 @@ TEST_CASE("NepaliDateArithmeticEdgeCaseTests.Constructor_"
 TEST_CASE("NepaliDateArithmeticEdgeCaseTests.TryParse_AutoAdjust_ValidStandardFormat_"
           "ReturnsCorrectDate",
           "[cs]") {
-    // pending C3-05: parse("2080/05/15") gives this date; built with make_date until then.
-    CHECK(make_date(2080, 5, 15) == bs(2080, 5, 15));
+    CHECK(nepdate::parse("2080/05/15") == bs(2080, 5, 15));
 }
 
 // ---- NepaliDateManipulationTests ----

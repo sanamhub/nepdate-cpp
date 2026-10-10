@@ -41,6 +41,7 @@ target_sources(nepdate
             include/nepdate/fiscal_year.hpp
             include/nepdate/format.hpp
             include/nepdate/nepdate.hpp
+            include/nepdate/parse.hpp
             include/nepdate/version.hpp
 )
 
