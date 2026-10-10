@@ -23,7 +23,7 @@ the hub [`sanamhub/nepdate`](https://github.com/sanamhub/nepdate); the C# origin
 - Needs a C++20 compiler: GCC 12, Clang 16, Apple Clang 16 (Xcode 16), MSVC 19.44 (Visual Studio
   2022 17.14) or newer (ADR-0001).
 
-**Status:** phase C0 (CMake project, generator skeleton, `tools/ci.cmake`, CI workflows) ready for review; no library code yet. Progress: [docs/plan/PROGRESS.md](docs/plan/PROGRESS.md).
+**Status:** phase C1 (date type, BS ↔ AD conversion, tables, tests) ready for review. Progress: [docs/plan/PROGRESS.md](docs/plan/PROGRESS.md).
 
 ## Where to start
 

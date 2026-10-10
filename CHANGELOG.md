@@ -5,3 +5,13 @@ version (ADR-0005). The format follows [Keep a Changelog](https://keepachangelog
 and versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+### Added
+
+- `nepdate::date`: a 4-byte Bikram Sambat date for BS 1901-01-01 to 2199-12-30, with `year`,
+  `month`, `day`, `weekday`, `day_of_year`, `month_length`, `year_length`, `first_of_month`,
+  `last_of_month`, `min`, `max`, `==`, `<=>` and `std::hash`.
+- `make_date`, `from_gregorian`, `from_sys_days`, `from_local_days`, `to_year_month_day` and
+  `to_sys_days`: BS to AD and back, `constexpr` and without allocation.
+- `errc`, `to_string(errc)`, `is_parse_error` and `result<T>`; `result<date>` is 4 bytes.
+- `month` and `lang` enumerations.
