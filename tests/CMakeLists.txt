@@ -12,6 +12,7 @@ add_executable(nepdate_tests
     civil_test.cpp
     constexpr_tests.cpp
     cs_phase1.cpp
+    date_range_test.cpp
     date_test.cpp
     exhaustive_test.cpp
     result_test.cpp

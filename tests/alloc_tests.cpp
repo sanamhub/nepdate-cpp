@@ -4,6 +4,7 @@
 #include "alloc_counter.hpp"
 
 #include <nepdate/date.hpp>
+#include <nepdate/date_range.hpp>
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -108,6 +109,24 @@ TEST_CASE("diff allocates nothing", "[alloc]") {
         sink(static_cast<std::size_t>(a.diff(b).days));
     });
     CHECK(n == 0);
+}
+
+TEST_CASE("date_range construction and a full iteration of of_year(2081) allocate nothing",
+          "[alloc]") {
+    const date a = make_date(2081, 4, 1).value();
+    const auto build = allocations_of([a](int i) {
+        const auto r = nepdate::date_range::make(a, a.add_days(i).value());
+        const auto month = nepdate::date_range::of_month(2081, nepdate::month::shrawan);
+        const auto year = nepdate::date_range::of_year(1901 + i % 299);
+        sink(r->size() + month->size() + year->size() + static_cast<std::size_t>(r->contains(a)));
+    });
+    const auto iterate = allocations_of([](int /*i*/) {
+        for (const date d : nepdate::date_range::of_year(2081).value()) {
+            sink(static_cast<std::size_t>(d.day()));
+        }
+    });
+    CHECK(build == 0);
+    CHECK(iterate == 0);
 }
 
 TEST_CASE("the counter sees an allocation", "[alloc]") {
