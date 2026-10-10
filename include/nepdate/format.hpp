@@ -13,6 +13,7 @@
 #include <string>
 #include <string_view>
 #include <system_error>
+#include <version>
 
 namespace nepdate {
 
@@ -396,5 +397,79 @@ to_chars_pattern(char* first, char* last, date d, std::string_view pattern, lang
 }
 
 } // namespace nepdate
+
+// The one feature-test #if of the library (AGENTS.md): std::formatter exists only where the
+// standard library has <format>.
+#if defined(__cpp_lib_format) && __cpp_lib_format >= 201907L
+#include <format>
+
+namespace nepdate::detail {
+
+// Output to a std::format iterator through a 256-byte stack buffer, flushed when full, so a
+// long result is written in pieces and never truncated.
+template <class OutputIt> struct iterator_sink {
+    OutputIt out;
+    std::array<char, 256> buf{};
+    std::size_t n = 0;
+
+    void flush() {
+        out = std::copy_n(buf.data(), n, out);
+        n = 0;
+    }
+    void put(char c) {
+        if (n == buf.size()) {
+            flush();
+        }
+        buf[n++] = c;
+    }
+    void write(std::string_view s) {
+        while (!s.empty()) {
+            if (n == buf.size()) {
+                flush();
+            }
+            const std::size_t k = std::min(buf.size() - n, s.size());
+            std::copy_n(s.data(), k, buf.data() + n);
+            n += k;
+            s.remove_prefix(k);
+        }
+    }
+    void number(std::uint32_t value, int min_width, lang l) {
+        // Pattern tokens ask for at most 4 digits of a value below 2^32: 30 bytes at most.
+        std::array<char, 32> digits{};
+        char* const end =
+            write_number(digits.data(), digits.data() + digits.size(), value, min_width, l);
+        if (end != nullptr) {
+            write(std::string_view(digits.data(), static_cast<std::size_t>(end - digits.data())));
+        }
+    }
+};
+
+} // namespace nepdate::detail
+
+/// {} prints "2081/04/15"; {:<pattern>} formats with to_chars_pattern and lang::en (FORMATTING
+/// section 5). The pattern can't contain '{' or '}'. Nepali output goes through to_chars_*.
+template <> struct std::formatter<nepdate::date, char> {
+    std::string_view pattern;
+
+    /// Takes everything up to the closing '}' as the pattern; an empty one means "YYYY/MM/DD".
+    constexpr std::format_parse_context::iterator parse(std::format_parse_context& ctx) {
+        auto it = ctx.begin();
+        const auto start = it;
+        while (it != ctx.end() && *it != '}') {
+            ++it;
+        }
+        pattern = std::string_view(start, it);
+        return it;
+    }
+
+    template <class FormatContext>
+    typename FormatContext::iterator format(nepdate::date d, FormatContext& ctx) const {
+        nepdate::detail::iterator_sink<typename FormatContext::iterator> sink{ctx.out()};
+        nepdate::detail::write_pattern(sink, d, pattern, nepdate::lang::en);
+        sink.flush();
+        return sink.out;
+    }
+};
+#endif
 
 #endif // NEPDATE_FORMAT_HPP

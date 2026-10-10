@@ -18,6 +18,7 @@ add_executable(nepdate_tests
     exhaustive_test.cpp
     fiscal_year_test.cpp
     format_test.cpp
+    formatter_test.cpp
     names_test.cpp
     pattern_test.cpp
     result_test.cpp
