@@ -13,6 +13,7 @@
 #include <optional>
 
 using nepdate::date;
+using nepdate::date_diff;
 using nepdate::errc;
 using nepdate::make_date;
 using nepdate::overflow;
@@ -130,4 +131,45 @@ TEST_CASE("spill out of the last month is out_of_range", "[arith][add_months]") 
     const date d = make_date(2199, 1, 31).value();
     CHECK(d.add_months(11, overflow::clamp) == bs(2199, 12, 30));
     CHECK(d.add_months(11, overflow::spill).error() == errc::out_of_range);
+}
+
+TEST_CASE("diff: the ALGORITHM section 8a table", "[arith][diff]") {
+    STATIC_REQUIRE(bs(2080, 1, 1).diff(bs(2081, 4, 15)) == date_diff{false, 1, 3, 14, 473});
+    STATIC_REQUIRE(bs(2081, 4, 15).diff(bs(2080, 1, 1)) == date_diff{true, 1, 3, 14, -473});
+    STATIC_REQUIRE(bs(2081, 4, 32).diff(bs(2081, 5, 31)) == date_diff{false, 0, 1, 0, 31});
+    STATIC_REQUIRE(bs(2081, 4, 32).diff(bs(2081, 6, 1)) == date_diff{false, 0, 1, 1, 32});
+    STATIC_REQUIRE(bs(2081, 1, 31).diff(bs(2081, 2, 30)) == date_diff{false, 0, 0, 30, 30});
+    STATIC_REQUIRE(bs(2081, 3, 15).diff(bs(2081, 3, 15)) == date_diff{false, 0, 0, 0, 0});
+}
+
+TEST_CASE("diff: the extra rows of C2-03", "[arith][diff]") {
+    CHECK(bs(2081, 4, 32).diff(bs(2081, 6, 30)) == date_diff{false, 0, 2, 0, 61});
+    CHECK(bs(2081, 1, 1).diff(bs(2082, 1, 1)) == date_diff{false, 1, 0, 0, 366});
+    CHECK(bs(2081, 4, 15).diff(bs(2083, 2, 10)) == date_diff{false, 1, 9, 26, 663});
+    CHECK(bs(2083, 2, 10).diff(bs(2081, 4, 15)) == date_diff{true, 1, 9, 26, -663});
+}
+
+TEST_CASE("diff across the whole calendar", "[arith][diff]") {
+    const date_diff d = date::min().diff(date::max());
+    CHECK(d == date_diff{false, 298, 11, 29, 109211});
+}
+
+TEST_CASE("diff agrees with days_until and with the section 8a definition", "[arith][diff]") {
+    // Fixed seed, 10,000 pairs of serial days.
+    const auto [s1, s2] = GENERATE(nepdate_test::random_pairs(10000, 0, kMaxSerial, 0, kMaxSerial));
+    const date a = from_serial(s1);
+    const date b = from_serial(s2);
+    const date_diff d = a.diff(b);
+    CHECK(d.total_days == a.days_until(b));
+    CHECK(d.negative == (b < a));
+    // n is the largest month count with add_months(n, clamp) <= the later date.
+    const date lo = d.negative ? b : a;
+    const date hi = d.negative ? a : b;
+    const int n = d.years * 12 + d.months;
+    const date landed = lo.add_months(n).value();
+    CHECK(landed <= hi);
+    CHECK(landed.add_days(d.days) == hi);
+    const auto beyond = lo.add_months(n + 1);
+    CHECK((!beyond.has_value() || hi < *beyond));
+    CHECK(d.months < 12);
 }

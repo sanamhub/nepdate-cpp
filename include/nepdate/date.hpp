@@ -38,6 +38,16 @@ enum class month : std::uint8_t {
 /// days into the next month, like C# AddMonths(n, awayFromMonthEnd: true).
 enum class overflow : std::uint8_t { clamp, spill };
 
+/// Calendar distance between two dates (ALGORITHM section 8a), from date::diff.
+struct date_diff {
+    bool negative;  ///< the other date is before this one
+    int years;      ///< whole years, 0..298
+    int months;     ///< whole months after the years, 0..11
+    int days;       ///< days after the months, 0..32
+    int total_days; ///< signed, equals days_until
+    friend constexpr bool operator==(const date_diff&, const date_diff&) noexcept = default;
+};
+
 class date;
 template <> class result<date>;
 
@@ -164,6 +174,11 @@ class date {
 
     /// Returns other minus this date in days, negative when other is earlier (D-07).
     [[nodiscard]] constexpr int days_until(date other) const noexcept;
+
+    /// Returns the years, months and days from this date to other (ALGORITHM section 8a). The
+    /// months are the largest count n with add_months(n, clamp) <= other, the days what is left.
+    /// When other is earlier the dates are swapped and negative is true.
+    [[nodiscard]] constexpr date_diff diff(date other) const noexcept;
 
     /// Returns the next day, or std::nullopt at max().
     [[nodiscard]] constexpr std::optional<date> next() const noexcept;
@@ -314,6 +329,23 @@ constexpr result<date> date::add_years(int n, overflow o) const noexcept {
 
 constexpr int date::days_until(date other) const noexcept {
     return static_cast<int>(detail::to_serial(other)) - static_cast<int>(detail::to_serial(*this));
+}
+
+constexpr date_diff date::diff(date other) const noexcept {
+    const bool negative = other < *this;
+    const date a = negative ? other : *this;
+    const date b = negative ? *this : other;
+    // n0 lands in b's month (the section 8a hint). The clamped date there is either <= b or one
+    // month too far; it can only be too far when n0 > 0, because in a's own month it is a.
+    const std::uint32_t ib = detail::month_index(b);
+    std::uint32_t n = ib - detail::month_index(a);
+    date landed = detail::in_month_clamped(a, ib);
+    if (b < landed) {
+        --n;
+        landed = detail::in_month_clamped(a, ib - 1U);
+    }
+    return date_diff{negative, static_cast<int>(n / 12U), static_cast<int>(n % 12U),
+                     landed.days_until(b), days_until(other)};
 }
 
 constexpr std::optional<date> date::next() const noexcept {

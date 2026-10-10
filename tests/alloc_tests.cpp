@@ -101,6 +101,15 @@ TEST_CASE("add_months and add_years allocate nothing", "[alloc]") {
     CHECK(years == 0);
 }
 
+TEST_CASE("diff allocates nothing", "[alloc]") {
+    const date a = make_date(2081, 4, 32).value();
+    const auto n = allocations_of([a](int i) {
+        const date b = a.add_days(i * 37 - 18000).value();
+        sink(static_cast<std::size_t>(a.diff(b).days));
+    });
+    CHECK(n == 0);
+}
+
 TEST_CASE("the counter sees an allocation", "[alloc]") {
     // Without this the tests above would also pass with a counter that never counts.
     const auto n = allocations_of([](int /*i*/) {

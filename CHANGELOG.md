@@ -17,3 +17,4 @@ and versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `month` and `lang` enumerations.
 - `date::add_days`, `next`, `prev` and `days_until` (D-03, D-07).
 - `date::add_months` and `add_years` with `overflow::clamp` or `overflow::spill` (D-02).
+- `date::diff` and `date_diff`: years, months and days between two dates (ALGORITHM §8a).
