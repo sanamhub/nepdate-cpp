@@ -3,8 +3,9 @@
 
 // Proleptic Gregorian dates <-> Unix days with the Neri-Schneider algorithms (C. Neri and
 // L. Schneider, "Euclidean affine functions and their application to calendar algorithms",
-// Software: Practice and Experience 53(4), 2023). Same results as ALGORITHM §5 (Hinnant), with
-// multiplications and shifts instead of divisions by 400, 100 and 4 (ADR-0002 §3). Not public API.
+// Software: Practice and Experience 53(4), 2023). Same results as ALGORITHM section 5 (Hinnant),
+// with multiplications and shifts instead of divisions by 400, 100 and 4 (ADR-0002 section 3). Not
+// public API.
 
 #include <cstdint>
 

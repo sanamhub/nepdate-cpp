@@ -84,7 +84,7 @@ class date {
     /// Returns the day of the month, 1..32.
     [[nodiscard]] constexpr int day() const noexcept { return static_cast<int>(v_ & 0xFFU); }
 
-    /// Returns the weekday (ALGORITHM §7).
+    /// Returns the weekday (ALGORITHM section 7).
     [[nodiscard]] constexpr std::chrono::weekday weekday() const noexcept {
         return std::chrono::weekday{(detail::to_serial(*this) + 4U) % 7U};
     }
@@ -142,7 +142,7 @@ class date {
         return static_cast<int>(detail::to_serial(*this)) + detail::kEpochUnixDays;
     }
 
-    // year << 16 | month << 8 | day (ADR-0002 §1): integer order is chronological order.
+    // year << 16 | month << 8 | day (ADR-0002 section 1): integer order is chronological order.
     std::uint32_t v_;
 };
 
@@ -162,8 +162,8 @@ constexpr std::uint32_t detail::month_index(date d) noexcept {
     return ((v >> 16U) - static_cast<std::uint32_t>(kMinYear)) * 12U + ((v >> 8U) & 0xFFU) - 1U;
 }
 
-/// result<date> is 4 bytes (ADR-0002 §1): every valid date has a year of at least 1901 in the high
-/// bits, so an error is stored as its errc value with zero year bits.
+/// result<date> is 4 bytes (ADR-0002 section 1): every valid date has a year of at least 1901 in
+/// the high bits, so an error is stored as its errc value with zero year bits.
 template <> class [[nodiscard]] result<date> {
   public:
     constexpr result(date value) noexcept : d_(value) {}
@@ -218,10 +218,10 @@ static_assert(std::is_trivially_copyable_v<result<date>>);
 
 /// Returns the BS date year-month-day, or out_of_range (year outside 1901..2199), invalid_month
 /// (month outside 1..12) or invalid_day (day outside 1..month length), checked in that order
-/// (ALGORITHM §3).
+/// (ALGORITHM section 3).
 [[nodiscard]] constexpr result<date> make_date(int year, int month, int day) noexcept {
     // Casting to unsigned first wraps negative and huge values into the rejected range, so no
-    // signed arithmetic happens on caller input (ADR-0002 §3).
+    // signed arithmetic happens on caller input (ADR-0002 section 3).
     const unsigned y = static_cast<unsigned>(year) - static_cast<unsigned>(detail::kMinYear);
     if (y >= static_cast<unsigned>(detail::kMaxYear - detail::kMinYear + 1)) {
         return errc::out_of_range;
@@ -257,7 +257,7 @@ namespace detail {
 } // namespace detail
 
 /// Returns the BS date of the AD (proleptic Gregorian) date year-month-day: invalid_gregorian when
-/// that isn't a real date, out_of_range outside AD 1844-04-11..2143-04-15 (ALGORITHM §3).
+/// that isn't a real date, out_of_range outside AD 1844-04-11..2143-04-15 (ALGORITHM section 3).
 [[nodiscard]] constexpr result<date> from_gregorian(int year, int month, int day) noexcept {
     const unsigned m = static_cast<unsigned>(month) - 1U;
     if (m >= 12U) {

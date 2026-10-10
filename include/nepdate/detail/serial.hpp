@@ -1,7 +1,7 @@
 #ifndef NEPDATE_DETAIL_SERIAL_HPP
 #define NEPDATE_DETAIL_SERIAL_HPP
 
-// BS date <-> serial day (days since BS 1901-01-01), ADR-0002 §3. Not public API.
+// BS date <-> serial day (days since BS 1901-01-01), ADR-0002 section 3. Not public API.
 // <nepdate/date.hpp> includes this file after it defines date.
 
 #include <nepdate/date.hpp>

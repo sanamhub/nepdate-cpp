@@ -1,7 +1,7 @@
 #ifndef NEPDATE_DETAIL_RESULT_HPP
 #define NEPDATE_DETAIL_RESULT_HPP
 
-// nepdate::errc and nepdate::result<T> (ADR-0003 §2). Include <nepdate/date.hpp>, which also
+// nepdate::errc and nepdate::result<T> (ADR-0003 section 2). Include <nepdate/date.hpp>, which also
 // defines the 4-byte result<date>.
 
 #include <cassert>
@@ -12,8 +12,8 @@
 
 namespace nepdate {
 
-/// Why an operation failed. The first four come from validation (ALGORITHM §3), the last five from
-/// parsing (PARSING §4). The value 0 is never an error.
+/// Why an operation failed. The first four come from validation (ALGORITHM section 3), the last
+/// five from parsing (PARSING section 4). The value 0 is never an error.
 enum class errc : std::uint8_t {
     out_of_range = 1,  ///< outside BS 1901-01-01..2199-12-30 or AD 1844-04-11..2143-04-15
     invalid_month,     ///< month not 1..12
@@ -59,14 +59,14 @@ enum class errc : std::uint8_t {
 namespace detail {
 
 // Not constexpr on purpose: reaching it in a constant expression makes that expression ill-formed,
-// so `constexpr auto d = make_date(2081, 4, 33).value();` fails to compile (ADR-0003 §2).
+// so `constexpr auto d = make_date(2081, 4, 33).value();` fails to compile (ADR-0003 section 2).
 [[noreturn]] inline void bad_result_access() noexcept {
     std::abort();
 }
 
 } // namespace detail
 
-/// Holds a T or an errc, never both (ADR-0003 §2). Member names follow std::expected.
+/// Holds a T or an errc, never both (ADR-0003 section 2). Member names follow std::expected.
 /// result<date> is specialised in <nepdate/date.hpp> to 4 bytes.
 template <class T> class [[nodiscard]] result {
     static_assert(std::is_trivially_copyable_v<T>, "result<T> needs a trivially copyable T");
