@@ -20,3 +20,5 @@ and versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `date::diff` and `date_diff`: years, months and days between two dates (ALGORITHM §8a).
 - `date_range` (`<nepdate/date_range.hpp>`): an inclusive, random-access view of dates with
   `make`, `of_month`, `of_year`, `size` and `contains` (D-09).
+- `fiscal_year`, `quarter`, `quarter_of` and `months_of` (`<nepdate/fiscal_year.hpp>`): start,
+  end, range, quarter ranges and the label `2082/83` or `२०८२/८३` (D-08).

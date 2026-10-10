@@ -5,9 +5,11 @@
 
 #include <nepdate/date.hpp>
 #include <nepdate/date_range.hpp>
+#include <nepdate/fiscal_year.hpp>
 
 #include <catch2/catch_test_macros.hpp>
 
+#include <array>
 #include <cstddef>
 #include <functional>
 
@@ -127,6 +129,23 @@ TEST_CASE("date_range construction and a full iteration of of_year(2081) allocat
     });
     CHECK(build == 0);
     CHECK(iterate == 0);
+}
+
+TEST_CASE("fiscal_year members other than label allocate nothing", "[alloc]") {
+    const date d = make_date(2081, 4, 15).value();
+    const auto n = allocations_of([d](int i) {
+        const auto fy = nepdate::fiscal_year::of(d.add_days(i).value());
+        const auto q = nepdate::quarter_of(d);
+        std::array<char, 32> buffer{};
+        const auto label = fy.to_chars_label(buffer.data(), buffer.data() + buffer.size(),
+                                             i % 2 == 0 ? nepdate::lang::en : nepdate::lang::ne);
+        sink(static_cast<std::size_t>(fy.start_year() + fy.start()->day() + fy.end()->day()) +
+             fy.range()->size() + fy.quarter_range(q)->size() +
+             static_cast<std::size_t>(nepdate::months_of(q)[0]) +
+             static_cast<std::size_t>(label.ptr - buffer.data()) +
+             static_cast<std::size_t>(fy == nepdate::fiscal_year{2081}));
+    });
+    CHECK(n == 0);
 }
 
 TEST_CASE("the counter sees an allocation", "[alloc]") {
