@@ -19,6 +19,7 @@ add_executable(nepdate_tests
     fiscal_year_test.cpp
     format_test.cpp
     names_test.cpp
+    pattern_test.cpp
     result_test.cpp
     serial_test.cpp
     tables_test.cpp

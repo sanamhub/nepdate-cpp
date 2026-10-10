@@ -229,6 +229,80 @@ template <class Sink> constexpr void write_long(Sink& out, date d, long_format f
     }
 }
 
+// FORMATTING section 5: the standard patterns when the whole pattern is one of them, otherwise a
+// left-to-right scan. Token digits follow l; literal bytes are copied unchanged (D-15).
+template <class Sink>
+constexpr void write_pattern(Sink& out, date d, std::string_view p, lang l) noexcept {
+    if (p.empty() || p == "G" || p == "g" || p == "d") {
+        write_short(out, d, short_format{}, l);
+        return;
+    }
+    if (p == "D") {
+        write_long(out, d, long_format{}, l);
+        return;
+    }
+    if (p == "s") {
+        write_short(out, d, short_format{date_order::ymd, separator::dash, true}, l);
+        return;
+    }
+    const auto year = static_cast<std::uint32_t>(d.year());
+    const auto m = static_cast<std::uint32_t>(d.month());
+    const auto day = static_cast<std::uint32_t>(d.day());
+    const std::size_t n = p.size();
+    std::size_t i = 0;
+    while (i < n) {
+        const char c = p[i];
+        if (c == '\\') {
+            // A '\' at the very end writes nothing.
+            if (i + 1 < n) {
+                out.put(p[i + 1]);
+            }
+            i += 2;
+        } else if (c == '\'') {
+            // An unterminated quote runs to the end of the pattern.
+            std::size_t close = p.find('\'', i + 1);
+            if (close == std::string_view::npos) {
+                close = n;
+            }
+            out.write(p.substr(i + 1, close - i - 1));
+            i = close + 1;
+        } else if (c == 'y' || c == 'M' || c == 'd') {
+            std::size_t j = i + 1;
+            while (j < n && p[j] == c) {
+                ++j;
+            }
+            const std::size_t run = j - i;
+            i = j;
+            if (c == 'y') {
+                if (run >= 4) {
+                    out.number(year, 4, l);
+                } else {
+                    out.number(year % 100U, 2, l);
+                }
+            } else if (c == 'M') {
+                if (run >= 4) {
+                    out.write(month_name(d.month(), l));
+                } else if (run == 3) {
+                    out.write(month_short_name(d.month(), l));
+                } else {
+                    out.number(m, static_cast<int>(run), l);
+                }
+            } else {
+                out.number(day, run == 2 ? 2 : 1, l);
+            }
+        } else {
+            // Copy the literal run up to the next special character in one write.
+            std::size_t j = i + 1;
+            while (j < n && p[j] != '\\' && p[j] != '\'' && p[j] != 'y' && p[j] != 'M' &&
+                   p[j] != 'd') {
+                ++j;
+            }
+            out.write(p.substr(i, j - i));
+            i = j;
+        }
+    }
+}
+
 } // namespace detail
 
 // Every to_chars_* below writes into [first, last) without allocating and returns
@@ -265,6 +339,16 @@ template <class Sink> constexpr void write_long(Sink& out, date d, long_format f
     return out.result();
 }
 
+/// Writes d with a pattern (FORMATTING section 5): "", "G", "g", "d" give "2081/04/15", "D" the
+/// long format, "s" "2081-04-15"; any other pattern is scanned for the tokens yyyy, yy, MMMM, MMM,
+/// MM, M, dd, d, '...' and \x. Token digits and names follow l; other characters are copied.
+[[nodiscard]] constexpr std::to_chars_result
+to_chars_pattern(char* first, char* last, date d, std::string_view pattern, lang l) noexcept {
+    detail::span_sink out{first, last};
+    detail::write_pattern(out, d, pattern, l);
+    return out.result();
+}
+
 /// Returns "2081/04/15". Fits the small-string buffer of every standard library, so it doesn't
 /// allocate.
 [[nodiscard]] inline std::string to_string(date d) {
@@ -292,6 +376,23 @@ template <class Sink> constexpr void write_long(Sink& out, date d, long_format f
     std::array<char, max_long_size> buf{};
     const std::to_chars_result r = to_chars_long(buf.data(), buf.data() + buf.size(), d, f, l);
     return std::string(buf.data(), r.ptr);
+}
+
+/// Returns what to_chars_pattern writes, however long. Allocates only the returned string.
+[[nodiscard]] inline std::string format_pattern(date d, std::string_view pattern, lang l) {
+    std::array<char, max_long_size> buf{};
+    const std::to_chars_result r =
+        to_chars_pattern(buf.data(), buf.data() + buf.size(), d, pattern, l);
+    if (r.ec == std::errc{}) {
+        return std::string(buf.data(), r.ptr);
+    }
+    // Longer than the stack buffer: measure, then write straight into the string.
+    detail::count_sink count;
+    detail::write_pattern(count, d, pattern, l);
+    std::string out(count.n, '\0');
+    detail::span_sink sink{out.data(), out.data() + out.size()};
+    detail::write_pattern(sink, d, pattern, l);
+    return out;
 }
 
 } // namespace nepdate
