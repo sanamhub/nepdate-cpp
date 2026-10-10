@@ -4,9 +4,12 @@
 #include "alloc_counter.hpp"
 
 #include <nepdate/date.hpp>
+#include <nepdate/date_range.hpp>
+#include <nepdate/fiscal_year.hpp>
 
 #include <catch2/catch_test_macros.hpp>
 
+#include <array>
 #include <cstddef>
 #include <functional>
 
@@ -72,6 +75,77 @@ TEST_CASE("comparison and std::hash allocate nothing", "[alloc]") {
     const auto hash = allocations_of([a](int /*i*/) { sink(std::hash<date>{}(a)); });
     CHECK(compare == 0);
     CHECK(hash == 0);
+}
+
+TEST_CASE("add_days, next, prev and days_until allocate nothing", "[alloc]") {
+    const date d = make_date(2081, 4, 15).value();
+    const auto add = allocations_of(
+        [d](int i) { sink(static_cast<std::size_t>(d.add_days(i - kRuns / 2)->day())); });
+    const auto next =
+        allocations_of([d](int /*i*/) { sink(static_cast<std::size_t>(d.next()->day())); });
+    const auto prev =
+        allocations_of([d](int /*i*/) { sink(static_cast<std::size_t>(d.prev()->day())); });
+    const auto until = allocations_of(
+        [d](int /*i*/) { sink(static_cast<std::size_t>(d.days_until(date::max()))); });
+    CHECK(add == 0);
+    CHECK(next == 0);
+    CHECK(prev == 0);
+    CHECK(until == 0);
+}
+
+TEST_CASE("add_months and add_years allocate nothing", "[alloc]") {
+    const date d = make_date(2081, 4, 32).value();
+    const auto months = allocations_of([d](int i) {
+        sink(static_cast<std::size_t>(d.add_months(i % 100 - 50, nepdate::overflow::spill)->day()));
+    });
+    const auto years = allocations_of(
+        [d](int i) { sink(static_cast<std::size_t>(d.add_years(i % 100 - 50)->day())); });
+    CHECK(months == 0);
+    CHECK(years == 0);
+}
+
+TEST_CASE("diff allocates nothing", "[alloc]") {
+    const date a = make_date(2081, 4, 32).value();
+    const auto n = allocations_of([a](int i) {
+        const date b = a.add_days(i * 37 - 18000).value();
+        sink(static_cast<std::size_t>(a.diff(b).days));
+    });
+    CHECK(n == 0);
+}
+
+TEST_CASE("date_range construction and a full iteration of of_year(2081) allocate nothing",
+          "[alloc]") {
+    const date a = make_date(2081, 4, 1).value();
+    const auto build = allocations_of([a](int i) {
+        const auto r = nepdate::date_range::make(a, a.add_days(i).value());
+        const auto month = nepdate::date_range::of_month(2081, nepdate::month::shrawan);
+        const auto year = nepdate::date_range::of_year(1901 + i % 299);
+        sink(r->size() + month->size() + year->size() + static_cast<std::size_t>(r->contains(a)));
+    });
+    const auto iterate = allocations_of([](int /*i*/) {
+        for (const date d : nepdate::date_range::of_year(2081).value()) {
+            sink(static_cast<std::size_t>(d.day()));
+        }
+    });
+    CHECK(build == 0);
+    CHECK(iterate == 0);
+}
+
+TEST_CASE("fiscal_year members other than label allocate nothing", "[alloc]") {
+    const date d = make_date(2081, 4, 15).value();
+    const auto n = allocations_of([d](int i) {
+        const auto fy = nepdate::fiscal_year::of(d.add_days(i).value());
+        const auto q = nepdate::quarter_of(d);
+        std::array<char, 32> buffer{};
+        const auto label = fy.to_chars_label(buffer.data(), buffer.data() + buffer.size(),
+                                             i % 2 == 0 ? nepdate::lang::en : nepdate::lang::ne);
+        sink(static_cast<std::size_t>(fy.start_year() + fy.start()->day() + fy.end()->day()) +
+             fy.range()->size() + fy.quarter_range(q)->size() +
+             static_cast<std::size_t>(nepdate::months_of(q)[0]) +
+             static_cast<std::size_t>(label.ptr - buffer.data()) +
+             static_cast<std::size_t>(fy == nepdate::fiscal_year{2081}));
+    });
+    CHECK(n == 0);
 }
 
 TEST_CASE("the counter sees an allocation", "[alloc]") {

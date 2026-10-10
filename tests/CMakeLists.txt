@@ -8,11 +8,15 @@ if(_nepdate_links)
 endif()
 
 add_executable(nepdate_tests
+    arith_test.cpp
     civil_test.cpp
     constexpr_tests.cpp
     cs_phase1.cpp
+    cs_phase2.cpp
+    date_range_test.cpp
     date_test.cpp
     exhaustive_test.cpp
+    fiscal_year_test.cpp
     result_test.cpp
     serial_test.cpp
     tables_test.cpp
@@ -42,7 +46,7 @@ catch_discover_tests(nepdate_alloc_tests)
 
 # C1-07: every C# catalogue row up to this phase has a test or a deviation line (ADR-0004 §3).
 # The limit rises by one in each phase.
-set(NEPDATE_CATALOG_PHASE 1)
+set(NEPDATE_CATALOG_PHASE 2)
 add_test(NAME catalog_coverage
     COMMAND "${CMAKE_COMMAND}"
         -DPHASE=${NEPDATE_CATALOG_PHASE}
