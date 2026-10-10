@@ -135,3 +135,32 @@ TEST_CASE("csharp-golden/add-days.tsv: every row, negative amounts included", "[
     // The ERR rows are there and were compared, not skipped.
     CHECK(errors > 0);
 }
+
+TEST_CASE("csharp-golden/add-months.tsv: clamp and spill, negative amounts included",
+          "[vectors][arith]") {
+    const auto t = read_vectors("csharp-golden/add-months.tsv", '\t');
+    REQUIRE(t.rows.size() >= 10180);
+    const std::size_t bs = t.column("bs");
+    const std::size_t months = t.column("months");
+    const std::size_t clamp = t.column("clamp");
+    const std::size_t spill = t.column("overflow");
+    REQUIRE(spill < t.header.size());
+    const auto expected = [](const std::string& cell) -> nepdate::result<date> {
+        if (cell == "ERR") {
+            return nepdate::errc::out_of_range;
+        }
+        const auto want = parse_ymd(cell);
+        return make_date(want.year, want.month, want.day);
+    };
+    int errors = 0;
+    for (const auto& row : t.rows) {
+        INFO(row[bs] << " + " << row[months] << " months");
+        const auto b = parse_ymd(row[bs]);
+        const date d = make_date(b.year, b.month, b.day).value();
+        const int n = std::stoi(row[months]);
+        CHECK(d.add_months(n, nepdate::overflow::clamp) == expected(row[clamp]));
+        CHECK(d.add_months(n, nepdate::overflow::spill) == expected(row[spill]));
+        errors += row[clamp] == "ERR" ? 1 : 0;
+    }
+    CHECK(errors > 0);
+}

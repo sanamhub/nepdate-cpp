@@ -90,6 +90,17 @@ TEST_CASE("add_days, next, prev and days_until allocate nothing", "[alloc]") {
     CHECK(until == 0);
 }
 
+TEST_CASE("add_months and add_years allocate nothing", "[alloc]") {
+    const date d = make_date(2081, 4, 32).value();
+    const auto months = allocations_of([d](int i) {
+        sink(static_cast<std::size_t>(d.add_months(i % 100 - 50, nepdate::overflow::spill)->day()));
+    });
+    const auto years = allocations_of(
+        [d](int i) { sink(static_cast<std::size_t>(d.add_years(i % 100 - 50)->day())); });
+    CHECK(months == 0);
+    CHECK(years == 0);
+}
+
 TEST_CASE("the counter sees an allocation", "[alloc]") {
     // Without this the tests above would also pass with a counter that never counts.
     const auto n = allocations_of([](int /*i*/) {

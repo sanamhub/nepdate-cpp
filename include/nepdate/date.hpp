@@ -33,6 +33,11 @@ enum class month : std::uint8_t {
     chaitra,
 };
 
+/// What add_months and add_years do when the day doesn't exist in the target month (ALGORITHM
+/// section 8). clamp gives that month's last day, like C# AddMonths(n); spill carries the extra
+/// days into the next month, like C# AddMonths(n, awayFromMonthEnd: true).
+enum class overflow : std::uint8_t { clamp, spill };
+
 class date;
 template <> class result<date>;
 
@@ -51,6 +56,17 @@ struct date_access {
 
 // Month index (y - 1901) * 12 + (m - 1) into kMonthStart.
 [[nodiscard]] constexpr std::uint32_t month_index(date d) noexcept;
+
+// Number of months in the calendar, 299 * 12.
+inline constexpr std::uint32_t kMonths = static_cast<std::uint32_t>(kMonthStart.size() - 1);
+
+// Length of month index i. Precondition: i < kMonths.
+[[nodiscard]] constexpr std::uint32_t month_days(std::uint32_t i) noexcept {
+    return kMonthStart[i + 1] - kMonthStart[i];
+}
+
+// d's day in month index i, or that month's last day when it is shorter. Precondition: i < kMonths.
+[[nodiscard]] constexpr date in_month_clamped(date d, std::uint32_t i) noexcept;
 
 // Days since BS 1901-01-01 and back (detail/serial.hpp).
 [[nodiscard]] constexpr std::uint32_t to_serial(date d) noexcept;
@@ -135,6 +151,16 @@ class date {
     /// Returns the date n days later (earlier for a negative n), or out_of_range when that is
     /// outside 1901-01-01..2199-12-30 (D-03).
     [[nodiscard]] constexpr result<date> add_days(int n) const noexcept;
+
+    /// Returns the date n months later (earlier for a negative n), ALGORITHM section 8. When the
+    /// day doesn't exist in the target month, o decides (see overflow). Returns out_of_range when
+    /// the target month, or the month spill carries into, is outside 1901..2199 (D-02).
+    [[nodiscard]] constexpr result<date> add_months(int n,
+                                                    overflow o = overflow::clamp) const noexcept;
+
+    /// Returns add_months(12 * n, o), or out_of_range.
+    [[nodiscard]] constexpr result<date> add_years(int n,
+                                                   overflow o = overflow::clamp) const noexcept;
 
     /// Returns other minus this date in days, negative when other is earlier (D-07).
     [[nodiscard]] constexpr int days_until(date other) const noexcept;
@@ -243,6 +269,47 @@ constexpr result<date> date::add_days(int n) const noexcept {
         return errc::out_of_range;
     }
     return detail::from_serial(static_cast<std::uint32_t>(s));
+}
+
+constexpr date detail::in_month_clamped(date d, std::uint32_t i) noexcept {
+    const std::uint32_t length = month_days(i);
+    const std::uint32_t day = date_access::packed(d) & 0xFFU;
+    return date_access::make(pack(static_cast<std::uint32_t>(kMinYear) + i / 12U, i % 12U + 1U,
+                                  day < length ? day : length));
+}
+
+constexpr result<date> date::add_months(int n, overflow o) const noexcept {
+    constexpr int months = static_cast<int>(detail::kMonths);
+    // Any larger |n| leaves the calendar; rejecting it first keeps the sum from overflowing.
+    if (n < -months || n > months) {
+        return errc::out_of_range;
+    }
+    const int total = static_cast<int>(detail::month_index(*this)) + n;
+    if (total < 0 || total >= months) {
+        return errc::out_of_range;
+    }
+    const auto i = static_cast<std::uint32_t>(total);
+    const date target = detail::in_month_clamped(*this, i);
+    if (o == overflow::clamp || target.day() == day()) {
+        return target;
+    }
+    // Spill: at most 3 days (32 - 29) go into the next month, which has at least 29.
+    const std::uint32_t j = i + 1U;
+    if (j >= detail::kMonths) {
+        return errc::out_of_range;
+    }
+    return detail::date_access::make(
+        detail::pack(static_cast<std::uint32_t>(detail::kMinYear) + j / 12U, j % 12U + 1U,
+                     static_cast<std::uint32_t>(day() - target.day())));
+}
+
+constexpr result<date> date::add_years(int n, overflow o) const noexcept {
+    constexpr int years = detail::kMaxYear - detail::kMinYear + 1;
+    // Checked before multiplying by 12, so 12 * n can't overflow.
+    if (n < -years || n > years) {
+        return errc::out_of_range;
+    }
+    return add_months(n * 12, o);
 }
 
 constexpr int date::days_until(date other) const noexcept {
