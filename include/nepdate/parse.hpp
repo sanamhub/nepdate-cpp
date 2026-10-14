@@ -146,7 +146,8 @@ constexpr void read_digits(std::string_view t, int& digits, int& value) noexcept
 } // namespace detail
 
 /// Parses "year month day" (PARSING section 1): groups of 1 to 4 ASCII or Devanagari digits (mixing
-/// allowed, D-05), separated by any of - / . _ \ space | and the danda U+0964; leading, trailing
+/// allowed, D-05), separated by any of - / . _ a backslash, space, | and the danda U+0964;
+/// leading, trailing
 /// and repeated separators are ignored. Returns the date or invalid_character, wrong_group_count
 /// (also for empty input), number_too_long, then out_of_range, invalid_month or invalid_day.
 [[nodiscard]] constexpr result<date> parse(std::string_view s) noexcept {

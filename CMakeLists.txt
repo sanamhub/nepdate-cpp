@@ -89,6 +89,7 @@ add_subdirectory(tools/coreonly)
 
 if(NEPDATE_BUILD_TESTS)
     add_subdirectory(tests)
+    add_subdirectory(examples)
 endif()
 
 if(NEPDATE_BUILD_TOOLS)

@@ -73,7 +73,7 @@ to_chars_number(char* first, char* last, unsigned value, int min_width, lang l) 
 /// Field order of a short format (FORMATTING section 3, C# DateFormats in the same order).
 enum class date_order : std::uint8_t { ymd, ydm, myd, mdy, dym, dmy };
 
-/// Separator of a short format: '/', '\', '.', '_', '-' or ' '.
+/// Separator of a short format: slash, backslash, dot, underscore, dash or space.
 enum class separator : std::uint8_t { slash, backslash, dot, underscore, dash, space };
 
 /// Options of to_chars_short. pad gives a 4-digit year and 2-digit month and day.
@@ -342,7 +342,8 @@ constexpr void write_pattern(Sink& out, date d, std::string_view p, lang l) noex
 
 /// Writes d with a pattern (FORMATTING section 5): "", "G", "g", "d" give "2081/04/15", "D" the
 /// long format, "s" "2081-04-15"; any other pattern is scanned for the tokens yyyy, yy, MMMM, MMM,
-/// MM, M, dd, d, '...' and \x. Token digits and names follow l; other characters are copied.
+/// MM, M, dd, d, '...' and a backslash that escapes the next character. Token digits and names
+/// follow l; other characters are copied.
 [[nodiscard]] constexpr std::to_chars_result
 to_chars_pattern(char* first, char* last, date d, std::string_view pattern, lang l) noexcept {
     detail::span_sink out{first, last};

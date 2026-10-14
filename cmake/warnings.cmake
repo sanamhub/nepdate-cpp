@@ -15,5 +15,9 @@ function(nepdate_set_warnings target)
             -Wold-style-cast
             -Wnon-virtual-dtor
         )
+        # Doc comments are checked by Clang only (C5-01); GCC has no -Wdocumentation.
+        if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+            target_compile_options(${target} PRIVATE -Wdocumentation)
+        endif()
     endif()
 endfunction()
