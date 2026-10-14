@@ -2,36 +2,22 @@
 // -fsanitize=fuzzer-no-link,address,undefined); the seed corpus runs through the same property as
 // a normal test on every platform (corpus_test.cpp). A violation aborts, so libFuzzer reports it
 // as a finding and saves the input.
+//
+// The input is parsed in place, not copied: libFuzzer hands over an exactly sized heap buffer, so
+// ASan reports any read past its end (the C3 checkpoint item "parse never reads past the input").
 
 #include "fuzz_property.hpp"
 
-#include <algorithm>
-#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
-#include <cstring>
 #include <string_view>
 
-namespace {
-
-// libFuzzer's default -max_len. Longer inputs are still covered, in pieces.
-constexpr std::size_t kMaxInput = 4096;
-
-} // namespace
-
 extern "C" int LLVMFuzzerTestOneInput(const std::uint8_t* data, std::size_t size) {
-    std::size_t off = 0;
-    do {
-        std::array<char, kMaxInput> buf{};
-        const std::size_t n = std::min(kMaxInput, size - off);
-        if (n != 0) {
-            std::memcpy(buf.data(), data + off, n);
-        }
-        if (!nepdate_test::fuzz::parse_property(std::string_view(buf.data(), n))) {
-            std::abort();
-        }
-        off += n;
-    } while (off < size);
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast): fuzzer bytes viewed as char
+    const std::string_view input(reinterpret_cast<const char*>(data), size);
+    if (!nepdate_test::fuzz::parse_property(input)) {
+        std::abort();
+    }
     return 0;
 }
