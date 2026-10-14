@@ -16,8 +16,13 @@ class NepdatePatroConan(ConanFile):
     settings = "os", "arch", "compiler", "build_type"
     options = {"shared": [True, False], "fPIC": [True, False]}
     default_options = {"shared": False, "fPIC": True}
-    requires = "nepdate/0.1.0"
     no_copy_source = True
+
+    def requirements(self):
+        # patro.hpp includes nepdate headers, so consumers need them too. Conan 2 already passes
+        # a header-library's headers on; saying so here keeps that true if nepdate's package
+        # type ever changes. The test package links only nepdate::patro to prove it.
+        self.requires("nepdate/0.1.0", transitive_headers=True)
 
     def layout(self):
         cmake_layout(self)
