@@ -20,6 +20,7 @@ add_executable(nepdate_tests
     fiscal_year_test.cpp
     format_test.cpp
     formatter_test.cpp
+    fuzz/corpus_test.cpp
     names_test.cpp
     parse_test.cpp
     pattern_test.cpp
@@ -32,6 +33,9 @@ add_executable(nepdate_tests
 target_link_libraries(nepdate_tests PRIVATE nepdate::nepdate Catch2::Catch2WithMain)
 # The vectors are read at run time from shared/ (ADR-0004 section 3).
 target_compile_definitions(nepdate_tests PRIVATE NEPDATE_SHARED_DIR="${PROJECT_SOURCE_DIR}/shared")
+# The fuzz seed corpus (C3-07) is read at run time from the source tree.
+target_compile_definitions(
+    nepdate_tests PRIVATE NEPDATE_FUZZ_CORPUS_DIR="${PROJECT_SOURCE_DIR}/tests/fuzz/corpus")
 nepdate_set_warnings(nepdate_tests)
 nepdate_set_instrumentation(nepdate_tests)
 if(NEPDATE_NO_EXCEPTIONS)
@@ -49,6 +53,21 @@ if(NEPDATE_NO_EXCEPTIONS)
     target_compile_definitions(nepdate_alloc_tests PRIVATE CATCH_CONFIG_DISABLE_EXCEPTIONS)
 endif()
 catch_discover_tests(nepdate_alloc_tests)
+
+# C3-07: libFuzzer targets for strict and lenient parsing, built only by the fuzz preset (Clang
+# with -fsanitize=address,undefined,fuzzer-no-link). The seed corpus in fuzz/corpus runs through
+# the same property as a normal test on every platform (fuzz/corpus_test.cpp above). libFuzzer
+# provides main, so the final link adds -fsanitize=fuzzer; the preset's fuzzer-no-link keeps the
+# Catch2 binaries' own main.
+if(NEPDATE_SANITIZE MATCHES "fuzzer" AND NOT MSVC)
+    foreach(name IN ITEMS fuzz_parse fuzz_parse_lenient)
+        add_executable(${name} fuzz/${name}.cpp)
+        target_link_libraries(${name} PRIVATE nepdate::nepdate)
+        nepdate_set_warnings(${name})
+        nepdate_set_instrumentation(${name})
+        target_link_options(${name} PRIVATE -fsanitize=fuzzer)
+    endforeach()
+endif()
 
 # C1-07: every C# catalogue row up to this phase has a test or a deviation line (ADR-0004 §3).
 # The limit rises by one in each phase.
