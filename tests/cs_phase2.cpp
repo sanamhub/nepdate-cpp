@@ -7,8 +7,8 @@
 // rows build the same dates through fiscal_year and quarter_range.
 //
 // Following the hub PORT-PLAN rule, rows that need a later task's API carry a pending marker: the
-// DateTime rows convert with from_sys_days(floor<days>(t)) until from_sys_time (C4-05), and the
-// Current* rows use a fixed date until today() (C4-05).
+// DateTime rows use from_sys_time(t, 0min) (C4-05) and the Current* rows read the clock through
+// today() (C4-05).
 
 #include <nepdate/date.hpp>
 #include <nepdate/date_range.hpp>
@@ -97,19 +97,19 @@ std::vector<date> dates_of(const date_range& r) {
     return {r.begin(), r.end()};
 }
 
-// pending C4-05: C#'s new NepaliDate(DateTime) becomes from_sys_time(t, 0min); until then the
-// date part goes through from_sys_days(floor<days>(t)).
+// C#'s new NepaliDate(DateTime) is from_sys_time(t, 0min): the instant's date part, no offset.
 nepdate::result<date> from_date_time(chr::sys_seconds t) {
-    return nepdate::from_sys_days(chr::floor<chr::days>(t));
+    return nepdate::from_sys_time(t, chr::minutes{0});
 }
 
 chr::sys_seconds at(chr::year_month_day ymd, int h, int m, int s) {
     return chr::sys_days{ymd} + chr::hours{h} + chr::minutes{m} + chr::seconds{s};
 }
 
-// pending C4-05: C#'s Current* rows read the clock; today() replaces this fixed date.
+// C#'s Current* rows read the clock; today() does, defaulting to Asia/Kathmandu (+05:45). The
+// rows only check properties that hold for any date, so the non-deterministic clock can't flake.
 date fixed_today() {
-    return bs(2081, 4, 15);
+    return nepdate::today().value();
 }
 
 } // namespace
@@ -502,26 +502,26 @@ TEST_CASE("NepaliDateArithmeticEdgeCaseTests.AddMonths_Negative_SameDayPreserved
 
 TEST_CASE("NepaliDateArithmeticEdgeCaseTests.Constructor_DateTimeWithMidnightTime_IgnoresTime",
           "[cs]") {
-    // pending C4-05: from_sys_time(t, 0min) once it exists.
+    // C#'s new NepaliDate(DateTime) is from_sys_time(t, 0min).
     CHECK(from_date_time(at(chr::year{2023} / 9 / 1, 0, 0, 0)) == bs(2080, 5, 15));
 }
 
 TEST_CASE("NepaliDateArithmeticEdgeCaseTests.Constructor_DateTimeWithNoonTime_IgnoresTime",
           "[cs]") {
-    // pending C4-05: from_sys_time(t, 0min) once it exists.
+    // C#'s new NepaliDate(DateTime) is from_sys_time(t, 0min).
     CHECK(from_date_time(at(chr::year{2023} / 9 / 1, 12, 30, 45)) == bs(2080, 5, 15));
 }
 
 TEST_CASE("NepaliDateArithmeticEdgeCaseTests.Constructor_DateTimeWithEndOfDayTime_IgnoresTime",
           "[cs]") {
-    // pending C4-05: from_sys_time(t, 0min) once it exists.
+    // C#'s new NepaliDate(DateTime) is from_sys_time(t, 0min).
     CHECK(from_date_time(at(chr::year{2023} / 9 / 1, 23, 59, 59)) == bs(2080, 5, 15));
 }
 
 TEST_CASE("NepaliDateArithmeticEdgeCaseTests.Constructor_"
           "TwoDateTimesOnSameEnglishDateDifferentTimes_ProduceSameNepaliDate",
           "[cs]") {
-    // pending C4-05: from_sys_time(t, 0min) once it exists.
+    // C#'s new NepaliDate(DateTime) is from_sys_time(t, 0min).
     const auto morning = from_date_time(at(chr::year{2023} / 1 / 1, 6, 0, 0));
     const auto evening = from_date_time(at(chr::year{2023} / 1 / 1, 22, 0, 0));
     REQUIRE(morning.has_value());
@@ -698,27 +698,31 @@ TEST_CASE("NepaliDateRangeExtendedTests.ForCalendarYear_LengthIsReasonable", "[c
 }
 
 TEST_CASE("NepaliDateRangeExtendedTests.CurrentMonth_StartIsFirstDayOfCurrentMonth", "[cs]") {
-    const auto r = date_range::of_month(fixed_today().year(), fixed_today().month());
+    const date t = fixed_today();
+    const auto r = date_range::of_month(t.year(), t.month());
     REQUIRE(r.has_value());
-    CHECK(r->first() == fixed_today().first_of_month());
+    CHECK(r->first() == t.first_of_month());
 }
 
 TEST_CASE("NepaliDateRangeExtendedTests.CurrentMonth_EndIsLastDayOfCurrentMonth", "[cs]") {
-    const auto r = date_range::of_month(fixed_today().year(), fixed_today().month());
+    const date t = fixed_today();
+    const auto r = date_range::of_month(t.year(), t.month());
     REQUIRE(r.has_value());
-    CHECK(r->last() == fixed_today().last_of_month());
+    CHECK(r->last() == t.last_of_month());
 }
 
 TEST_CASE("NepaliDateRangeExtendedTests.CurrentMonth_ContainsToday", "[cs]") {
-    const auto r = date_range::of_month(fixed_today().year(), fixed_today().month());
+    const date t = fixed_today();
+    const auto r = date_range::of_month(t.year(), t.month());
     REQUIRE(r.has_value());
-    CHECK(r->contains(fixed_today()));
+    CHECK(r->contains(t));
 }
 
 TEST_CASE("NepaliDateRangeExtendedTests.CurrentFiscalYear_ContainsToday", "[cs]") {
-    const auto r = fiscal_year::of(fixed_today()).range();
+    const date t = fixed_today();
+    const auto r = fiscal_year::of(t).range();
     REQUIRE(r.has_value());
-    CHECK(r->contains(fixed_today()));
+    CHECK(r->contains(t));
 }
 
 TEST_CASE("NepaliDateRangeExtendedTests.CurrentFiscalYear_StartIsShrawan", "[cs]") {
@@ -736,9 +740,10 @@ TEST_CASE("NepaliDateRangeExtendedTests.CurrentFiscalYear_EndIsAshadh", "[cs]") 
 }
 
 TEST_CASE("NepaliDateRangeExtendedTests.CurrentCalendarYear_ContainsToday", "[cs]") {
-    const auto r = date_range::of_year(fixed_today().year());
+    const date t = fixed_today();
+    const auto r = date_range::of_year(t.year());
     REQUIRE(r.has_value());
-    CHECK(r->contains(fixed_today()));
+    CHECK(r->contains(t));
 }
 
 TEST_CASE("NepaliDateRangeExtendedTests.CurrentCalendarYear_StartIsBaishakh1", "[cs]") {

@@ -14,6 +14,7 @@ add_executable(nepdate_tests
     cs_phase1.cpp
     cs_phase2.cpp
     cs_phase3.cpp
+    cs_phase4.cpp
     date_range_test.cpp
     date_test.cpp
     exhaustive_test.cpp
@@ -27,6 +28,7 @@ add_executable(nepdate_tests
     result_test.cpp
     serial_test.cpp
     tables_test.cpp
+    time_test.cpp
     vectors_test.cpp
     version_test.cpp
 )

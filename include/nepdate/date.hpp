@@ -440,6 +440,32 @@ namespace detail {
     return detail::from_unix_days(static_cast<std::int64_t>(d.time_since_epoch().count()));
 }
 
+/// Nepal's fixed UTC offset, +05:45 (the offset of Asia/Kathmandu; Nepal has used it since
+/// 1986-01-01).
+inline constexpr std::chrono::minutes nepal_utc_offset{345};
+
+/// Returns the BS date of an instant in the zone with the given fixed UTC offset:
+/// from_sys_days(floor<days>(t + utc_offset)). The offset is added first, so 2024-07-30 18:30 UTC
+/// is BS 2081-04-15 with offset 0 and 2081-04-16 with nepal_utc_offset. Returns out_of_range when
+/// the result is outside AD 1844-04-11..2143-04-15.
+[[nodiscard]] constexpr result<date> from_sys_time(std::chrono::sys_seconds t,
+                                                   std::chrono::minutes utc_offset) noexcept {
+    return from_sys_days(std::chrono::floor<std::chrono::days>(t + utc_offset));
+}
+
+/// Returns today's BS date in the zone with the given fixed UTC offset, reading
+/// system_clock::now(). The default is Asia/Kathmandu, expressed as its fixed offset
+/// nepal_utc_offset; Nepal has used +05:45 since 1986-01-01 (before that Kathmandu ran on local
+/// mean time, so pass the zone's offset for older instants). Where the standard library has a time
+/// zone database, other zones work the same way through their offset, for example
+/// z->get_info(t).offset from std::chrono::time_zone. Returns out_of_range when the clock is
+/// outside AD 1844-04-11..2143-04-15, so today() can fail (PORT-PLAN phase 4).
+[[nodiscard]] inline result<date>
+today(std::chrono::minutes utc_offset = nepal_utc_offset) noexcept {
+    return from_sys_time(std::chrono::floor<std::chrono::seconds>(std::chrono::system_clock::now()),
+                         utc_offset);
+}
+
 } // namespace nepdate
 
 /// Hashes the 4-byte packed value.

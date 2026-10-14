@@ -2,8 +2,8 @@
 // Each row is a TEST_CASE named after its id, or a cs-deviation / cs-n/a line. The CTest test
 // catalog_coverage (tools/check_catalog.cmake) checks that every phase-1 row is here.
 //
-// Rows that build a date from a string use parse (C3-05). The row that reads the clock needs
-// today() and is skipped with a "pending C4-05" marker (hub PORT-PLAN rule); C4-05 removes it.
+// Rows that build a date from a string use parse (C3-05). The row that reads the clock uses
+// today() (C4-05).
 
 #include <nepdate/date.hpp>
 #include <nepdate/parse.hpp>
@@ -361,7 +361,11 @@ TEST_CASE("NepaliDatePropertiesTests.MonthName_ReturnsCorrectEnum", "[cs]") {
 }
 
 TEST_CASE("NepaliDatePropertiesTests.Today_ReturnsCurrentNepaliDate", "[cs]") {
-    SKIP("pending C4-05: needs today()");
+    // C# compares Today with new NepaliDate(DateTime.Today); the port compares today() with the
+    // current instant shifted by Nepal's offset.
+    const nepdate::date t = nepdate::today().value();
+    const std::chrono::sys_seconds now = chr::floor<chr::seconds>(chr::system_clock::now());
+    CHECK(t == nepdate::from_sys_days(chr::floor<chr::days>(now + nepdate::nepal_utc_offset)));
 }
 
 TEST_CASE("NepaliDatePropertiesTests.DayOfYear_FirstDayOfYear_Returns1", "[cs]") {
