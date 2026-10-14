@@ -103,5 +103,5 @@ TEST_CASE("the counter sees an allocation", "[alloc]") {
         const std::string s(64, 'x'); // NOLINT: measured on purpose
         sink(s.size());
     });
-    CHECK(n == static_cast<std::size_t>(kRuns));
+    CHECK(n == static_cast<std::size_t>(kRuns) * (1U + nepdate_test::kStringProxyAllocations));
 }

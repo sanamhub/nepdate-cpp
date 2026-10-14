@@ -215,7 +215,8 @@ TEST_CASE("from_sys_time and today allocate nothing", "[alloc]") {
 TEST_CASE("to_string(d) allocates nothing", "[alloc]") {
     const date d = make_date(2081, 4, 15).value();
     const auto n = allocations_of([d](int /*i*/) { sink(nepdate::to_string(d).size()); });
-    CHECK(n == 0);
+    // The text fits every small-string buffer; only MSVC's debug iterator proxy can allocate.
+    CHECK(n == static_cast<std::size_t>(kRuns) * nepdate_test::kStringProxyAllocations);
 }
 
 TEST_CASE("the counter sees an allocation", "[alloc]") {
