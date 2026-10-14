@@ -14,6 +14,7 @@ add_executable(nepdate_tests
     cs_phase1.cpp
     cs_phase2.cpp
     cs_phase3.cpp
+    cs_phase4.cpp
     date_range_test.cpp
     date_test.cpp
     exhaustive_test.cpp
@@ -27,6 +28,7 @@ add_executable(nepdate_tests
     result_test.cpp
     serial_test.cpp
     tables_test.cpp
+    time_test.cpp
     vectors_test.cpp
     version_test.cpp
 )
@@ -70,14 +72,27 @@ if(NEPDATE_SANITIZE MATCHES "fuzzer" AND NOT MSVC)
 endif()
 
 # C1-07: every C# catalogue row up to this phase has a test or a deviation line (ADR-0004 §3).
-# The limit rises by one in each phase.
-set(NEPDATE_CATALOG_PHASE 3)
+# The limit rises by one in each phase. The 35 patro rows of phase 4 live in the patro test
+# binary (C4-06); a core-only build checks what its own tests can cover.
+set(NEPDATE_CATALOG_PHASE 4)
+if(TARGET nepdate::patro)
+    set(_catalog_exes "$<TARGET_FILE:nepdate_tests>;$<TARGET_FILE:nepdate_patro_tests>")
+    set(_catalog_dirs "${CMAKE_CURRENT_SOURCE_DIR};${PROJECT_SOURCE_DIR}/patro/tests")
+    set(_catalog_phase ${NEPDATE_CATALOG_PHASE})
+else()
+    set(_catalog_exes "$<TARGET_FILE:nepdate_tests>")
+    set(_catalog_dirs "${CMAKE_CURRENT_SOURCE_DIR}")
+    set(_catalog_phase 3)
+endif()
+# Escaped semicolons keep each -D value one argument through add_test's list expansion.
+string(REPLACE ";" "\\;" _catalog_exes "${_catalog_exes}")
+string(REPLACE ";" "\\;" _catalog_dirs "${_catalog_dirs}")
 add_test(NAME catalog_coverage
     COMMAND "${CMAKE_COMMAND}"
-        -DPHASE=${NEPDATE_CATALOG_PHASE}
+        -DPHASE=${_catalog_phase}
         -DCATALOG=${PROJECT_SOURCE_DIR}/shared/spec/vectors/csharp-tests/catalog.tsv
-        -DTEST_EXE=$<TARGET_FILE:nepdate_tests>
-        -DTEST_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+        -DTEST_EXES=${_catalog_exes}
+        -DTEST_DIRS=${_catalog_dirs}
         -P "${PROJECT_SOURCE_DIR}/tools/check_catalog.cmake"
 )
 
@@ -85,6 +100,11 @@ add_test(NAME catalog_coverage
 add_test(NAME release_check_rejects_9.9.9
     COMMAND "${CMAKE_COMMAND}" -DVERSION=9.9.9 -P "${PROJECT_SOURCE_DIR}/tools/release_check.cmake")
 set_tests_properties(release_check_rejects_9.9.9 PROPERTIES WILL_FAIL TRUE)
+
+# C4-02 AC: no patro table, name or string goes into any file under include/.
+add_test(NAME patro_data_isolation
+    COMMAND "${CMAKE_COMMAND}" -DINCLUDE_DIR=${PROJECT_SOURCE_DIR}/include
+        -P "${PROJECT_SOURCE_DIR}/tools/check_patro_in_include.cmake")
 
 # C1-02 AC: `constexpr auto d = make_date(2081, 4, 33).value();` must not compile. Both targets stay
 # out of the normal build; the tests build them. RESOURCE_LOCK keeps the two builds from running

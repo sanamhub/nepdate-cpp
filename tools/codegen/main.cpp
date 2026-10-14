@@ -8,7 +8,9 @@
 
 #include "calendar.hpp"
 #include "names.hpp"
+#include "patro.hpp"
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdio>
 #include <filesystem>
@@ -101,11 +103,50 @@ int main(int argc, char** argv) {
         return 2;
     }
 
+    // The patro year files, sorted by year (ADR-0001 section 5).
+    const fs::path patro_dir = opts->shared / "data" / "patro";
+    std::vector<fs::path> patro_paths;
+    std::error_code ec;
+    for (const auto& entry : fs::directory_iterator(patro_dir, ec)) {
+        if (entry.is_regular_file() && entry.path().extension() == ".json") {
+            patro_paths.push_back(entry.path());
+        }
+    }
+    std::sort(patro_paths.begin(), patro_paths.end());
+    if (patro_paths.empty()) {
+        std::fprintf(stderr, "no patro year files under %s\n", patro_dir.generic_string().c_str());
+        return 2;
+    }
+    std::vector<std::string> patro_jsons;
+    for (const fs::path& path : patro_paths) {
+        const auto text = read_file(path);
+        if (!text) {
+            std::fprintf(stderr, "cannot read %s\n", path.generic_string().c_str());
+            return 2;
+        }
+        patro_jsons.push_back(*text);
+    }
+    const auto patro_parsed = nepdate::codegen::parse_patro(patro_jsons);
+    if (!patro_parsed.error.empty()) {
+        std::fprintf(stderr, "%s\n", patro_parsed.error.c_str());
+        return 2;
+    }
+    const auto patro =
+        nepdate::codegen::build_patro_tables(patro_parsed.value, built.value.month_start);
+    if (!patro.error.empty()) {
+        std::fprintf(stderr, "%s\n", patro.error.c_str());
+        return 2;
+    }
+
     const std::vector<output_file> files = {
         {.relative = fs::path("include/nepdate/detail/calendar_tables.hpp"),
          .content = nepdate::codegen::render_calendar_tables(parsed.value, built.value)},
         {.relative = fs::path("include/nepdate/detail/names_tables.hpp"),
          .content = nepdate::codegen::render_names_tables()},
+        {.relative = fs::path("patro/src/patro_tables.hpp"),
+         .content = nepdate::codegen::render_patro_tables(patro.value, built.value.month_start)},
+        {.relative = fs::path("patro/include/nepdate/patro_config.hpp"),
+         .content = nepdate::codegen::render_patro_config(built.value.fingerprint)},
     };
 
     int status = 0;

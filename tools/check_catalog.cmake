@@ -2,34 +2,43 @@
 # no greater than PHASE has a Catch2 test named after its id, or a `// cs-deviation: <id> D-xx` or
 # `// cs-n/a: <id> <reason>` line in a test source (ADR-0004 §3). Prints each missing id.
 #
-#   cmake -DPHASE=1 -DCATALOG=<catalog.tsv> -DTEST_EXE=<catch2 exe> -DTEST_DIR=<tests dir>
+#   cmake -DPHASE=1 -DCATALOG=<catalog.tsv> -DTEST_EXES=<exe;exe> -DTEST_DIRS=<dir;dir>
 #         -P tools/check_catalog.cmake
+#
+# Since C4-06 the tests live in two executables (core and patro); TEST_EXES and TEST_DIRS are
+# semicolon lists.
 
 cmake_minimum_required(VERSION 3.25)
 
-foreach(var PHASE CATALOG TEST_EXE TEST_DIR)
+foreach(var PHASE CATALOG TEST_EXES TEST_DIRS)
     if(NOT DEFINED ${var})
         message(FATAL_ERROR "check_catalog: -D${var}=... is required")
     endif()
 endforeach()
 
-execute_process(COMMAND "${TEST_EXE}" --list-tests --verbosity quiet
-    OUTPUT_VARIABLE listed RESULT_VARIABLE rc)
-if(NOT rc EQUAL 0)
-    message(FATAL_ERROR "check_catalog: ${TEST_EXE} --list-tests exited ${rc}")
-endif()
-string(REPLACE "\r" "" listed "${listed}")
-string(REPLACE ";" "\\;" listed "${listed}")
-string(REPLACE "\n" ";" tests "${listed}")
+set(tests "")
+foreach(exe IN LISTS TEST_EXES)
+    execute_process(COMMAND "${exe}" --list-tests --verbosity quiet
+        OUTPUT_VARIABLE listed RESULT_VARIABLE rc)
+    if(NOT rc EQUAL 0)
+        message(FATAL_ERROR "check_catalog: ${exe} --list-tests exited ${rc}")
+    endif()
+    string(REPLACE "\r" "" listed "${listed}")
+    string(REPLACE ";" "\\;" listed "${listed}")
+    string(REPLACE "\n" ";" listed "${listed}")
+    list(APPEND tests ${listed})
+endforeach()
 
-file(GLOB_RECURSE sources "${TEST_DIR}/*.cpp" "${TEST_DIR}/*.hpp")
 set(comments "")
-foreach(source IN LISTS sources)
-    file(STRINGS "${source}" lines REGEX "// cs-(deviation|n/a): ")
-    foreach(line IN LISTS lines)
-        if(line MATCHES "// cs-(deviation|n/a): ([^ ]+)")
-            list(APPEND comments "${CMAKE_MATCH_2}")
-        endif()
+foreach(dir IN LISTS TEST_DIRS)
+    file(GLOB_RECURSE sources "${dir}/*.cpp" "${dir}/*.hpp")
+    foreach(source IN LISTS sources)
+        file(STRINGS "${source}" lines REGEX "// cs-(deviation|n/a): ")
+        foreach(line IN LISTS lines)
+            if(line MATCHES "// cs-(deviation|n/a): ([^ ]+)")
+                list(APPEND comments "${CMAKE_MATCH_2}")
+            endif()
+        endforeach()
     endforeach()
 endforeach()
 

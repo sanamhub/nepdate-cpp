@@ -4,7 +4,7 @@
 #   cmake [-DONLY=<gate>,...] [-DSTRICT=ON] [-DPRESET_PREFIX=<prefix>] -P tools/ci.cmake
 #
 # ONLY runs the named gates (format, ascii, codegen, build-and-test, no-exceptions, tidy, sanitizers,
-# coverage), so each CI job runs its part of ADR-0004 §4. STRICT turns a skipped gate into a
+# coverage, isolation), so each CI job runs its part of ADR-0004 §4. STRICT turns a skipped gate into a
 # failure; CI sets it, so a missing tool can't pass a job by accident.
 #
 # Gates use the presets dev, noexcept, tidy, asan-ubsan and coverage. PRESET_PREFIX (or the
@@ -42,7 +42,7 @@ if(PRESET_PREFIX)
     message(STATUS "ci: using presets ${PRESET_PREFIX}<name>")
 endif()
 
-set(all_gates format ascii codegen build-and-test no-exceptions tidy sanitizers coverage)
+set(all_gates format ascii codegen build-and-test no-exceptions tidy sanitizers coverage isolation)
 if(DEFINED ONLY)
     string(REPLACE "," ";" gates "${ONLY}")
     foreach(gate IN LISTS gates)
@@ -293,6 +293,66 @@ if("coverage" IN_LIST gates)
         endif()
         ci_pass()
     endif()
+endif()
+
+# ---- gate 9: isolation (C4-04) ----
+if("isolation" IN_LIST gates)
+    ci_run("${CMAKE_COMMAND}" --preset "${PRESET_PREFIX}release")
+    if(ci_rc EQUAL 0)
+        ci_run("${CMAKE_COMMAND}" --build --preset "${PRESET_PREFIX}release"
+            --target coreonly nepdate_patro_tests)
+    endif()
+    if(NOT ci_rc EQUAL 0)
+        ci_fail(isolation "preset ${PRESET_PREFIX}release, step ${ci_step}")
+    endif()
+
+    # The anchor event name (PATRO section 4, 2081-04-15) as hex bytes: the core-only binary
+    # must not contain it, the patro test binary must (hub ADR-0004). The binaries are read with
+    # HEX because file(READ) on raw binary data truncates; the needle is a literal because CMake
+    # 4's string(HEX) does not encode ASCII.
+    set(anchor "576f726c642044617920416761696e73742048756d616e20547261666669636b696e67")
+
+    file(GLOB coreonly_bins
+        "${root}/build/${PRESET_PREFIX}release/tools/coreonly/coreonly*")
+    file(GLOB patro_test_bins
+        "${root}/build/${PRESET_PREFIX}release/patro/tests/nepdate_patro_tests*")
+    if(NOT coreonly_bins)
+        ci_fail(isolation "coreonly binary not found")
+    endif()
+    if(NOT patro_test_bins)
+        ci_fail(isolation "patro test binary not found")
+    endif()
+    foreach(bin IN LISTS coreonly_bins)
+        file(READ "${bin}" bytes HEX)
+        string(FIND "${bytes}" "${anchor}" at)
+        if(NOT at EQUAL -1)
+            ci_fail(isolation "${bin} contains patro data")
+        endif()
+    endforeach()
+    set(found OFF)
+    foreach(bin IN LISTS patro_test_bins)
+        file(READ "${bin}" bytes HEX)
+        string(FIND "${bytes}" "${anchor}" at)
+        if(NOT at EQUAL -1)
+            set(found ON)
+        endif()
+    endforeach()
+    if(NOT found)
+        ci_fail(isolation "the patro test binary lacks the anchor event name")
+    endif()
+
+    # No core header may include the patro. (The empty INTERFACE_LINK_LIBRARIES check runs at
+    # configure time in tests/CMakeLists.txt, and the release configure above ran it.)
+    file(GLOB_RECURSE core_headers "${root}/include/*")
+    foreach(header IN LISTS core_headers)
+        file(READ "${header}" text)
+        string(FIND "${text}" "#include <nepdate/patro" at)
+        if(NOT at EQUAL -1)
+            file(RELATIVE_PATH relative "${root}" "${header}")
+            ci_fail(isolation "${relative} includes the patro")
+        endif()
+    endforeach()
+    ci_pass()
 endif()
 
 ci_summary()

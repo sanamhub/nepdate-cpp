@@ -124,7 +124,8 @@ constexpr result<date> from_gregorian(std::chrono::year_month_day ymd) noexcept;
 constexpr result<date> from_sys_days(std::chrono::sys_days d) noexcept;      // out_of_range
 constexpr result<date> from_local_days(std::chrono::local_days d) noexcept;  // out_of_range
 
-// Today's BS date for a clock reading and a UTC offset.
+// Today's BS date for a clock reading and a UTC offset; the default is Asia/Kathmandu, whose
+// fixed offset is +05:45 (see the note at the end of this file).
 inline constexpr std::chrono::minutes nepal_utc_offset{345};                 // +05:45
 constexpr result<date> from_sys_time(std::chrono::sys_seconds t,
                                      std::chrono::minutes utc_offset) noexcept;

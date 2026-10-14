@@ -264,6 +264,33 @@ jobs:
           ./build/fuzz/tests/fuzz_parse tests/fuzz/corpus -max_total_time=60 -print_final_stats=1
           ./build/fuzz/tests/fuzz_parse_lenient tests/fuzz/corpus -max_total_time=60 -print_final_stats=1
 
+  isolation:
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [ubuntu-24.04, windows-2025-vs2026]
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install Ninja (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y ninja-build
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/vcpkg-cache
+          key: vcpkg-isolation-${{ matrix.runner }}-${{ hashFiles('vcpkg.json') }}
+      - name: Set up vcpkg
+        run: .github/scripts/setup-vcpkg.sh
+      - uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1.13.0
+        if: runner.os == 'Windows'
+        with:
+          arch: x64
+      - name: Gate 9
+        run: cmake -DONLY=isolation -DSTRICT=ON -P tools/ci.cmake
+
   shared-check:
     permissions:
       contents: read

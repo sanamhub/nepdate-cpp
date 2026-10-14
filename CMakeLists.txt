@@ -13,7 +13,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
 
 option(NEPDATE_BUILD_TESTS "Build the core tests (needs the vcpkg feature dev)" ${PROJECT_IS_TOP_LEVEL})
-# patro/ arrives in phase C4; the option exists now so presets and packages don't change then.
+# patro/ arrives in phase C4 and is built by default; the option exists so a core-only consumer
+# (vcpkg port nepdate) can turn it off (ADR-0001 section 4).
 option(NEPDATE_BUILD_PATRO "Build the nepdate::patro library" ON)
 option(NEPDATE_BUILD_TOOLS "Build tools/codegen (needs the vcpkg feature dev)" OFF)
 
@@ -70,7 +71,23 @@ install(FILES
 )
 
 if(NEPDATE_BUILD_TESTS)
+    # Before patro/, so the patro tests register with CTest too (C4-06).
     enable_testing()
+endif()
+
+if(NEPDATE_BUILD_PATRO)
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/patro/CMakeLists.txt")
+        add_subdirectory(patro)
+    else()
+        # A core-only checkout (or tarball) may ship without patro/; the core must still build.
+        message(WARNING "NEPDATE_BUILD_PATRO is ON but patro/ is missing; building the core only")
+    endif()
+endif()
+
+# Gate 9 (C4-04): the core-only program the isolation gate builds in Release.
+add_subdirectory(tools/coreonly)
+
+if(NEPDATE_BUILD_TESTS)
     add_subdirectory(tests)
 endif()
 
