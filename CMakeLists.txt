@@ -70,6 +70,11 @@ install(FILES
     DESTINATION "${NEPDATE_CONFIG_INSTALL_DIR}"
 )
 
+if(NEPDATE_BUILD_TESTS)
+    # Before patro/, so the patro tests register with CTest too (C4-06).
+    enable_testing()
+endif()
+
 if(NEPDATE_BUILD_PATRO)
     if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/patro/CMakeLists.txt")
         add_subdirectory(patro)
@@ -83,7 +88,6 @@ endif()
 add_subdirectory(tools/coreonly)
 
 if(NEPDATE_BUILD_TESTS)
-    enable_testing()
     add_subdirectory(tests)
 endif()
 

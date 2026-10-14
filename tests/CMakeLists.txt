@@ -72,14 +72,27 @@ if(NEPDATE_SANITIZE MATCHES "fuzzer" AND NOT MSVC)
 endif()
 
 # C1-07: every C# catalogue row up to this phase has a test or a deviation line (ADR-0004 §3).
-# The limit rises by one in each phase.
-set(NEPDATE_CATALOG_PHASE 3)
+# The limit rises by one in each phase. The 35 patro rows of phase 4 live in the patro test
+# binary (C4-06); a core-only build checks what its own tests can cover.
+set(NEPDATE_CATALOG_PHASE 4)
+if(TARGET nepdate::patro)
+    set(_catalog_exes "$<TARGET_FILE:nepdate_tests>;$<TARGET_FILE:nepdate_patro_tests>")
+    set(_catalog_dirs "${CMAKE_CURRENT_SOURCE_DIR};${PROJECT_SOURCE_DIR}/patro/tests")
+    set(_catalog_phase ${NEPDATE_CATALOG_PHASE})
+else()
+    set(_catalog_exes "$<TARGET_FILE:nepdate_tests>")
+    set(_catalog_dirs "${CMAKE_CURRENT_SOURCE_DIR}")
+    set(_catalog_phase 3)
+endif()
+# Escaped semicolons keep each -D value one argument through add_test's list expansion.
+string(REPLACE ";" "\\;" _catalog_exes "${_catalog_exes}")
+string(REPLACE ";" "\\;" _catalog_dirs "${_catalog_dirs}")
 add_test(NAME catalog_coverage
     COMMAND "${CMAKE_COMMAND}"
-        -DPHASE=${NEPDATE_CATALOG_PHASE}
+        -DPHASE=${_catalog_phase}
         -DCATALOG=${PROJECT_SOURCE_DIR}/shared/spec/vectors/csharp-tests/catalog.tsv
-        -DTEST_EXE=$<TARGET_FILE:nepdate_tests>
-        -DTEST_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+        -DTEST_EXES=${_catalog_exes}
+        -DTEST_DIRS=${_catalog_dirs}
         -P "${PROJECT_SOURCE_DIR}/tools/check_catalog.cmake"
 )
 

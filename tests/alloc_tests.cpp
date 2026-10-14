@@ -12,6 +12,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include <array>
+#include <chrono>
 #include <cstddef>
 #include <functional>
 
@@ -197,6 +198,16 @@ TEST_CASE("parse and parse_lenient allocate nothing, success or error", "[alloc]
         sink(static_cast<std::size_t>(a->day()) + static_cast<std::size_t>(b.error()) +
              static_cast<std::size_t>(c->month()) + static_cast<std::size_t>(e->year()) +
              static_cast<std::size_t>(f.error()) + static_cast<std::size_t>(g.error()));
+    });
+    CHECK(n == 0);
+}
+
+TEST_CASE("from_sys_time and today allocate nothing", "[alloc]") {
+    const auto n = allocations_of([](int /*i*/) {
+        const auto a = nepdate::from_sys_time(
+            std::chrono::sys_days{std::chrono::year{2024} / 7 / 30}, nepdate::nepal_utc_offset);
+        const auto b = nepdate::today();
+        sink(static_cast<std::size_t>(a->day()) + static_cast<std::size_t>(b->day()));
     });
     CHECK(n == 0);
 }
