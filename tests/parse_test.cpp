@@ -94,7 +94,7 @@ TEST_CASE("lenient parse errors", "[parse]") {
 
 TEST_CASE("parse.tsv: strict column", "[parse][vectors]") {
     const auto t = read_vectors("parse.tsv", '\t');
-    REQUIRE(t.rows.size() == 63);
+    REQUIRE(t.rows.size() == 67);
     const std::size_t input = t.column("input");
     const std::size_t strict = t.column("strict");
     REQUIRE(strict < t.header.size());
@@ -105,12 +105,12 @@ TEST_CASE("parse.tsv: strict column", "[parse][vectors]") {
         CHECK(actual_text(parse(row[input])) == expected_text(row[strict]));
         ++checked;
     }
-    CHECK(checked == 63);
+    CHECK(checked == 67);
 }
 
 TEST_CASE("parse.tsv: lenient column", "[parse][vectors]") {
     const auto t = read_vectors("parse.tsv", '\t');
-    REQUIRE(t.rows.size() == 63);
+    REQUIRE(t.rows.size() == 67);
     const std::size_t input = t.column("input");
     const std::size_t lenient = t.column("lenient");
     REQUIRE(lenient < t.header.size());
@@ -120,7 +120,7 @@ TEST_CASE("parse.tsv: lenient column", "[parse][vectors]") {
         CHECK(actual_text(nepdate::parse_lenient(row[input])) == expected_text(row[lenient]));
         ++checked;
     }
-    CHECK(checked == 63);
+    CHECK(checked == 67);
 }
 
 TEST_CASE("PARSING section 1 examples", "[parse]") {
@@ -175,4 +175,37 @@ TEST_CASE("to_chars then parse gives the same date for every 32nd day", "[parse]
         CHECK(parse(nepdate::to_string(d)).value() == d);
         CHECK(parse(nepdate::format_short(d, {}, nepdate::lang::ne)).value() == d);
     }
+}
+
+TEST_CASE("the YYYY<sep>MM<sep>DD fast path gives the same result as the general loop", "[parse]") {
+    // A leading space makes the input 11 bytes, so it skips the fast path, and the loop ignores
+    // leading separators: parse(" " + s) is the loop's answer for s.
+    constexpr std::string_view years[] = {"0000", "1900", "1901", "2081", "2199", "2200", "9999"};
+    constexpr std::string_view seps = "-/._| ";
+    std::size_t checked = 0;
+    std::size_t mismatches = 0;
+    for (const std::string_view y : years) {
+        for (int m = 0; m < 100; ++m) {
+            for (int d = 0; d < 100; d += 3) {
+                for (const char sep : seps) {
+                    std::string s(y);
+                    s += sep;
+                    s += static_cast<char>('0' + (m / 10));
+                    s += static_cast<char>('0' + (m % 10));
+                    s += sep;
+                    s += static_cast<char>('0' + (d / 10));
+                    s += static_cast<char>('0' + (d % 10));
+                    mismatches += parse(s) == parse(" " + s) ? 0U : 1U;
+                    ++checked;
+                }
+            }
+        }
+    }
+    CHECK(checked == 7U * 100U * 34U * 6U);
+    CHECK(mismatches == 0);
+    // Backslash separators, and near misses that must not take the fast path.
+    CHECK(parse("2081\\04\\15") == make_date(2081, 4, 15));
+    CHECK(parse("2081/04/1x").error() == errc::invalid_character);
+    CHECK(parse("2081:04/15").error() == errc::invalid_character);
+    CHECK(parse("20814/0/15").error() == errc::number_too_long);
 }

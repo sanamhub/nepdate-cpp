@@ -27,3 +27,7 @@ oom-*
 
 # Benchmark raw output (published numbers go in docs/benchmarks.md)
 /bench/results/
+
+# Conan test_package build trees (conan create runs them in-tree)
+/conan/*/test_package/build/
+/conan/*/test_package/CMakeUserPresets.json

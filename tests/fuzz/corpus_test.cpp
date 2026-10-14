@@ -16,14 +16,14 @@
 
 TEST_CASE("the fuzz corpus is exactly the parse.tsv inputs and passes the property", "[fuzz]") {
     const nepdate_test::table t = nepdate_test::read_vectors("parse.tsv", '\t');
-    REQUIRE(t.rows.size() == 63);
+    REQUIRE(t.rows.size() == 67);
     const std::size_t input = t.column("input");
     REQUIRE(input < t.header.size());
     std::set<std::string> inputs;
     for (const auto& row : t.rows) {
         inputs.insert(row[input]);
     }
-    REQUIRE(inputs.size() == 63);
+    REQUIRE(inputs.size() == 67);
 
     std::set<std::string> corpus;
     std::size_t files = 0;
@@ -38,7 +38,7 @@ TEST_CASE("the fuzz corpus is exactly the parse.tsv inputs and passes the proper
             std::string(std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>()));
         ++files;
     }
-    REQUIRE(files == 63);
+    REQUIRE(files == 67);
     CHECK(corpus == inputs);
 
     for (const std::string& bytes : corpus) {

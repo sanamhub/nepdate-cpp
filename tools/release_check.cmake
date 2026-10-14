@@ -65,6 +65,15 @@ foreach(recipe IN LISTS recipes)
     endif()
 endforeach()
 
+# The patro's standalone project version must match too (patro/CMakeLists.txt): the standalone
+# build does find_package(nepdate ${PROJECT_VERSION} EXACT).
+file(READ "${root}/patro/CMakeLists.txt" text)
+if(NOT text MATCHES "project\\(nepdate-patro VERSION ([0-9.]+)")
+    list(APPEND problems "patro/CMakeLists.txt: no project(nepdate-patro VERSION ...)")
+elseif(NOT CMAKE_MATCH_1 STREQUAL VERSION)
+    list(APPEND problems "patro/CMakeLists.txt: project version ${CMAKE_MATCH_1}")
+endif()
+
 file(READ "${root}/CHANGELOG.md" text)
 string(REPLACE "." "\\." escaped "${VERSION}")
 if(NOT text MATCHES "\n## \\[${escaped}\\] - [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]\n")

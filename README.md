@@ -23,7 +23,88 @@ the hub [`sanamhub/nepdate`](https://github.com/sanamhub/nepdate); the C# origin
 - Needs a C++20 compiler: GCC 12, Clang 16, Apple Clang 16 (Xcode 16), MSVC 19.44 (Visual Studio
   2022 17.14) or newer (ADR-0001).
 
-**Status:** phase C2 (add days, months and years, diff, fiscal year, date range) ready for review. Progress: [docs/plan/PROGRESS.md](docs/plan/PROGRESS.md).
+**Status:** v0.1.0 prepared, C5 checkpoint ready for review. Progress: [docs/plan/PROGRESS.md](docs/plan/PROGRESS.md).
+
+## Quick start
+
+`nepdate` is a header-only library; `nepdate-patro` is a compiled library on top of it. Both are
+installed from this repository, or from the vcpkg and Conan Center packages whose ports and
+recipes live in `ports/` and `conan/`.
+
+Install with vcpkg (overlay ports from this tree, until they land upstream):
+
+```sh
+vcpkg install nepdate nepdate-patro --overlay-ports=ports
+```
+
+Install with Conan:
+
+```sh
+conan create conan/nepdate
+conan create conan/nepdate-patro
+```
+
+Then use `find_package` and link the targets:
+
+```cmake
+find_package(nepdate CONFIG REQUIRED)
+find_package(nepdate-patro CONFIG REQUIRED)
+target_link_libraries(your_app PRIVATE nepdate::nepdate nepdate::patro)
+```
+
+The three programs in `examples/` (built and run by CTest) show the main features.
+`examples/quick_start.cpp` converts 2081-04-15 to AD and back:
+
+```cpp
+#include <nepdate/nepdate.hpp>
+
+#include <cstdio>
+
+int main() {
+    const nepdate::date d = nepdate::make_date(2081, 4, 15).value();
+    const auto ad = d.to_year_month_day();
+    std::printf("%s\n", nepdate::to_string(d).c_str());
+    std::printf("%d-%02u-%02u\n", static_cast<int>(ad.year()), static_cast<unsigned>(ad.month()),
+                static_cast<unsigned>(ad.day()));
+    std::printf("%s\n", nepdate::to_string(nepdate::from_gregorian(ad).value()).c_str());
+}
+```
+
+`examples/patro.cpp` reads the tithi, holiday flag and events for one day:
+
+```cpp
+#include <nepdate/patro.hpp>
+
+#include <cstdio>
+#include <string>
+
+int main() {
+    const nepdate::date d = nepdate::make_date(2081, 4, 15).value();
+    const nepdate::patro::day_info day = nepdate::patro::info(d);
+    if (const auto t = day.tithi()) {
+        std::printf("%s\n", std::string(t->name(nepdate::lang::en)).c_str());
+    }
+    std::printf("holiday: %d\n", day.is_public_holiday() ? 1 : 0);
+    for (const nepdate::patro::event e : day.events()) {
+        std::printf("%s\n", std::string(e.name(nepdate::lang::en)).c_str());
+    }
+}
+```
+
+`examples/parse.cpp` parses strict and lenient text:
+
+```cpp
+#include <nepdate/nepdate.hpp>
+
+#include <cstdio>
+
+int main() {
+    const nepdate::result<nepdate::date> strict = nepdate::parse("2081/04/15");
+    const nepdate::result<nepdate::date> lenient = nepdate::parse_lenient("2081 Shrawan 15");
+    std::printf("%s\n", nepdate::to_string(strict.value()).c_str());
+    std::printf("%s\n", nepdate::to_string(lenient.value()).c_str());
+}
+```
 
 ## Where to start
 

@@ -21,7 +21,7 @@ if(NEPDATE_SANITIZE)
         # side too, or the linker reports an annotation mismatch (LNK2038).
         string(REGEX REPLACE "/RTC[1csu]+" "" CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
         set(_nepdate_sanitize_compile /fsanitize=address /D_DISABLE_VECTOR_ANNOTATION
-            /D_DISABLE_STRING_ANNOTATION)
+            /D_DISABLE_STRING_ANNOTATION /D_DISABLE_OPTIONAL_ANNOTATION)
     else()
         set(_nepdate_sanitize_compile
             -fsanitize=${NEPDATE_SANITIZE} -fno-sanitize-recover=all -fno-omit-frame-pointer)

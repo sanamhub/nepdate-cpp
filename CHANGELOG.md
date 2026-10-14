@@ -4,7 +4,7 @@ All notable changes to `nepdate` and `nepdate-patro` are recorded here. Both lib
 version (ADR-0005). The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.1.0] - 2026-10-15
 
 ### Added
 
@@ -22,3 +22,17 @@ and versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `make`, `of_month`, `of_year`, `size` and `contains` (D-09).
 - `fiscal_year`, `quarter`, `quarter_of` and `months_of` (`<nepdate/fiscal_year.hpp>`): start,
   end, range, quarter ranges and the label `2082/83` or `२०८२/८३` (D-08).
+- Formatting (`<nepdate/format.hpp>`): `to_chars`, `to_chars_iso`, `to_chars_short`,
+  `to_chars_long`, `to_chars_pattern` and `to_chars_number` write into the caller's buffer; the
+  matching `std::string` functions are `to_string`, `to_iso_string`, `format_short`,
+  `format_long` and `format_pattern`. Names come from `month_name`, `month_short_name` (D-04),
+  `weekday_name` and `weekday_short_name`. `std::formatter<nepdate::date>` prints `{}` as
+  `YYYY/MM/DD` and `{:<pattern>}` through FORMATTING §5, behind the one `__cpp_lib_format` guard.
+- Parsing (`<nepdate/parse.hpp>`): `parse` (strict) and `parse_lenient`, both `constexpr` over
+  `std::string_view`, plus the `char8_t` overloads for `u8""` literals.
+- Clock and time zone interop (`<nepdate/date.hpp>`): `nepal_utc_offset`, `from_sys_time` and
+  `today`, which default to Nepal's fixed +05:45 offset.
+- `nepdate::patro` (`<nepdate/patro.hpp>`): `info`, `coverage`, `public_holidays`, `tithi`,
+  `event` and `day_info` for the tithi, holidays and events of BS 2077-01-01 to 2084-08-20.
+- vcpkg overlay ports (`ports/nepdate`, `ports/nepdate-patro`) and Conan recipes
+  (`conan/nepdate`, `conan/nepdate-patro`) for the two packages.

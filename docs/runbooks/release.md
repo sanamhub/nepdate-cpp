@@ -8,11 +8,18 @@ required reviewer). One tag releases both libraries, `nepdate` and `nepdate-patr
 1. `main` is green on every CI job, including `packages` and `isolation`. `cmake -P tools/ci.cmake`
    passes locally.
 2. `CHANGELOG.md` has `## [X.Y.Z] - YYYY-MM-DD`, moved out of `[Unreleased]`.
-3. The version is X.Y.Z in `CMakeLists.txt`, `include/nepdate/version.hpp`, `ports/*/vcpkg.json` and
-   `conan/*/conanfile.py`:
+3. The version is X.Y.Z in `CMakeLists.txt`, `include/nepdate/version.hpp`,
+   `patro/CMakeLists.txt`, `ports/*/vcpkg.json` and `conan/*/conanfile.py`:
    `cmake -DVERSION=X.Y.Z -P tools/release_check.cmake` passes.
 4. If the calendar month lengths changed since the last release, the changelog says so: the
    fingerprint check (ADR-0002 §7) forces users to rebuild the patro with the new core.
+
+## Dry run
+
+`release.yml` also runs from a `workflow_dispatch` with a `version` input. That run does preflight
+(version and changelog agree) and the full CI, and the `release` job stays skipped because there is
+no tag. Use it to check a prepared version before tagging; the AC for the workflow is a green
+preflight and CI with `release` skipped.
 
 ## Releasing
 
