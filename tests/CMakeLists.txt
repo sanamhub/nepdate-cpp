@@ -86,6 +86,11 @@ add_test(NAME release_check_rejects_9.9.9
     COMMAND "${CMAKE_COMMAND}" -DVERSION=9.9.9 -P "${PROJECT_SOURCE_DIR}/tools/release_check.cmake")
 set_tests_properties(release_check_rejects_9.9.9 PROPERTIES WILL_FAIL TRUE)
 
+# C4-02 AC: no patro table, name or string goes into any file under include/.
+add_test(NAME patro_data_isolation
+    COMMAND "${CMAKE_COMMAND}" -DINCLUDE_DIR=${PROJECT_SOURCE_DIR}/include
+        -P "${PROJECT_SOURCE_DIR}/tools/check_patro_in_include.cmake")
+
 # C1-02 AC: `constexpr auto d = make_date(2081, 4, 33).value();` must not compile. Both targets stay
 # out of the normal build; the tests build them. RESOURCE_LOCK keeps the two builds from running
 # the build tool in this tree at the same time.

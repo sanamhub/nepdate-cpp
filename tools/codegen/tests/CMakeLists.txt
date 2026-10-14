@@ -1,7 +1,7 @@
 find_package(Catch2 3 CONFIG REQUIRED)
 include(Catch)
 
-add_executable(nepdate_codegen_tests codegen_test.cpp names_test.cpp)
+add_executable(nepdate_codegen_tests codegen_test.cpp names_test.cpp patro_test.cpp)
 target_link_libraries(nepdate_codegen_tests PRIVATE nepdate_codegen_lib Catch2::Catch2WithMain)
 target_compile_definitions(nepdate_codegen_tests
     PRIVATE NEPDATE_SHARED_DIR="${PROJECT_SOURCE_DIR}/shared")
