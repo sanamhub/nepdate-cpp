@@ -2,11 +2,15 @@
 
 #include <nepdate/date.hpp>
 #include <nepdate/fiscal_year.hpp>
+#include <nepdate/format.hpp>
 
 #include <catch2/catch_test_macros.hpp>
 
+#include <array>
 #include <chrono>
 #include <cstddef>
+#include <string_view>
+#include <system_error>
 #include <type_traits>
 
 using nepdate::date;
@@ -67,4 +71,16 @@ TEST_CASE("C2: the ALGORITHM section 8 examples and a fiscal year at compile tim
     STATIC_REQUIRE(
         nepdate::fiscal_year{2081}.range()->size() ==
         static_cast<std::size_t>(make_date(2081, 4, 1)->days_until(make_date(2082, 4, 1).value())));
+}
+
+TEST_CASE("C3: a Nepali long format fits a std::array<char, 80> at compile time", "[constexpr]") {
+    STATIC_REQUIRE([] {
+        constexpr date d = make_date(2081, 4, 15).value();
+        std::array<char, 80> buf{};
+        const std::to_chars_result r = nepdate::to_chars_long(
+            buf.data(), buf.data() + buf.size(), d, {.weekday = true}, nepdate::lang::ne);
+        return r.ec == std::errc{} &&
+               std::string_view(buf.data(), static_cast<std::size_t>(r.ptr - buf.data())) ==
+                   "मङ्गलवार, साउन १५, २०८१";
+    }());
 }
