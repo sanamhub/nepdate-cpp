@@ -344,7 +344,7 @@ jobs:
           NEPDATE_CPP_SOURCE: ${{ github.workspace }}
         run: |
           set -euo pipefail
-          pipx install conan
+          pipx install conan==2.33.0  # pinned: the version the recipes were tested with
           conan profile detect --force
           conan create conan/nepdate
           conan create conan/nepdate-patro
