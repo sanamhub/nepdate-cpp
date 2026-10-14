@@ -71,8 +71,16 @@ install(FILES
 )
 
 if(NEPDATE_BUILD_PATRO)
-    add_subdirectory(patro)
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/patro/CMakeLists.txt")
+        add_subdirectory(patro)
+    else()
+        # A core-only checkout (or tarball) may ship without patro/; the core must still build.
+        message(WARNING "NEPDATE_BUILD_PATRO is ON but patro/ is missing; building the core only")
+    endif()
 endif()
+
+# Gate 9 (C4-04): the core-only program the isolation gate builds in Release.
+add_subdirectory(tools/coreonly)
 
 if(NEPDATE_BUILD_TESTS)
     enable_testing()
