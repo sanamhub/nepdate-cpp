@@ -101,22 +101,30 @@ std::string hex(std::uint64_t value, int digits) {
     return out;
 }
 
-// A C string literal for text: printable ASCII as is, every other byte as a three-digit octal
-// escape, which can't swallow the character after it (ADR-0001 section 6).
-std::string literal(std::string_view text) {
-    std::string out = "\"";
-    for (const char c : text) {
-        const auto byte = static_cast<unsigned char>(c);
-        if (byte >= 0x20U && byte < 0x7FU && c != '"' && c != '\\') {
-            out += c;
-        } else {
-            out += "\\" + std::to_string(static_cast<unsigned>(byte / 64U)) +
-                   std::to_string(static_cast<unsigned>(byte / 8U % 8U)) +
-                   std::to_string(static_cast<unsigned>(byte % 8U));
+// One byte as a char literal, so the blob array holds exactly its bytes and no string terminators.
+std::string char_literal(unsigned char byte) {
+    if (byte >= 0x20U && byte < 0x7FU && byte != '\'' && byte != '\\') {
+        return std::string("'") + static_cast<char>(byte) + "'";
+    }
+    return "'\\" + std::to_string(static_cast<unsigned>(byte / 64U)) +
+           std::to_string(static_cast<unsigned>(byte / 8U % 8U)) +
+           std::to_string(static_cast<unsigned>(byte % 8U)) + "'";
+}
+
+// One name's bytes as char literals, 16 per line.
+void blob_bytes(std::string& out, std::string_view text) {
+    for (std::size_t i = 0; i < text.size(); ++i) {
+        if (i % 16U == 0U) {
+            out += "    ";
+        }
+        out += char_literal(static_cast<unsigned char>(text[i])) + ",";
+        if (i % 16U == 15U) {
+            out += "\n";
         }
     }
-    out += '"';
-    return out;
+    if (text.size() % 16U != 0U) {
+        out += "\n";
+    }
 }
 
 } // namespace
@@ -438,12 +446,13 @@ std::string render_patro_tables(const patro_tables& t,
     out += "}};\n";
     out += "\n";
     out += "// Every distinct name, np then en per pair, concatenated. The 32 tithi names come\n";
-    out += "// first (PATRO section 3).\n";
+    out += "// first (PATRO section 3). The readable Nepali sits beside each pair.\n";
     out += "inline constexpr std::array<char, " + std::to_string(t.name_blob.size()) +
            "> kNameBlob = {\n";
     for (const auto& [np, en] : t.names) {
-        out += "    " + literal(np) + " // " + np + "\n";
-        out += "    " + literal(en) + "\n";
+        out += "    // " + np + " (" + en + ")\n";
+        blob_bytes(out, np);
+        blob_bytes(out, en);
     }
     out += "};\n";
     out += "\n";

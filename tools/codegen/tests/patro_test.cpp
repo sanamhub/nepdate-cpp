@@ -179,7 +179,7 @@ TEST_CASE("rendering is deterministic and names the PATRO section 4 anchors", "[
     CHECK_THAT(once, ContainsSubstring("Panchami"));
     CHECK_THAT(once, ContainsSubstring("पञ्चमी"));
     CHECK_THAT(once, ContainsSubstring("World Day Against Human Trafficking"));
-    CHECK_THAT(once, ContainsSubstring("\\340\\244\\252"));
+    CHECK_THAT(once, ContainsSubstring("'\\340','\\244','\\252'"));
     const std::string config = cg::render_patro_config(b.core_tables.fingerprint);
     std::string fingerprint = "0x";
     constexpr std::string_view hex_digits = "0123456789abcdef";
