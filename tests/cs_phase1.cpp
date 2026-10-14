@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <array>
 #include <chrono>
+#include <compare>
 #include <functional>
 #include <optional>
 
@@ -54,15 +55,15 @@ void check_sorts() {
 } // namespace
 
 TEST_CASE("NepaliDateComparableTests.CompareTo_Object_Earlier_ReturnsNegative", "[cs]") {
-    CHECK((d1() <=> d2()) < 0);
+    CHECK(std::is_lt(d1() <=> d2()));
 }
 
 TEST_CASE("NepaliDateComparableTests.CompareTo_Object_Same_ReturnsZero", "[cs]") {
-    CHECK((d1() <=> make_date(2081, 1, 1).value()) == 0);
+    CHECK(std::is_eq(d1() <=> make_date(2081, 1, 1).value()));
 }
 
 TEST_CASE("NepaliDateComparableTests.CompareTo_Object_Later_ReturnsPositive", "[cs]") {
-    CHECK((d3() <=> d1()) > 0);
+    CHECK(std::is_gt(d3() <=> d1()));
 }
 
 TEST_CASE("NepaliDateComparableTests.CompareTo_Object_Null_ReturnsPositive", "[cs]") {
@@ -73,15 +74,15 @@ TEST_CASE("NepaliDateComparableTests.CompareTo_Object_Null_ReturnsPositive", "[c
 // cs-n/a: NepaliDateComparableTests.CompareTo_WrongType_ThrowsArgumentException <=> takes a date, so comparing with a string doesn't compile
 
 TEST_CASE("NepaliDateComparableTests.CompareTo_Generic_Earlier_ReturnsNegative", "[cs]") {
-    CHECK((d1() <=> d2()) < 0);
+    CHECK(std::is_lt(d1() <=> d2()));
 }
 
 TEST_CASE("NepaliDateComparableTests.CompareTo_Generic_Same_ReturnsZero", "[cs]") {
-    CHECK((d1() <=> make_date(2081, 1, 1).value()) == 0);
+    CHECK(std::is_eq(d1() <=> make_date(2081, 1, 1).value()));
 }
 
 TEST_CASE("NepaliDateComparableTests.CompareTo_Generic_Later_ReturnsPositive", "[cs]") {
-    CHECK((d3() <=> d1()) > 0);
+    CHECK(std::is_gt(d3() <=> d1()));
 }
 
 TEST_CASE("NepaliDateComparableTests.SortedSet_OrdersCorrectly", "[cs]") {
@@ -559,26 +560,26 @@ TEST_CASE("OptimizationVerificationTests.Operator_MinMaxBoundary_CorrectOrdering
 TEST_CASE("OptimizationVerificationTests.CompareTo_EarlierDate_ReturnsNegative", "[cs]") {
     const date earlier = make_date(2080, 5, 15).value();
     const date later = make_date(2080, 5, 16).value();
-    CHECK((earlier <=> later) < 0);
+    CHECK(std::is_lt(earlier <=> later));
 }
 
 TEST_CASE("OptimizationVerificationTests.CompareTo_SameDate_ReturnsZero", "[cs]") {
     const date a = make_date(2080, 5, 15).value();
-    CHECK((a <=> a) == 0);
+    CHECK(std::is_eq(a <=> a));
 }
 
 TEST_CASE("OptimizationVerificationTests.CompareTo_LaterDate_ReturnsPositive", "[cs]") {
     const date earlier = make_date(2080, 5, 15).value();
     const date later = make_date(2080, 5, 16).value();
-    CHECK((later <=> earlier) > 0);
+    CHECK(std::is_gt(later <=> earlier));
 }
 
 TEST_CASE("OptimizationVerificationTests.CompareTo_DifferentYears_CorrectOrdering", "[cs]") {
-    CHECK((make_date(2080, 1, 1).value() <=> make_date(2081, 1, 1).value()) < 0);
+    CHECK(std::is_lt(make_date(2080, 1, 1).value() <=> make_date(2081, 1, 1).value()));
 }
 
 TEST_CASE("OptimizationVerificationTests.CompareTo_DifferentMonths_CorrectOrdering", "[cs]") {
-    CHECK((make_date(2080, 1, 1).value() <=> make_date(2080, 2, 1).value()) < 0);
+    CHECK(std::is_lt(make_date(2080, 1, 1).value() <=> make_date(2080, 2, 1).value()));
 }
 
 TEST_CASE("OptimizationVerificationTests.Equals_SameDates_ReturnsTrue", "[cs]") {
