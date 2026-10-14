@@ -1,0 +1,114 @@
+# ADR-0005: one tag vX.Y.Z releases both libraries. On a tag push: preflight (the version agrees
+# with the tag and every version location, tools/release_check.cmake), the full CI workflow, then
+# the production environment (required reviewer) creates the GitHub Release with the changelog
+# section as notes and attaches the source archive with SHA-256 and SHA-512 and a provenance
+# attestation. A workflow_dispatch run with a `version` input does preflight and CI only; the
+# release job stays skipped, so a draft release can be dry-run before tagging.
+
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to preflight (X.Y.Z, no leading v)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Resolve and validate the version
+        id: meta
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
+            tag="$GITHUB_REF_NAME"
+            version="${tag#v}"
+          else
+            version="${{ inputs.version }}"
+            tag="v$version"
+          fi
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::version must look like X.Y.Z, got '$version' (tag vX.Y.Z)"
+            exit 1
+          fi
+          if [[ "$tag" != "v$version" ]]; then
+            echo "::error::tag $tag does not match v$version"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+      - name: Release check
+        run: cmake -DVERSION=${{ steps.meta.outputs.version }} -P tools/release_check.cmake
+
+  ci:
+    needs: preflight
+    uses: ./.github/workflows/ci.yml
+    permissions:
+      contents: read
+
+  release:
+    if: github.ref_type == 'tag'
+    needs: ci
+    runs-on: ubuntu-24.04
+    environment: production
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Archive name
+        id: archive
+        shell: bash
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "name=nepdate-cpp-$version.tar.gz" >> "$GITHUB_OUTPUT"
+      - name: Source archive (includes shared/)
+        run: |
+          git archive --format=tar.gz --prefix="nepdate-cpp-${{ steps.archive.outputs.version }}/" \
+            -o "${{ steps.archive.outputs.name }}" "$GITHUB_REF_NAME"
+      - name: Checksums
+        run: |
+          sha256sum "${{ steps.archive.outputs.name }}" > "${{ steps.archive.outputs.name }}.sha256"
+          sha512sum "${{ steps.archive.outputs.name }}" > "${{ steps.archive.outputs.name }}.sha512"
+      - name: Changelog notes
+        shell: bash
+        run: |
+          version="${{ steps.archive.outputs.version }}"
+          awk -v want="## [$version] -" '
+            /^## \[/ { if (in_section) exit; if (index($0, want) == 1) in_section = 1 }
+            in_section { print }
+          ' CHANGELOG.md > release-notes.md
+          test -s release-notes.md
+          cat release-notes.md
+      - name: Build provenance attestation
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: "${{ steps.archive.outputs.name }}"
+      - name: GitHub Release
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
+        with:
+          name: "v${{ steps.archive.outputs.version }}"
+          body_path: release-notes.md
+          files: |
+            ${{ steps.archive.outputs.name }}
+            ${{ steps.archive.outputs.name }}.sha256
+            ${{ steps.archive.outputs.name }}.sha512
