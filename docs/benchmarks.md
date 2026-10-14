@@ -100,7 +100,7 @@ sees only Google Benchmark's own noise (about 0.1 bytes/op), and the allocation 
 | B3 | 7.62 | 0 | n/a | | n/a | | n/a | | 17.50 |
 | B4 | 4.94 | 0 | n/a | | n/a | | n/a | | 18.85 |
 | B5 | 21.97 | 0 | n/a | | n/a | | n/a | | 153.02 |
-| B6 | 23.38 | 0 | n/a | | n/a | | n/a | | 21.55 |
+| B6 | 12.53 (23.38 before the review's fast path) | 0 | n/a | | n/a | | n/a | | 21.55 |
 | B7 | 11.12 | 0 | n/a | | n/a | | n/a | | 47.93 |
 | B8 | 487.19 | 0 | n/a | | n/a | | n/a | | 3,132.66 |
 
@@ -135,16 +135,19 @@ compilers. ADR-0002 section 9 sets tighter targets for all eight:
 | B3 | <= 8 | 7.62 | 4.12 | both |
 | B4 | <= 8 | 4.94 | 2.35 | both |
 | B5 | <= 40 | 21.97 | 24.14 | both |
-| B6 | <= 15 | 23.38 | 15.66 | neither |
+| B6 | <= 15 | 12.53 (fast path) | 15.66 (before the fast path) | MSVC |
 | B7 | <= 10 | 11.12 | 8.69 | Clang |
 | B8 | <= 250 | 487.19 | 267.08 | neither |
 
 Misses to report to the human:
 
-- **B6, strict parse.** 23.38 ns (MSVC) and 15.66 ns (Clang) against 15 ns, and slower than C#'s
-  21.55 ns on MSVC. `parse` scans the input character by character (digit, Devanagari byte or
-  separator check per byte), about ten branches per date. A branchless scan or a digit lookup
-  table would close the gap; that is a library change for a later task, not this release.
+- **B6, strict parse.** The run above measured 23.38 ns (MSVC) and 15.66 ns (Clang) against 15
+  ns, slower than C#'s 21.55 ns on MSVC: `parse` scanned the input character by character. The
+  review added a fast path for exactly `YYYY<sep>MM<sep>DD` in ASCII digits, which goes straight
+  to `make_date` with the same result as the loop (tested against the loop on 142,800 inputs).
+  MSVC B6 is now 12.53 ns (802 ns per 64, CPU time, 10 repetitions, machine at 56 % load,
+  2026-10-15), under the target and faster than C#. Clang was not re-measured; its row above is
+  from before the fast path.
 - **B8, patro month grid.** 487 ns (MSVC) and 267 ns (Clang) against 250 ns. One grid is about 30
   `from_serial` calls plus 30 `info` lookups; MSVC's codegen for that loop is about 1.8 times
   Clang's. The Go port's pinned prototype measured 226 ns on this machine.
