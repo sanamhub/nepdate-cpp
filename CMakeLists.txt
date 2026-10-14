@@ -13,7 +13,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
 
 option(NEPDATE_BUILD_TESTS "Build the core tests (needs the vcpkg feature dev)" ${PROJECT_IS_TOP_LEVEL})
-# patro/ arrives in phase C4; the option exists now so presets and packages don't change then.
+# patro/ arrives in phase C4 and is built by default; the option exists so a core-only consumer
+# (vcpkg port nepdate) can turn it off (ADR-0001 section 4).
 option(NEPDATE_BUILD_PATRO "Build the nepdate::patro library" ON)
 option(NEPDATE_BUILD_TOOLS "Build tools/codegen (needs the vcpkg feature dev)" OFF)
 
@@ -68,6 +69,10 @@ install(FILES
     "${PROJECT_BINARY_DIR}/nepdateConfigVersion.cmake"
     DESTINATION "${NEPDATE_CONFIG_INSTALL_DIR}"
 )
+
+if(NEPDATE_BUILD_PATRO)
+    add_subdirectory(patro)
+endif()
 
 if(NEPDATE_BUILD_TESTS)
     enable_testing()
