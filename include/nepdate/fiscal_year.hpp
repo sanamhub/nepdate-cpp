@@ -3,6 +3,7 @@
 
 #include <nepdate/date.hpp>
 #include <nepdate/date_range.hpp>
+#include <nepdate/detail/names.hpp>
 
 #include <array>
 #include <charconv>
@@ -31,42 +32,6 @@ enum class quarter : std::uint8_t { q1 = 1, q2, q3, q4 };
     return {static_cast<month>(first), static_cast<month>(first + 1U),
             static_cast<month>(first + 2U)};
 }
-
-namespace detail {
-
-// Writes the decimal digits of value, ASCII or Devanagari, at least min_width of them. Returns
-// the end of the output, or nullptr when [first, last) is too small. C3-02 replaces this with the
-// shared digit writer of <nepdate/format.hpp>.
-[[nodiscard]] constexpr char* write_digits(char* first, char* last, std::uint32_t value,
-                                           int min_width, lang l) noexcept {
-    std::array<std::uint8_t, 10> digits{};
-    int count = 0;
-    do {
-        digits[static_cast<std::size_t>(count++)] = static_cast<std::uint8_t>(value % 10U);
-        value /= 10U;
-    } while (value != 0U);
-    while (count < min_width) {
-        digits[static_cast<std::size_t>(count++)] = 0U;
-    }
-    const std::ptrdiff_t width = l == lang::ne ? 3 : 1;
-    if (last - first < width * count) {
-        return nullptr;
-    }
-    while (count > 0) {
-        const std::uint8_t k = digits[static_cast<std::size_t>(--count)];
-        if (l == lang::ne) {
-            // Devanagari digit k is U+0966 + k: the bytes E0 A5 (A6 + k).
-            *first++ = '\340';
-            *first++ = '\245';
-            *first++ = static_cast<char>(0xA6U + k);
-        } else {
-            *first++ = static_cast<char>('0' + k);
-        }
-    }
-    return first;
-}
-
-} // namespace detail
 
 /// A fiscal year of Nepal, 1 Shrawan to the last day of Ashad (ALGORITHM section 8b, D-08).
 /// FY 2082/83 is fiscal_year{2082}. Any int is accepted; members that build a date return
@@ -147,7 +112,7 @@ class fiscal_year {
         // Negating in unsigned arithmetic is defined for INT_MIN too.
         const auto magnitude =
             y_ < 0 ? 0U - static_cast<std::uint32_t>(y_) : static_cast<std::uint32_t>(y_);
-        char* p = detail::write_digits(first, last, magnitude, 1, l);
+        char* p = detail::write_number(first, last, magnitude, 1, l);
         if (p == nullptr || p == last) {
             return too_small;
         }
@@ -155,7 +120,7 @@ class fiscal_year {
         // The last two digits of y + 1, in 64 bits so INT_MAX + 1 can't overflow.
         const long long next = static_cast<long long>(y_) + 1;
         const long long two_digits = (next < 0 ? -next : next) % 100;
-        p = detail::write_digits(p, last, static_cast<std::uint32_t>(two_digits), 2, l);
+        p = detail::write_number(p, last, static_cast<std::uint32_t>(two_digits), 2, l);
         if (p == nullptr) {
             return too_small;
         }

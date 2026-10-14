@@ -2,12 +2,11 @@
 // Each row is a TEST_CASE named after its id, or a cs-deviation / cs-n/a line. The CTest test
 // catalog_coverage (tools/check_catalog.cmake) checks that every phase-1 row is here.
 //
-// Rows that build a date from a string need parse (C3-05) and rows that read the clock need
-// today() (C4-05). Following the hub PORT-PLAN rule, a row that expects a date or a validation
-// error builds it with make_date and carries a "pending C3-05" comment; a row that needs the
-// missing API itself is skipped with that marker. C3-05 and C4-05 remove every marker naming them.
+// Rows that build a date from a string use parse (C3-05). The row that reads the clock needs
+// today() and is skipped with a "pending C4-05" marker (hub PORT-PLAN rule); C4-05 removes it.
 
 #include <nepdate/date.hpp>
+#include <nepdate/parse.hpp>
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -22,6 +21,8 @@ using nepdate::errc;
 using nepdate::from_gregorian;
 using nepdate::make_date;
 using nepdate::month;
+using nepdate::parse;
+using nepdate::result;
 namespace chr = std::chrono;
 
 namespace {
@@ -228,48 +229,42 @@ TEST_CASE("NepaliDateConstructionTests.Constructor_InvalidNepaliDate_ThrowsExcep
 }
 
 TEST_CASE("NepaliDateConstructionTests.Constructor_ValidStringFormats_CreatesInstance#1", "[cs]") {
-    // pending C3-05: parse("2080/05/15") gives this date; built with make_date until then.
-    const date d = make_date(2080, 5, 15).value();
+    const date d = parse("2080/05/15").value();
     CHECK(d.year() == 2080);
     CHECK(static_cast<int>(d.month()) == 5);
     CHECK(d.day() == 15);
 }
 
 TEST_CASE("NepaliDateConstructionTests.Constructor_ValidStringFormats_CreatesInstance#2", "[cs]") {
-    // pending C3-05: parse("2080-05-15") gives this date; built with make_date until then.
-    const date d = make_date(2080, 5, 15).value();
+    const date d = parse("2080-05-15").value();
     CHECK(d.year() == 2080);
     CHECK(static_cast<int>(d.month()) == 5);
     CHECK(d.day() == 15);
 }
 
 TEST_CASE("NepaliDateConstructionTests.Constructor_ValidStringFormats_CreatesInstance#3", "[cs]") {
-    // pending C3-05: parse("2080.05.15") gives this date; built with make_date until then.
-    const date d = make_date(2080, 5, 15).value();
+    const date d = parse("2080.05.15").value();
     CHECK(d.year() == 2080);
     CHECK(static_cast<int>(d.month()) == 5);
     CHECK(d.day() == 15);
 }
 
 TEST_CASE("NepaliDateConstructionTests.Constructor_ValidStringFormats_CreatesInstance#4", "[cs]") {
-    // pending C3-05: parse("2080_05_15") gives this date; built with make_date until then.
-    const date d = make_date(2080, 5, 15).value();
+    const date d = parse("2080_05_15").value();
     CHECK(d.year() == 2080);
     CHECK(static_cast<int>(d.month()) == 5);
     CHECK(d.day() == 15);
 }
 
 TEST_CASE("NepaliDateConstructionTests.Constructor_ValidStringFormats_CreatesInstance#5", "[cs]") {
-    // pending C3-05: parse(R"(2080\05\15)") gives this date; built with make_date until then.
-    const date d = make_date(2080, 5, 15).value();
+    const date d = parse(R"(2080\05\15)").value();
     CHECK(d.year() == 2080);
     CHECK(static_cast<int>(d.month()) == 5);
     CHECK(d.day() == 15);
 }
 
 TEST_CASE("NepaliDateConstructionTests.Constructor_ValidStringFormats_CreatesInstance#6", "[cs]") {
-    // pending C3-05: parse("2080 05 15") gives this date; built with make_date until then.
-    const date d = make_date(2080, 5, 15).value();
+    const date d = parse("2080 05 15").value();
     CHECK(d.year() == 2080);
     CHECK(static_cast<int>(d.month()) == 5);
     CHECK(d.day() == 15);
@@ -280,8 +275,7 @@ TEST_CASE("NepaliDateConstructionTests.Constructor_ValidStringFormats_CreatesIns
 // cs-deviation: NepaliDateConstructionTests.Constructor_AutoAdjustedFormats_CreatesInstance#2 D-06 (autoAdjust guesses the field order)
 
 TEST_CASE("NepaliDateConstructionTests.Constructor_AutoAdjustedFormats_CreatesInstance#3", "[cs]") {
-    // pending C3-05: parse("2080/05/15") gives this date; built with make_date until then.
-    const date d = make_date(2080, 5, 15).value();
+    const date d = parse("2080/05/15").value();
     CHECK(d.year() == 2080);
     CHECK(static_cast<int>(d.month()) == 5);
     CHECK(d.day() == 15);
@@ -297,23 +291,28 @@ TEST_CASE("NepaliDateConstructionTests.Constructor_AutoAdjustedFormats_CreatesIn
 
 TEST_CASE("NepaliDateConstructionTests.Constructor_InvalidStringFormats_ThrowsException#1",
           "[cs]") {
-    SKIP("pending C3-05: parse(\"\") must fail with a parse error");
+    const result<date> r = parse("");
+    REQUIRE_FALSE(r.has_value());
+    CHECK(nepdate::is_parse_error(r.error()));
 }
 
 TEST_CASE("NepaliDateConstructionTests.Constructor_InvalidStringFormats_ThrowsException#2",
           "[cs]") {
-    SKIP("pending C3-05: parse(\"invalid\") must fail with a parse error");
+    const result<date> r = parse("invalid");
+    REQUIRE_FALSE(r.has_value());
+    CHECK(nepdate::is_parse_error(r.error()));
 }
 
 TEST_CASE("NepaliDateConstructionTests.Constructor_InvalidStringFormats_ThrowsException#3",
           "[cs]") {
-    SKIP("pending C3-05: parse(\"2080/5\") must fail with a parse error");
+    const result<date> r = parse("2080/5");
+    REQUIRE_FALSE(r.has_value());
+    CHECK(nepdate::is_parse_error(r.error()));
 }
 
 TEST_CASE("NepaliDateConstructionTests.Constructor_ValidFormatInvalidDate_ThrowsException#1",
           "[cs]") {
-    // pending C3-05: parse("2080/5/40") gives this error; built with make_date until then.
-    CHECK(make_date(2080, 5, 40).error() == errc::invalid_day);
+    CHECK(parse("2080/5/40").error() == errc::invalid_day);
 }
 
 TEST_CASE("NepaliDateConstructionTests.Constructor_EnglishDate_ConvertsCorrectly", "[cs]") {
@@ -321,23 +320,28 @@ TEST_CASE("NepaliDateConstructionTests.Constructor_EnglishDate_ConvertsCorrectly
 }
 
 TEST_CASE("NepaliDateConstructionTests.TryParse_ValidString_ReturnsTrueWithCorrectDate", "[cs]") {
-    // pending C3-05: parse("2080/05/15") gives this date; built with make_date until then.
-    const date d = make_date(2080, 5, 15).value();
+    const date d = parse("2080/05/15").value();
     CHECK(d.year() == 2080);
     CHECK(static_cast<int>(d.month()) == 5);
     CHECK(d.day() == 15);
 }
 
 TEST_CASE("NepaliDateConstructionTests.TryParse_InvalidString_ReturnsFalseWithDefault#1", "[cs]") {
-    SKIP("pending C3-05: parse(\"\") must fail with a parse error");
+    const result<date> r = parse("");
+    REQUIRE_FALSE(r.has_value());
+    CHECK(nepdate::is_parse_error(r.error()));
 }
 
 TEST_CASE("NepaliDateConstructionTests.TryParse_InvalidString_ReturnsFalseWithDefault#2", "[cs]") {
-    SKIP("pending C3-05: parse(\"invalid\") must fail with a parse error");
+    const result<date> r = parse("invalid");
+    REQUIRE_FALSE(r.has_value());
+    CHECK(nepdate::is_parse_error(r.error()));
 }
 
 TEST_CASE("NepaliDateConstructionTests.TryParse_InvalidString_ReturnsFalseWithDefault#3", "[cs]") {
-    SKIP("pending C3-05: parse(\"2080/5\") must fail with a parse error");
+    const result<date> r = parse("2080/5");
+    REQUIRE_FALSE(r.has_value());
+    CHECK(nepdate::is_parse_error(r.error()));
 }
 
 TEST_CASE("NepaliDatePropertiesTests.EnglishDate_Conversion_ReturnsCorrectDate", "[cs]") {
@@ -380,99 +384,102 @@ TEST_CASE("NepaliDatePropertiesTests.Equals_NullObject_ReturnsFalse", "[cs]") {
 // cs-n/a: NepaliDatePropertiesTests.Equals_DifferentType_ReturnsFalse == takes a date, so comparing with a string doesn't compile
 
 TEST_CASE("OptimizationVerificationTests.Constructor_AllSeparators_ParseCorrectly#1", "[cs]") {
-    // pending C3-05: parse("2080/05/15") gives this date; built with make_date until then.
-    const date d = make_date(2080, 5, 15).value();
+    const date d = parse("2080/05/15").value();
     CHECK(d.year() == 2080);
     CHECK(static_cast<int>(d.month()) == 5);
     CHECK(d.day() == 15);
 }
 
 TEST_CASE("OptimizationVerificationTests.Constructor_AllSeparators_ParseCorrectly#2", "[cs]") {
-    // pending C3-05: parse("2080-05-15") gives this date; built with make_date until then.
-    const date d = make_date(2080, 5, 15).value();
+    const date d = parse("2080-05-15").value();
     CHECK(d.year() == 2080);
     CHECK(static_cast<int>(d.month()) == 5);
     CHECK(d.day() == 15);
 }
 
 TEST_CASE("OptimizationVerificationTests.Constructor_AllSeparators_ParseCorrectly#3", "[cs]") {
-    // pending C3-05: parse("2080.05.15") gives this date; built with make_date until then.
-    const date d = make_date(2080, 5, 15).value();
+    const date d = parse("2080.05.15").value();
     CHECK(d.year() == 2080);
     CHECK(static_cast<int>(d.month()) == 5);
     CHECK(d.day() == 15);
 }
 
 TEST_CASE("OptimizationVerificationTests.Constructor_AllSeparators_ParseCorrectly#4", "[cs]") {
-    // pending C3-05: parse("2080_05_15") gives this date; built with make_date until then.
-    const date d = make_date(2080, 5, 15).value();
+    const date d = parse("2080_05_15").value();
     CHECK(d.year() == 2080);
     CHECK(static_cast<int>(d.month()) == 5);
     CHECK(d.day() == 15);
 }
 
 TEST_CASE("OptimizationVerificationTests.Constructor_AllSeparators_ParseCorrectly#5", "[cs]") {
-    // pending C3-05: parse(R"(2080\05\15)") gives this date; built with make_date until then.
-    const date d = make_date(2080, 5, 15).value();
+    const date d = parse(R"(2080\05\15)").value();
     CHECK(d.year() == 2080);
     CHECK(static_cast<int>(d.month()) == 5);
     CHECK(d.day() == 15);
 }
 
 TEST_CASE("OptimizationVerificationTests.Constructor_AllSeparators_ParseCorrectly#6", "[cs]") {
-    // pending C3-05: parse("2080 05 15") gives this date; built with make_date until then.
-    const date d = make_date(2080, 5, 15).value();
+    const date d = parse("2080 05 15").value();
     CHECK(d.year() == 2080);
     CHECK(static_cast<int>(d.month()) == 5);
     CHECK(d.day() == 15);
 }
 
 TEST_CASE("OptimizationVerificationTests.Constructor_AllSeparators_ParseCorrectly#7", "[cs]") {
-    // pending C3-05: parse("2080।05।15") gives this date; built with make_date until then.
-    const date d = make_date(2080, 5, 15).value();
+    const date d = parse("2080।05।15").value();
     CHECK(d.year() == 2080);
     CHECK(static_cast<int>(d.month()) == 5);
     CHECK(d.day() == 15);
 }
 
 TEST_CASE("OptimizationVerificationTests.Constructor_AllSeparators_ParseCorrectly#8", "[cs]") {
-    // pending C3-05: parse("2080|05|15") gives this date; built with make_date until then.
-    const date d = make_date(2080, 5, 15).value();
+    const date d = parse("2080|05|15").value();
     CHECK(d.year() == 2080);
     CHECK(static_cast<int>(d.month()) == 5);
     CHECK(d.day() == 15);
 }
 
 TEST_CASE("OptimizationVerificationTests.Constructor_InvalidStrings_ThrowsException#1", "[cs]") {
-    SKIP("pending C3-05: parse(\"\") must fail with a parse error");
+    const result<date> r = parse("");
+    REQUIRE_FALSE(r.has_value());
+    CHECK(nepdate::is_parse_error(r.error()));
 }
 
 TEST_CASE("OptimizationVerificationTests.Constructor_InvalidStrings_ThrowsException#2", "[cs]") {
-    SKIP("pending C3-05: parse(\"invalid\") must fail with a parse error");
+    const result<date> r = parse("invalid");
+    REQUIRE_FALSE(r.has_value());
+    CHECK(nepdate::is_parse_error(r.error()));
 }
 
 TEST_CASE("OptimizationVerificationTests.Constructor_InvalidStrings_ThrowsException#3", "[cs]") {
-    SKIP("pending C3-05: parse(\"2080/05\") must fail with a parse error");
+    const result<date> r = parse("2080/05");
+    REQUIRE_FALSE(r.has_value());
+    CHECK(nepdate::is_parse_error(r.error()));
 }
 
 TEST_CASE("OptimizationVerificationTests.Constructor_InvalidStrings_ThrowsException#4", "[cs]") {
-    SKIP("pending C3-05: parse(\"2080\") must fail with a parse error");
+    const result<date> r = parse("2080");
+    REQUIRE_FALSE(r.has_value());
+    CHECK(nepdate::is_parse_error(r.error()));
 }
 
 TEST_CASE("OptimizationVerificationTests.Constructor_InvalidStrings_ThrowsException#5", "[cs]") {
-    SKIP("pending C3-05: parse(\"2080/05/15/99\") must fail with a parse error");
+    const result<date> r = parse("2080/05/15/99");
+    REQUIRE_FALSE(r.has_value());
+    CHECK(nepdate::is_parse_error(r.error()));
 }
 
 TEST_CASE("OptimizationVerificationTests.Constructor_InvalidStrings_ThrowsException#6", "[cs]") {
-    SKIP("pending C3-05: parse(\"abc/def/ghi\") must fail with a parse error");
+    const result<date> r = parse("abc/def/ghi");
+    REQUIRE_FALSE(r.has_value());
+    CHECK(nepdate::is_parse_error(r.error()));
 }
 
 // cs-n/a: OptimizationVerificationTests.Constructor_NullString_ThrowsException std::string_view has no null state to pass
 
 TEST_CASE("OptimizationVerificationTests.Constructor_WithoutLeadingZeros_ParsesCorrectly#1",
           "[cs]") {
-    // pending C3-05: parse("2080/5/15") gives this date; built with make_date until then.
-    const date d = make_date(2080, 5, 15).value();
+    const date d = parse("2080/5/15").value();
     CHECK(d.year() == 2080);
     CHECK(static_cast<int>(d.month()) == 5);
     CHECK(d.day() == 15);
@@ -480,8 +487,7 @@ TEST_CASE("OptimizationVerificationTests.Constructor_WithoutLeadingZeros_ParsesC
 
 TEST_CASE("OptimizationVerificationTests.Constructor_WithoutLeadingZeros_ParsesCorrectly#2",
           "[cs]") {
-    // pending C3-05: parse("2080/05/5") gives this date; built with make_date until then.
-    const date d = make_date(2080, 5, 5).value();
+    const date d = parse("2080/05/5").value();
     CHECK(d.year() == 2080);
     CHECK(static_cast<int>(d.month()) == 5);
     CHECK(d.day() == 5);
@@ -489,8 +495,7 @@ TEST_CASE("OptimizationVerificationTests.Constructor_WithoutLeadingZeros_ParsesC
 
 TEST_CASE("OptimizationVerificationTests.Constructor_WithoutLeadingZeros_ParsesCorrectly#3",
           "[cs]") {
-    // pending C3-05: parse("2080/1/1") gives this date; built with make_date until then.
-    const date d = make_date(2080, 1, 1).value();
+    const date d = parse("2080/1/1").value();
     CHECK(d.year() == 2080);
     CHECK(static_cast<int>(d.month()) == 1);
     CHECK(d.day() == 1);

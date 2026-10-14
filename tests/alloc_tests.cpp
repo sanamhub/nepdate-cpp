@@ -1,11 +1,13 @@
-// C1-08: the paths of ADR-0002 §6 that exist after C1 allocate nothing. Each runs 1000 times
-// between two reads of the counter; no Catch2 macro runs inside the measured block.
+// C1-08 and C3-08: the paths of ADR-0002 §6 allocate nothing. Each runs 1000 times between two
+// reads of the counter; no Catch2 macro runs inside the measured block.
 
 #include "alloc_counter.hpp"
 
 #include <nepdate/date.hpp>
 #include <nepdate/date_range.hpp>
 #include <nepdate/fiscal_year.hpp>
+#include <nepdate/format.hpp>
+#include <nepdate/parse.hpp>
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -145,6 +147,63 @@ TEST_CASE("fiscal_year members other than label allocate nothing", "[alloc]") {
              static_cast<std::size_t>(label.ptr - buffer.data()) +
              static_cast<std::size_t>(fy == nepdate::fiscal_year{2081}));
     });
+    CHECK(n == 0);
+}
+
+TEST_CASE("every to_chars_* writes without allocating", "[alloc]") {
+    const date d = make_date(2081, 4, 15).value();
+    const auto n = allocations_of([d](int /*i*/) {
+        std::array<char, nepdate::max_long_size> buf{};
+        const auto a = nepdate::to_chars(buf.data(), buf.data() + buf.size(), d);
+        const auto b = nepdate::to_chars_iso(buf.data(), buf.data() + buf.size(), d);
+        const auto c = nepdate::to_chars_short(
+            buf.data(), buf.data() + buf.size(), d,
+            {nepdate::date_order::dmy, nepdate::separator::dash, false}, nepdate::lang::ne);
+        const auto e = nepdate::to_chars_long(buf.data(), buf.data() + buf.size(), d,
+                                              {.weekday = true}, nepdate::lang::ne);
+        const auto f = nepdate::to_chars_pattern(buf.data(), buf.data() + buf.size(), d,
+                                                 "MMMM d, yyyy", nepdate::lang::ne);
+        const auto g = nepdate::to_chars_number(buf.data(), buf.data() + buf.size(), 2081, 4,
+                                                nepdate::lang::ne);
+        sink(static_cast<std::size_t>(a.ptr - buf.data() + b.ptr - buf.data() + c.ptr - buf.data() +
+                                      e.ptr - buf.data() + f.ptr - buf.data() + g.ptr -
+                                      buf.data()));
+    });
+    CHECK(n == 0);
+}
+
+TEST_CASE("month and weekday names allocate nothing", "[alloc]") {
+    const date d = make_date(2081, 4, 15).value();
+    const auto n = allocations_of([d](int i) {
+        const nepdate::month m = static_cast<nepdate::month>(1 + i % 12);
+        sink(nepdate::month_name(m, nepdate::lang::en).size() +
+             nepdate::month_name(m, nepdate::lang::ne).size() +
+             nepdate::month_short_name(m, nepdate::lang::en).size() +
+             nepdate::month_short_name(m, nepdate::lang::ne).size() +
+             nepdate::weekday_name(d.weekday(), nepdate::lang::en).size() +
+             nepdate::weekday_short_name(d.weekday(), nepdate::lang::ne).size());
+    });
+    CHECK(n == 0);
+}
+
+TEST_CASE("parse and parse_lenient allocate nothing, success or error", "[alloc]") {
+    const auto n = allocations_of([](int /*i*/) {
+        const auto a = nepdate::parse("2080/05/15");
+        const auto b = nepdate::parse("not a date");
+        const auto c = nepdate::parse("२०८०/०५/१५");
+        const auto e = nepdate::parse_lenient("15 Shrawan 2080");
+        const auto f = nepdate::parse_lenient("Shrawan Bhadra 2080");
+        const auto g = nepdate::parse_lenient("");
+        sink(static_cast<std::size_t>(a->day()) + static_cast<std::size_t>(b.error()) +
+             static_cast<std::size_t>(c->month()) + static_cast<std::size_t>(e->year()) +
+             static_cast<std::size_t>(f.error()) + static_cast<std::size_t>(g.error()));
+    });
+    CHECK(n == 0);
+}
+
+TEST_CASE("to_string(d) allocates nothing", "[alloc]") {
+    const date d = make_date(2081, 4, 15).value();
+    const auto n = allocations_of([d](int /*i*/) { sink(nepdate::to_string(d).size()); });
     CHECK(n == 0);
 }
 

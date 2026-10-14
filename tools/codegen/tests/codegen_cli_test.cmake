@@ -23,6 +23,17 @@ if(NOT rc EQUAL 0)
     message(FATAL_ERROR "${COMMITTED} is out of date: build the codegen target")
 endif()
 
+# C3-01: the names header sits next to the calendar header and must match it too.
+set(names "include/nepdate/detail/names_tables.hpp")
+get_filename_component(committed_dir "${COMMITTED}" DIRECTORY)
+foreach(other IN ITEMS "${WORK}/b/${names}" "${committed_dir}/names_tables.hpp")
+    execute_process(COMMAND "${CMAKE_COMMAND}" -E compare_files "${WORK}/a/${names}" "${other}"
+        RESULT_VARIABLE rc)
+    if(NOT rc EQUAL 0)
+        message(FATAL_ERROR "${other} differs from a fresh run: build the codegen target")
+    endif()
+endforeach()
+
 file(READ "${WORK}/a/${relative}" content)
 string(FIND "${content}" "\r" cr)
 if(NOT cr EQUAL -1)

@@ -1,4 +1,5 @@
-// tools/codegen: writes the generated headers from shared/data (ADR-0001 §5).
+// tools/codegen: writes the generated headers from shared/data and from the name lists in
+// names.hpp (ADR-0001 §5).
 //
 //   nepdate_codegen --shared <shared dir> --out <repository root> [--check]
 //
@@ -6,6 +7,7 @@
 // writing. Exit 2 means bad arguments, unreadable input or invalid data.
 
 #include "calendar.hpp"
+#include "names.hpp"
 
 #include <cstddef>
 #include <cstdio>
@@ -102,6 +104,8 @@ int main(int argc, char** argv) {
     const std::vector<output_file> files = {
         {.relative = fs::path("include/nepdate/detail/calendar_tables.hpp"),
          .content = nepdate::codegen::render_calendar_tables(parsed.value, built.value)},
+        {.relative = fs::path("include/nepdate/detail/names_tables.hpp"),
+         .content = nepdate::codegen::render_names_tables()},
     };
 
     int status = 0;

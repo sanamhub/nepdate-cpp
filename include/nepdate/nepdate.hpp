@@ -4,6 +4,8 @@
 #include <nepdate/date.hpp>        // IWYU pragma: export
 #include <nepdate/date_range.hpp>  // IWYU pragma: export
 #include <nepdate/fiscal_year.hpp> // IWYU pragma: export
+#include <nepdate/format.hpp>      // IWYU pragma: export
+#include <nepdate/parse.hpp>       // IWYU pragma: export
 #include <nepdate/version.hpp>     // IWYU pragma: export
 
 #endif // NEPDATE_NEPDATE_HPP

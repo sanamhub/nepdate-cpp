@@ -1,6 +1,6 @@
 find_package(nlohmann_json 3 CONFIG REQUIRED)
 
-add_library(nepdate_codegen_lib STATIC calendar.cpp calendar.hpp)
+add_library(nepdate_codegen_lib STATIC calendar.cpp calendar.hpp names.cpp names.hpp)
 target_include_directories(nepdate_codegen_lib PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_compile_features(nepdate_codegen_lib PUBLIC cxx_std_20)
 target_link_libraries(nepdate_codegen_lib PUBLIC nlohmann_json::nlohmann_json)

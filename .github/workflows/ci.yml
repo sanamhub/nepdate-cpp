@@ -1,6 +1,6 @@
 # The jobs of ADR-0004 §4 that exist after phase C0. Each job runs its gates through
 # tools/ci.cmake with STRICT=ON, so a missing tool fails the job instead of skipping a gate.
-# fuzz, packages and isolation arrive with C3, C5 and C4.
+# packages and isolation arrive with C5 and C4.
 name: ci
 
 on:
@@ -232,6 +232,37 @@ jobs:
         run: .github/scripts/setup-vcpkg.sh
       - name: Gate 8
         run: cmake -DONLY=coverage -DSTRICT=ON -P tools/ci.cmake
+
+  fuzz:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      CC: clang-18
+      CXX: clang++-18
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install Clang 18
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build clang-18
+          # Ubuntu 24.04 kernels use 32 random mmap bits, which ASan in Clang 18 can't map.
+          sudo sysctl vm.mmap_rnd_bits=28
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/vcpkg-cache
+          key: vcpkg-fuzz-${{ hashFiles('vcpkg.json') }}
+      - name: Set up vcpkg
+        run: .github/scripts/setup-vcpkg.sh
+      - name: Build the fuzz targets
+        run: |
+          cmake --preset fuzz
+          cmake --build --preset fuzz --target fuzz_parse fuzz_parse_lenient
+      - name: Fuzz each target for 60 s, seeded with tests/fuzz/corpus
+        run: |
+          ./build/fuzz/tests/fuzz_parse tests/fuzz/corpus -max_total_time=60 -print_final_stats=1
+          ./build/fuzz/tests/fuzz_parse_lenient tests/fuzz/corpus -max_total_time=60 -print_final_stats=1
 
   shared-check:
     permissions:
