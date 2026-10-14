@@ -447,10 +447,26 @@ inline constexpr std::chrono::minutes nepal_utc_offset{345};
 /// Returns the BS date of an instant in the zone with the given fixed UTC offset:
 /// from_sys_days(floor<days>(t + utc_offset)). The offset is added first, so 2024-07-30 18:30 UTC
 /// is BS 2081-04-15 with offset 0 and 2081-04-16 with nepal_utc_offset. Returns out_of_range when
-/// the result is outside AD 1844-04-11..2143-04-15.
+/// the result is outside AD 1844-04-11..2143-04-15, and also when t or utc_offset is more than
+/// 2^52 seconds (about 142 million years) from zero.
 [[nodiscard]] constexpr result<date> from_sys_time(std::chrono::sys_seconds t,
                                                    std::chrono::minutes utc_offset) noexcept {
-    return from_sys_days(std::chrono::floor<std::chrono::days>(t + utc_offset));
+    // The sum is done in 64-bit seconds and the day is floored by hand: `t + utc_offset` could
+    // overflow for extreme inputs, and floor<days> could narrow a far-out instant into the range,
+    // since std::chrono::days may be 32 bits. Inside the limit the sum can't overflow.
+    constexpr std::int64_t kLimit = std::int64_t{1} << 52;
+    const auto secs = static_cast<std::int64_t>(t.time_since_epoch().count());
+    const auto mins = static_cast<std::int64_t>(utc_offset.count());
+    if (secs < -kLimit || secs > kLimit || mins < -kLimit / 60 || mins > kLimit / 60) {
+        return errc::out_of_range;
+    }
+    const std::int64_t local = secs + (mins * 60);
+    constexpr std::int64_t kSecondsPerDay = 86'400;
+    std::int64_t day = local / kSecondsPerDay;
+    if (local % kSecondsPerDay < 0) {
+        --day;
+    }
+    return detail::from_unix_days(day);
 }
 
 /// Returns today's BS date in the zone with the given fixed UTC offset, reading

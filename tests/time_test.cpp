@@ -49,6 +49,31 @@ TEST_CASE("clocks far outside the range are out_of_range", "[time]") {
           errc::out_of_range);
 }
 
+TEST_CASE("extreme offsets and day counts never wrap into the range", "[time]") {
+    const chr::sys_seconds t = at(chr::year{2024} / 7 / 30, 0, 0, 0);
+    CHECK(nepdate::from_sys_time(t, chr::minutes::max()).error() == errc::out_of_range);
+    CHECK(nepdate::from_sys_time(t, chr::minutes::min()).error() == errc::out_of_range);
+    CHECK(nepdate::from_sys_time(chr::sys_seconds::max(), chr::minutes::min()).error() ==
+          errc::out_of_range);
+    // 2^32 days after 2024-07-30: a 32-bit day count would wrap back to 2024-07-30.
+    const std::int64_t wrapped_day = (std::int64_t{1} << 32) + 19'934;
+    const chr::sys_seconds far{chr::seconds{wrapped_day * 86'400}};
+    CHECK(nepdate::from_sys_time(far, chr::minutes{0}).error() == errc::out_of_range);
+}
+
+TEST_CASE("from_sys_time floors before the epoch", "[time]") {
+    // AD 1844-04-11 is the first supported day; one second before it is the day before.
+    const chr::sys_seconds first = at(chr::year{1844} / 4 / 11, 0, 0, 0);
+    const auto first_day = nepdate::from_sys_days(chr::sys_days{chr::year{1844} / 4 / 11});
+    REQUIRE(first_day.has_value());
+    CHECK(nepdate::from_sys_time(first, chr::minutes{0}) == first_day);
+    CHECK(nepdate::from_sys_time(first + chr::hours{23} + chr::minutes{59} + chr::seconds{59},
+                                 chr::minutes{0}) == first_day);
+    CHECK(nepdate::from_sys_time(first - chr::seconds{1}, chr::minutes{0}).error() ==
+          errc::out_of_range);
+    CHECK(nepdate::from_sys_time(first, chr::minutes{-1}).error() == errc::out_of_range);
+}
+
 TEST_CASE("today is the current instant shifted by the offset", "[time]") {
     const nepdate::result<date> t = nepdate::today();
     REQUIRE(t.has_value());
