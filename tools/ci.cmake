@@ -130,7 +130,7 @@ endfunction()
 # Every C++ source that clang-format checks: outside shared/, build trees and generated files.
 file(GLOB_RECURSE sources RELATIVE "${root}"
     "${root}/*.hpp" "${root}/*.cpp" "${root}/*.h" "${root}/*.cc")
-list(FILTER sources EXCLUDE REGEX "^(shared|build[^/]*|out|vcpkg_installed|\\.git)/")
+list(FILTER sources EXCLUDE REGEX "^(shared|build[^/]*|out|vcpkg_installed|\\.git|conan/.*/test_package/build)/")
 list(FILTER sources EXCLUDE REGEX "^include/nepdate/detail/calendar_tables\\.hpp$")
 list(FILTER sources EXCLUDE REGEX "^include/nepdate/detail/names_tables\\.hpp$")
 list(FILTER sources EXCLUDE REGEX "^patro/src/patro_tables\\.hpp$")
