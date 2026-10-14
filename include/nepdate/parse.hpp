@@ -46,6 +46,10 @@ struct scanned_char {
     return {char_kind::other, 0, 1};
 }
 
+[[nodiscard]] constexpr bool is_ascii_digit(char c) noexcept {
+    return c >= '0' && c <= '9';
+}
+
 // The ASCII separators of strict parsing (PARSING section 1).
 inline constexpr std::string_view kStrictSeparators = "-/._\\ |";
 
@@ -147,10 +151,23 @@ constexpr void read_digits(std::string_view t, int& digits, int& value) noexcept
 
 /// Parses "year month day" (PARSING section 1): groups of 1 to 4 ASCII or Devanagari digits (mixing
 /// allowed, D-05), separated by any of - / . _ a backslash, space, | and the danda U+0964;
-/// leading, trailing
-/// and repeated separators are ignored. Returns the date or invalid_character, wrong_group_count
-/// (also for empty input), number_too_long, then out_of_range, invalid_month or invalid_day.
+/// leading, trailing and repeated separators are ignored. Returns the date or invalid_character,
+/// wrong_group_count (also for empty input), number_too_long, then out_of_range, invalid_month or
+/// invalid_day.
 [[nodiscard]] constexpr result<date> parse(std::string_view s) noexcept {
+    // Fast path for the common shape YYYY<sep>MM<sep>DD in ASCII digits (B6). The loop below
+    // reads exactly these three groups from such input and ends in the same make_date call, so
+    // the result is identical; every other input takes the loop.
+    if (s.size() == 10 && detail::kStrictSeparators.find(s[4]) != std::string_view::npos &&
+        detail::kStrictSeparators.find(s[7]) != std::string_view::npos &&
+        detail::is_ascii_digit(s[0]) && detail::is_ascii_digit(s[1]) &&
+        detail::is_ascii_digit(s[2]) && detail::is_ascii_digit(s[3]) &&
+        detail::is_ascii_digit(s[5]) && detail::is_ascii_digit(s[6]) &&
+        detail::is_ascii_digit(s[8]) && detail::is_ascii_digit(s[9])) {
+        const auto at = [s](std::size_t i) { return static_cast<int>(s[i] - '0'); };
+        return make_date((at(0) * 1000) + (at(1) * 100) + (at(2) * 10) + at(3),
+                         (at(5) * 10) + at(6), (at(8) * 10) + at(9));
+    }
     std::array<int, 3> groups{};
     std::size_t group = 0; // index of the group being read
     int digits = 0;        // digits in that group so far
