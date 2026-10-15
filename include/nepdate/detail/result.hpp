@@ -70,6 +70,9 @@ namespace detail {
 /// result<date> is specialised in <nepdate/date.hpp> to 4 bytes.
 template <class T> class [[nodiscard]] result {
     static_assert(std::is_trivially_copyable_v<T>, "result<T> needs a trivially copyable T");
+    // The rvalue accessors return T by value (ADR-0006); a larger T would make that copy expensive.
+    static_assert(sizeof(T) <= 16,
+                  "result<T> rvalue accessors copy T; ADR-0006 caps T at 16 bytes");
 
   public:
     // Implicit, so `return d;` and `return errc::out_of_range;` work.
@@ -84,7 +87,24 @@ template <class T> class [[nodiscard]] result {
 
     /// Returns the value. On an error: std::abort() at run time, a compile error in a constant
     /// expression.
-    [[nodiscard]] constexpr const T& value() const {
+    [[nodiscard]] constexpr const T& value() const& {
+        if (!has_value()) {
+            detail::bad_result_access();
+        }
+        return value_; // NOLINT(cppcoreguidelines-pro-type-union-access): checked just above
+    }
+
+    /// Returns the value by copy, so a range-for over a temporary's value is safe in C++20
+    /// (ADR-0006). On an error: std::abort() at run time, a compile error in a constant expression.
+    [[nodiscard]] constexpr T value() && {
+        if (!has_value()) {
+            detail::bad_result_access();
+        }
+        return value_; // NOLINT(cppcoreguidelines-pro-type-union-access): checked just above
+    }
+
+    /// Same as value() && for a const rvalue.
+    [[nodiscard]] constexpr T value() const&& {
         if (!has_value()) {
             detail::bad_result_access();
         }
@@ -92,7 +112,14 @@ template <class T> class [[nodiscard]] result {
     }
 
     /// Returns the value. Precondition: has_value().
-    [[nodiscard]] constexpr const T& operator*() const noexcept {
+    [[nodiscard]] constexpr const T& operator*() const& noexcept {
+        assert(has_value());
+        return value_; // NOLINT(cppcoreguidelines-pro-type-union-access): precondition
+    }
+
+    /// Returns the value by copy, so `*of_year(y)` as a range-for range is safe in C++20
+    /// (ADR-0006). Precondition: has_value().
+    [[nodiscard]] constexpr T operator*() && noexcept {
         assert(has_value());
         return value_; // NOLINT(cppcoreguidelines-pro-type-union-access): precondition
     }

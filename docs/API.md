@@ -54,15 +54,19 @@ public:
     constexpr result(errc error) noexcept;                // implicit, so `return errc::x;` works
     constexpr bool has_value() const noexcept;
     constexpr explicit operator bool() const noexcept;
-    constexpr const T& value() const;                     // on an error: std::abort() at run time,
+    constexpr const T& value() const&;                    // on an error: std::abort() at run time,
                                                           // a compile error in a constant expression
-    constexpr const T& operator*() const noexcept;        // precondition: has_value()
+    constexpr T value() &&;                               // by copy, so a range-for over a
+    constexpr T value() const&&;                          // temporary's value is safe (ADR-0006)
+    constexpr const T& operator*() const& noexcept;       // precondition: has_value()
+    constexpr T operator*() && noexcept;                  // by copy (ADR-0006)
     constexpr const T* operator->() const noexcept;       // precondition: has_value()
     constexpr T value_or(T fallback) const noexcept;
     constexpr errc error() const noexcept;                // precondition: !has_value()
     friend constexpr bool operator==(const result&, const result&) noexcept = default;
 };
-// result<date> is 4 bytes (ADR-0002 §2); other result<T> are T plus one byte.
+// result<date> is 4 bytes (ADR-0002 §2); other result<T> are T plus one byte. T is at most 16
+// bytes (ADR-0006).
 
 // ---------- names ----------
 enum class lang : std::uint8_t { en, ne };

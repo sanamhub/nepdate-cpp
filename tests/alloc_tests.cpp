@@ -128,8 +128,7 @@ TEST_CASE("date_range construction and a full iteration of of_year(2081) allocat
         sink(r->size() + month->size() + year->size() + static_cast<std::size_t>(r->contains(a)));
     });
     const auto iterate = allocations_of([](int /*i*/) {
-        const nepdate::date_range year = nepdate::date_range::of_year(2081).value();
-        for (const date d : year) {
+        for (const date d : nepdate::date_range::of_year(2081).value()) {
             sink(static_cast<std::size_t>(d.day()));
         }
     });
