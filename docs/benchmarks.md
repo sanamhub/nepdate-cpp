@@ -21,7 +21,7 @@ through [`bench/`](../bench/). The C# column is copied from the hub's
 The laptop was not idle during these runs (other agent jobs were active, and the CPU sat at its
 3.1 GHz base clock). The numbers are indicative; BENCHMARK.md section 1 asks for a quiet machine,
 which the final release run should use. Loads at the C7 re-bench: MSVC 23 %, Clang 11 %.
-B8 before/after was measured in one process at 7 % (MSVC) and 16 % (Clang) load.
+The MSVC B8 row was re-measured on its own after the C7 review (see the B8 note).
 
 ## Toolchains and versions
 
@@ -103,7 +103,7 @@ sees only Google Benchmark's own noise (about 0.1 bytes/op), and the allocation 
 | B5 | 28.41 | 0 | n/a | | n/a | | n/a | | 153.02 |
 | B6 | 12.13 | 0 | n/a | | n/a | | n/a | | 21.55 |
 | B7 | 12.81 | 0 | n/a | | n/a | | n/a | | 47.93 |
-| B8 | 577.86 | 0 | n/a | | n/a | | n/a | | 3,132.66 |
+| B8 | 516.64 | 0 | n/a | | n/a | | n/a | | 3,132.66 |
 
 ## Results, Clang (zig)
 
@@ -116,7 +116,7 @@ sees only Google Benchmark's own noise (about 0.1 bytes/op), and the allocation 
 | B5 | 28.47 | 0 | n/a | | n/a | | n/a | | 153.02 |
 | B6 | 10.13 | 0 | n/a | | n/a | | n/a | | 21.55 |
 | B7 | 10.22 | 0 | n/a | | n/a | | n/a | | 47.93 |
-| B8 | 345.77 | 0 | n/a | | n/a | | n/a | | 3132.66 |
+| B8 | 450 | 0 | n/a | | n/a | | n/a | | 3132.66 |
 
 The competitor columns only fill B1 and B2: none of them has month arithmetic with clamp, the
 Nepali long format, strict parsing or patro data, so the other cells are "n/a"
@@ -146,18 +146,19 @@ compilers. ADR-0002 section 9 sets tighter targets for all eight:
 | B5 | <= 40 | 28.41 | 28.47 | both |
 | B6 | <= 15 | 12.13 | 10.13 | both |
 | B7 | <= 10 | 12.81 | 10.22 | neither |
-| B8 | <= 250 | 577.86 | 345.77 | neither |
+| B8 | <= 250 | 516.64 | 450 | neither |
 
 Misses to report to the human:
 
-- **B8, patro month grid.** 577.86 ns (MSVC, 23 % load) and 345.77 ns (Clang, 11 % load) against
-  250 ns. C7-03 stepped the serial incrementally from the month's first cell instead of iterating
-  a date_range; the same-process before/after was MSVC 749 ns to 617 ns (7 % load) and Clang
-  450 ns to 351 ns (16 % load). A callgrind profile (clang, WSL) puts 47 % of the instructions in
-  the grid loop (from_serial plus the consume), 26 % in patro::info (to_serial plus the four table
-  reads) and 17 % in event::name and tithi::name. Walking the event-start table forward to remove
-  the per-day from_serial/to_serial round trip would need a patro library change, which this phase
-  forbids (no library change except C7-01).
+- **B8, patro month grid.** 516.64 ns (MSVC, 33,064 ns per 64 grids, CPU time, 10 repetitions,
+  2026-10-15) and about 450 ns (Clang, 16 % load) against 250 ns. Both iterate the month with the
+  public `date_range`, as a user would. C7-03 first rewrote the benchmark loop to step serials with
+  the internal `detail::from_serial`; that made the benchmark faster without making the library
+  faster (and the MSVC gain was within noise), so the review reverted it. A callgrind profile
+  (clang, WSL) puts 47 % of the instructions in the grid loop (iterator dereference through
+  from_serial, plus the consume), 26 % in patro::info (to_serial plus four table reads) and 17 % in
+  event::name and tithi::name. The library fix is phase C8: a date_range iterator that steps the
+  date itself, and a patro lookup that doesn't convert back to a serial.
 - **B1 and B2 on MSVC, B7 on both.** 7.09 ns against 6, 8.94 ns against 8, and 12.81 ns (MSVC) /
   10.22 ns (Clang) against 10. B1 and B7 on MSVC missed in C5 too; these are within the noise of
   the loaded machine (the CPU never left its 3.1 GHz base clock).

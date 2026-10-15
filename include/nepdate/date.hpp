@@ -271,6 +271,12 @@ template <> class [[nodiscard]] result<date> {
         return d_;
     }
 
+    /// Same as operator*() && for a const rvalue, which would otherwise bind the const& overload.
+    [[nodiscard]] constexpr date operator*() const&& noexcept {
+        assert(has_value());
+        return d_;
+    }
+
     /// Returns a pointer to the date. Precondition: has_value().
     [[nodiscard]] constexpr const date* operator->() const noexcept {
         assert(has_value());

@@ -124,6 +124,12 @@ template <class T> class [[nodiscard]] result {
         return value_; // NOLINT(cppcoreguidelines-pro-type-union-access): precondition
     }
 
+    /// Same as operator*() && for a const rvalue, which would otherwise bind the const& overload.
+    [[nodiscard]] constexpr T operator*() const&& noexcept {
+        assert(has_value());
+        return value_; // NOLINT(cppcoreguidelines-pro-type-union-access): precondition
+    }
+
     /// Returns a pointer to the value. Precondition: has_value().
     [[nodiscard]] constexpr const T* operator->() const noexcept {
         assert(has_value());
