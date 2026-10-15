@@ -145,6 +145,149 @@ constexpr void read_digits(std::string_view t, int& digits, int& value) noexcept
     return j == entry.size();
 }
 
+// The classified tokens of one lenient parse (PARSING section 2). Numbers are stored in order,
+// at most three (a fourth already means unrecognized); month_count and unknown_count count the
+// rest without storing them.
+struct lenient_state {
+    std::array<int, 3> nums{};
+    std::array<int, 3> num_digits{};
+    std::size_t num_count = 0;
+    int month_value = 0;
+    std::size_t month_count = 0;
+    std::size_t unknown_count = 0;
+};
+
+// Appends the numbers of a token made only of digits and dots by re-splitting on '.':
+// "2080.05.15" gives three numbers while "B.S." never reaches here (PARSING section 2). Returns
+// number_too_long when any piece has more than four digits.
+[[nodiscard]] constexpr errc append_digit_token(std::string_view token,
+                                                lenient_state& st) noexcept {
+    std::size_t p = 0;
+    while (p <= token.size()) {
+        const std::size_t dot = token.find('.', p);
+        const std::size_t end = dot == std::string_view::npos ? token.size() : dot;
+        if (end > p) {
+            int digits = 0;
+            int value = 0;
+            read_digits(token.substr(p, end - p), digits, value);
+            if (digits > 4) {
+                return errc::number_too_long;
+            }
+            if (st.num_count < st.nums.size()) {
+                st.nums[st.num_count] = value;
+                st.num_digits[st.num_count] = digits;
+            }
+            ++st.num_count;
+        }
+        if (dot == std::string_view::npos) {
+            break;
+        }
+        p = end + 1;
+    }
+    return errc{};
+}
+
+// Classifies one non-number token: the dropped words (gate, miti) and era markers are ignored, a
+// month name counts a month (the first one is remembered), anything else counts as unknown.
+constexpr void classify_word(std::string_view token, lenient_state& st) noexcept {
+    for (const std::string_view word : kDroppedWords) {
+        if (token == word) {
+            return;
+        }
+    }
+    for (const std::string_view era : kEraMarkers) {
+        if (folded_eq(token, era)) {
+            return;
+        }
+    }
+    for (const month_spelling& spelling : kMonthSpellings) {
+        if (folded_eq(token, spelling.text)) {
+            if (st.month_count == 0) {
+                st.month_value = static_cast<int>(spelling.month);
+            }
+            ++st.month_count;
+            return;
+        }
+    }
+    ++st.unknown_count;
+}
+
+// Splits the input into tokens (step 2) and classifies each (steps 3): Devanagari digits map to
+// ASCII via read_digits, ',' and the strict separators split tokens, digits-and-dots tokens are
+// re-split on dots, and the other tokens are classified as month, ignored or other. Returns
+// number_too_long as soon as a number has more than four digits, errc{} otherwise.
+[[nodiscard]] constexpr errc tokenize(std::string_view s, lenient_state& st) noexcept {
+    std::size_t i = 0;
+    while (i < s.size()) {
+        const std::size_t sep = lenient_sep_size(s, i);
+        if (sep != 0) {
+            i += sep;
+            continue;
+        }
+        const std::size_t start = i;
+        while (i < s.size() && lenient_sep_size(s, i) == 0) {
+            ++i;
+        }
+        const std::string_view token = s.substr(start, i - start);
+        if (is_digits_and_dots(token)) {
+            const errc e = append_digit_token(token, st);
+            if (e != errc{}) {
+                return e;
+            }
+        } else {
+            classify_word(token, st);
+        }
+    }
+    return errc{};
+}
+
+// The month-name form (step 3): one month and two numbers give the date in any order, the 4-digit
+// number is the year and the other (1 or 2 digits) the day.
+[[nodiscard]] constexpr result<date> assemble_month_name(const lenient_state& st) noexcept {
+    int year = 0;
+    int day = 0;
+    int day_digits = 0;
+    if (st.num_digits[0] == 4 && st.num_digits[1] != 4) {
+        year = st.nums[0];
+        day = st.nums[1];
+        day_digits = st.num_digits[1];
+    } else if (st.num_digits[1] == 4 && st.num_digits[0] != 4) {
+        year = st.nums[1];
+        day = st.nums[0];
+        day_digits = st.num_digits[0];
+    } else {
+        return errc::ambiguous;
+    }
+    if (day_digits > 2) {
+        return errc::ambiguous;
+    }
+    return make_date(year, st.month_value, day);
+}
+
+// The numeric form (step 4): three numbers give Y M D when the first has four digits, D M Y when
+// the last does, and are ambiguous otherwise (2-digit years are never expanded, D-06).
+[[nodiscard]] constexpr result<date> assemble_numeric(const lenient_state& st) noexcept {
+    if (st.num_digits[0] == 4) {
+        return make_date(st.nums[0], st.nums[1], st.nums[2]);
+    }
+    if (st.num_digits[2] == 4) {
+        return make_date(st.nums[2], st.nums[1], st.nums[0]);
+    }
+    return errc::ambiguous;
+}
+
+// Step 5: two or more months, any unknown token, or any other token count is unrecognized;
+// otherwise the matching form assembles and validates through make_date.
+[[nodiscard]] constexpr result<date> assemble(const lenient_state& st) noexcept {
+    if (st.month_count == 1 && st.unknown_count == 0 && st.num_count == 2) {
+        return assemble_month_name(st);
+    }
+    if (st.month_count == 0 && st.unknown_count == 0 && st.num_count == 3) {
+        return assemble_numeric(st);
+    }
+    return errc::unrecognized;
+}
+
 } // namespace detail
 
 /// Parses "year month day" (PARSING section 1): groups of 1 to 4 ASCII or Devanagari digits (mixing
@@ -206,122 +349,19 @@ constexpr void read_digits(std::string_view t, int& digits, int& value) noexcept
 /// re-split on dots, and era markers plus the two dropped words (gate, miti) are dropped. A month
 /// name with two numbers gives the date in any order, three numbers give Y M D or D M Y, and
 /// anything else is unrecognized. Error order: number_too_long, ambiguous, then unrecognized; a
-/// successful date then validates through make_date.
-// NOLINTNEXTLINE(readability-function-cognitive-complexity): PARSING section 2 steps in order; split planned (C7)
+/// successful date then validates through make_date. The steps are split into detail::tokenize,
+/// detail::classify_word, detail::append_digit_token and detail::assemble, each under the
+/// clang-tidy cognitive-complexity threshold.
 [[nodiscard]] constexpr result<date> parse_lenient(std::string_view s) noexcept {
     if (const result<date> r = parse(s); r.has_value()) {
         return r;
     }
-
-    std::array<int, 3> nums{};
-    std::array<int, 3> num_digits{};
-    std::size_t num_count = 0;
-    int month_value = 0;
-    std::size_t month_count = 0;
-    std::size_t unknown_count = 0;
-
-    std::size_t i = 0;
-    while (i < s.size()) {
-        const std::size_t sep = detail::lenient_sep_size(s, i);
-        if (sep != 0) {
-            i += sep;
-            continue;
-        }
-        const std::size_t start = i;
-        while (i < s.size() && detail::lenient_sep_size(s, i) == 0) {
-            ++i;
-        }
-        const std::string_view token = s.substr(start, i - start);
-        if (detail::is_digits_and_dots(token)) {
-            std::size_t p = 0;
-            while (p <= token.size()) {
-                const std::size_t dot = token.find('.', p);
-                const std::size_t end = dot == std::string_view::npos ? token.size() : dot;
-                if (end > p) {
-                    int digits = 0;
-                    int value = 0;
-                    detail::read_digits(token.substr(p, end - p), digits, value);
-                    if (digits > 4) {
-                        return errc::number_too_long;
-                    }
-                    if (num_count < nums.size()) {
-                        nums[num_count] = value;
-                        num_digits[num_count] = digits;
-                    }
-                    ++num_count;
-                }
-                if (dot == std::string_view::npos) {
-                    break;
-                }
-                p = end + 1;
-            }
-        } else {
-            bool dropped = false;
-            for (const std::string_view word : detail::kDroppedWords) {
-                if (token == word) {
-                    dropped = true;
-                    break;
-                }
-            }
-            if (!dropped) {
-                for (const std::string_view era : detail::kEraMarkers) {
-                    if (detail::folded_eq(token, era)) {
-                        dropped = true;
-                        break;
-                    }
-                }
-            }
-            if (dropped) {
-                continue;
-            }
-            int m = 0;
-            for (const detail::month_spelling& spelling : detail::kMonthSpellings) {
-                if (detail::folded_eq(token, spelling.text)) {
-                    m = static_cast<int>(spelling.month);
-                    break;
-                }
-            }
-            if (m != 0) {
-                if (month_count == 0) {
-                    month_value = m;
-                }
-                ++month_count;
-            } else {
-                ++unknown_count;
-            }
-        }
+    detail::lenient_state st;
+    const errc e = detail::tokenize(s, st);
+    if (e != errc{}) {
+        return e;
     }
-
-    if (month_count == 1 && unknown_count == 0 && num_count == 2) {
-        int year = 0;
-        int day = 0;
-        int day_digits = 0;
-        if (num_digits[0] == 4 && num_digits[1] != 4) {
-            year = nums[0];
-            day = nums[1];
-            day_digits = num_digits[1];
-        } else if (num_digits[1] == 4 && num_digits[0] != 4) {
-            year = nums[1];
-            day = nums[0];
-            day_digits = num_digits[0];
-        } else {
-            return errc::ambiguous;
-        }
-        if (day_digits > 2) {
-            return errc::ambiguous;
-        }
-        return make_date(year, month_value, day);
-    }
-    if (month_count == 0 && unknown_count == 0 && num_count == 3) {
-        if (num_digits[0] == 4) {
-            return make_date(nums[0], nums[1], nums[2]);
-        }
-        if (num_digits[2] == 4) {
-            return make_date(nums[2], nums[1], nums[0]);
-        }
-        return errc::ambiguous;
-    }
-    return errc::unrecognized;
+    return detail::assemble(st);
 }
 
 /// Same as parse(std::string_view) on the same bytes, for u8"" literals.

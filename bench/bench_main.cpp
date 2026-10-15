@@ -203,6 +203,35 @@ void b6_strict_parse(benchmark::State& state) {
 }
 BENCHMARK(b6_strict_parse);
 
+// B-lenient: lenient parse of the 64 dates as "DD <month name> YYYY" (the PARSING section 2
+// month-name form), so the lenient tokenizer, classifier and assembler all run. Not one of the
+// published B1 to B8; C7-02 uses it to show the split didn't regress lenient parsing.
+std::array<std::string, kInputs> lenient_text_inputs() {
+    constexpr std::array<std::string_view, 12> month_names = {
+        "Baishakh", "Jestha",  "Ashad", "Shrawan", "Bhadra", "Ashoj",
+        "Kartik",   "Mangsir", "Poush", "Magh",    "Falgun", "Chaitra"};
+    std::array<std::string, kInputs> out{};
+    const auto fields = bs_fields();
+    for (std::size_t i = 0; i < kInputs; ++i) {
+        out.at(i) = std::to_string(fields.at(i).day) + " " +
+                    std::string(month_names.at(static_cast<std::size_t>(fields.at(i).month - 1))) +
+                    " " + std::to_string(fields.at(i).year);
+    }
+    return out;
+}
+
+void b_lenient_parse(benchmark::State& state) {
+    const auto inputs = lenient_text_inputs();
+    for (auto _ : state) {
+        for (const std::string& s : inputs) {
+            const auto r = nepdate::parse_lenient(s);
+            consume(r->year(), static_cast<unsigned>(r->month()), static_cast<unsigned>(r->day()));
+        }
+    }
+    state.SetItemsProcessed(state.iterations() * static_cast<std::int64_t>(kInputs));
+}
+BENCHMARK(b_lenient_parse);
+
 // B7: patro info for the date (tithi, holiday flag, events).
 void b7_patro_info(benchmark::State& state) {
     const auto inputs = patro_serials();
