@@ -123,8 +123,7 @@ TEST_CASE("every 2081 output fits the size bounds; one byte less fails without o
     std::size_t longest_short = 0;
     std::size_t longest_long = 0;
     std::array<char, nepdate::max_long_size + 1> buf{};
-    const nepdate::date_range all = nepdate::date_range::of_year(2081).value();
-    for (const date d : all) {
+    for (const date d : nepdate::date_range::of_year(2081).value()) {
         for (const lang l : {lang::en, lang::ne}) {
             for (const bool pad : {true, false}) {
                 for (const date_order o : kOrders) {

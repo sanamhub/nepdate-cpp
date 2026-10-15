@@ -1,10 +1,12 @@
 // C1-02: errc and the generic result<T>. result<date> is tested in date_test.cpp.
 
+#include <nepdate/date.hpp>
 #include <nepdate/detail/result.hpp>
 
 #include <catch2/catch_test_macros.hpp>
 
 #include <type_traits>
+#include <utility>
 
 using nepdate::errc;
 using nepdate::result;
@@ -30,6 +32,19 @@ TEST_CASE("result<int> holds a value or an error", "[result]") {
     STATIC_REQUIRE(ok != bad);
     STATIC_REQUIRE(bad == result<int>{errc::invalid_day});
     STATIC_REQUIRE(bad != result<int>{errc::out_of_range});
+}
+
+TEST_CASE("rvalue accessors return T by value, lvalue accessors a const T& (ADR-0006)",
+          "[result]") {
+    STATIC_REQUIRE(std::is_same_v<decltype(std::declval<result<int>>().value()), int>);
+    STATIC_REQUIRE(std::is_same_v<decltype(std::declval<result<int>&>().value()), const int&>);
+    STATIC_REQUIRE(std::is_same_v<decltype(std::declval<const result<int>&&>().value()), int>);
+    STATIC_REQUIRE(std::is_same_v<decltype(std::declval<result<int>>().operator*()), int>);
+    STATIC_REQUIRE(std::is_same_v<decltype(std::declval<result<int>&>().operator*()), const int&>);
+    STATIC_REQUIRE(std::is_same_v<decltype(std::declval<const result<int>&&>().operator*()), int>);
+    STATIC_REQUIRE(
+        std::is_same_v<decltype(std::declval<const result<nepdate::date>&&>().operator*()),
+                       nepdate::date>);
 }
 
 namespace {

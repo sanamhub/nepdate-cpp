@@ -132,4 +132,22 @@ TEST_CASE("date_range works in a constant expression", "[range][constexpr]") {
                    bs(2081, 1, 1).add_days(100).value());
     STATIC_REQUIRE(date_range::of_year(2081)->contains(bs(2081, 12, 30)));
 }
+
+TEST_CASE("a range-for over a temporary result's value() and operator* is safe (ADR-0006)",
+          "[range]") {
+    const std::size_t year_size = date_range::of_year(2081)->size();
+    std::size_t n = 0;
+    for (const date d : date_range::of_year(2081).value()) {
+        CHECK(date_range::of_year(2081)->contains(d));
+        ++n;
+    }
+    CHECK(n == year_size);
+
+    n = 0;
+    for (const date d : *date_range::of_year(2081)) {
+        ++n;
+        CHECK(d.day() >= 1);
+    }
+    CHECK(n == year_size);
+}
 // NOLINTEND(bugprone-unchecked-optional-access)

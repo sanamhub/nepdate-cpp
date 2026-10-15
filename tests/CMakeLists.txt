@@ -24,6 +24,7 @@ add_executable(nepdate_tests
     fuzz/corpus_test.cpp
     names_test.cpp
     parse_test.cpp
+    parse_lenient_equiv_test.cpp
     pattern_test.cpp
     result_test.cpp
     serial_test.cpp
@@ -65,7 +66,7 @@ endif()
 # provides main, so the final link adds -fsanitize=fuzzer; the preset's fuzzer-no-link keeps the
 # Catch2 binaries' own main.
 if(NEPDATE_SANITIZE MATCHES "fuzzer" AND NOT MSVC)
-    foreach(name IN ITEMS fuzz_parse fuzz_parse_lenient)
+    foreach(name IN ITEMS fuzz_parse fuzz_parse_lenient fuzz_parse_lenient_equiv)
         add_executable(${name} fuzz/${name}.cpp)
         target_link_libraries(${name} PRIVATE nepdate::nepdate)
         nepdate_set_warnings(${name})

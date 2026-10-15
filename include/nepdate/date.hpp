@@ -234,7 +234,24 @@ template <> class [[nodiscard]] result<date> {
 
     /// Returns the date. On an error: std::abort() at run time, a compile error in a constant
     /// expression.
-    [[nodiscard]] constexpr const date& value() const {
+    [[nodiscard]] constexpr const date& value() const& {
+        if (!has_value()) {
+            detail::bad_result_access();
+        }
+        return d_;
+    }
+
+    /// Returns the date by copy, so a range-for over a temporary's value is safe in C++20
+    /// (ADR-0006). On an error: std::abort() at run time, a compile error in a constant expression.
+    [[nodiscard]] constexpr date value() && {
+        if (!has_value()) {
+            detail::bad_result_access();
+        }
+        return d_;
+    }
+
+    /// Same as value() && for a const rvalue.
+    [[nodiscard]] constexpr date value() const&& {
         if (!has_value()) {
             detail::bad_result_access();
         }
@@ -242,7 +259,20 @@ template <> class [[nodiscard]] result<date> {
     }
 
     /// Returns the date. Precondition: has_value().
-    [[nodiscard]] constexpr const date& operator*() const noexcept {
+    [[nodiscard]] constexpr const date& operator*() const& noexcept {
+        assert(has_value());
+        return d_;
+    }
+
+    /// Returns the date by copy, so `*of_year(y)` as a range-for range is safe in C++20
+    /// (ADR-0006). Precondition: has_value().
+    [[nodiscard]] constexpr date operator*() && noexcept {
+        assert(has_value());
+        return d_;
+    }
+
+    /// Same as operator*() && for a const rvalue, which would otherwise bind the const& overload.
+    [[nodiscard]] constexpr date operator*() const&& noexcept {
         assert(has_value());
         return d_;
     }
