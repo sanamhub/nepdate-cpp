@@ -244,16 +244,18 @@ void b7_patro_info(benchmark::State& state) {
 }
 BENCHMARK(b7_patro_info);
 
-// B8: a month grid: patro info for every day of the month the date is in.
+// B8: a month grid: patro info for every day of the month the date is in. The grid walks
+// consecutive days, so the serial is stepped incrementally from the month's first cell instead of
+// building a date_range and iterating it (C7-03).
 void b8_patro_month_grid(benchmark::State& state) {
     const auto inputs = patro_serials();
     for (auto _ : state) {
         for (const std::uint32_t s : inputs) {
             const date d = detail::from_serial(s);
-            const nepdate::date_range month =
-                nepdate::date_range::of_month(d.year(), d.month()).value();
-            for (const date day : month) {
-                consume_day_info(nepdate::patro::info(day));
+            const std::uint32_t first = detail::to_serial(d.first_of_month());
+            const std::uint32_t last = detail::to_serial(d.last_of_month());
+            for (std::uint32_t t = first; t <= last; ++t) {
+                consume_day_info(nepdate::patro::info(detail::from_serial(t)));
             }
         }
     }
