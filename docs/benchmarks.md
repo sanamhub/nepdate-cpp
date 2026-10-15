@@ -20,13 +20,14 @@ through [`bench/`](../bench/). The C# column is copied from the hub's
 
 The laptop was not idle during these runs (other agent jobs were active, and the CPU sat at its
 3.1 GHz base clock). The numbers are indicative; BENCHMARK.md section 1 asks for a quiet machine,
-which the final release run should use.
+which the final release run should use. Loads at the C7 re-bench: MSVC 23 %, Clang 11 %.
+B8 before/after was measured in one process at 7 % (MSVC) and 16 % (Clang) load.
 
 ## Toolchains and versions
 
 | Item | Value |
 |---|---|
-| nepdate-cpp | `main` at `89faf97` (C0 to C4 merged), plus the C5 branch |
+| nepdate-cpp | `main` at `1062363` (C0 to C6 merged), plus the C7 branch (`feat/C7-hardening`) |
 | MSVC | 19.51.36260 (Visual Studio 2026 Community 18), x64, Release `/O2 /DNDEBUG` |
 | Clang | 22.1.8 (zig 0.17.0, `x86_64-windows-gnu`, libc++), Release `-O3 -DNDEBUG` |
 | Google Benchmark | 1.9.5 (vcpkg, feature `dev`) |
@@ -95,33 +96,41 @@ sees only Google Benchmark's own noise (about 0.1 bytes/op), and the allocation 
 
 | ID | ns/op | bytes/op | nepdate-cli ns/op | agrees | aatishnn ns/op | agrees | nepalical ns/op | agrees | C# .NET 10 ns/op |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| B1 | 6.91 | 0 | 33.34 | 61/64 | 29,519 | 62/64 | 1,064 | 61/64 | 13.29 |
-| B2 | 7.67 | 0 | 305.94 | 61/64 | 24,774 | 60/64 | 809 | 61/64 | 18.64 |
-| B3 | 7.62 | 0 | n/a | | n/a | | n/a | | 17.50 |
-| B4 | 4.94 | 0 | n/a | | n/a | | n/a | | 18.85 |
-| B5 | 21.97 | 0 | n/a | | n/a | | n/a | | 153.02 |
-| B6 | 12.53 (23.38 before the review's fast path) | 0 | n/a | | n/a | | n/a | | 21.55 |
-| B7 | 11.12 | 0 | n/a | | n/a | | n/a | | 47.93 |
-| B8 | 487.19 | 0 | n/a | | n/a | | n/a | | 3,132.66 |
+| B1 | 7.09 | 0 | 33.34 | 61/64 | 29,519 | 62/64 | 1,064 | 61/64 | 13.29 |
+| B2 | 8.94 | 0 | 305.94 | 61/64 | 24,774 | 60/64 | 809 | 61/64 | 18.64 |
+| B3 | 7.55 | 0 | n/a | | n/a | | n/a | | 17.50 |
+| B4 | 5.58 | 0 | n/a | | n/a | | n/a | | 18.85 |
+| B5 | 28.41 | 0 | n/a | | n/a | | n/a | | 153.02 |
+| B6 | 12.13 | 0 | n/a | | n/a | | n/a | | 21.55 |
+| B7 | 12.81 | 0 | n/a | | n/a | | n/a | | 47.93 |
+| B8 | 577.86 | 0 | n/a | | n/a | | n/a | | 3,132.66 |
 
 ## Results, Clang (zig)
 
 | ID | ns/op | bytes/op | nepdate-cli ns/op | agrees | aatishnn ns/op | agrees | nepalical ns/op | agrees | C# .NET 10 ns/op |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| B1 | 4.31 | 0 | 26.76 | 61/64 | 19,836 | 62/64 | 1,038 | 61/64 | 13.29 |
-| B2 | 5.35 | 0 | 145.18 | 61/64 | 66,406 | 60/64 | 848 | 61/64 | 18.64 |
-| B3 | 4.12 | 0 | n/a | | n/a | | n/a | | 17.50 |
-| B4 | 2.35 | 0 | n/a | | n/a | | n/a | | 18.85 |
-| B5 | 24.14 | 0 | n/a | | n/a | | n/a | | 153.02 |
-| B6 | 15.66 | 0 | n/a | | n/a | | n/a | | 21.55 |
-| B7 | 8.69 | 0 | n/a | | n/a | | n/a | | 47.93 |
-| B8 | 267.08 | 0 | n/a | | n/a | | n/a | | 3132.66 |
+| B1 | 5.58 | 0 | 26.76 | 61/64 | 19,836 | 62/64 | 1,038 | 61/64 | 13.29 |
+| B2 | 6.23 | 0 | 145.18 | 61/64 | 66,406 | 60/64 | 848 | 61/64 | 18.64 |
+| B3 | 4.69 | 0 | n/a | | n/a | | n/a | | 17.50 |
+| B4 | 2.75 | 0 | n/a | | n/a | | n/a | | 18.85 |
+| B5 | 28.47 | 0 | n/a | | n/a | | n/a | | 153.02 |
+| B6 | 10.13 | 0 | n/a | | n/a | | n/a | | 21.55 |
+| B7 | 10.22 | 0 | n/a | | n/a | | n/a | | 47.93 |
+| B8 | 345.77 | 0 | n/a | | n/a | | n/a | | 3132.66 |
 
 The competitor columns only fill B1 and B2: none of them has month arithmetic with clamp, the
 Nepali long format, strict parsing or patro data, so the other cells are "n/a"
 (`docs/competitors.md`). aatishnn converts AD by walking day by day, and its B1/B2 are tens of
 microseconds; nepalical allocates four heap objects per conversion (about 4 allocs/op, 32
 bytes/op), the other two allocate nothing.
+
+## B-lenient (C7-02)
+
+The bench also times `parse_lenient` on the 64 dates written as `DD <month name> YYYY`, so the
+lenient tokenizer, classifier and assembler all run (strict parse fails first). It is not one of
+the published B1 to B8; C7-02 uses it to show the split of `parse_lenient` into per-step functions
+did not regress lenient parsing. MSVC, CPU time, 10 repetitions: 228.5 ns/op before (the C6 body)
+and 222.3 ns/op after (the split), 0 bytes both.
 
 ## Targets (ADR-0002 section 9)
 
@@ -130,36 +139,32 @@ compilers. ADR-0002 section 9 sets tighter targets for all eight:
 
 | ID | Target ns/op | MSVC | Clang | Met |
 |---|---:|---:|---:|---|
-| B1 | <= 6 | 6.91 | 4.31 | Clang |
-| B2 | <= 8 | 7.67 | 5.35 | both |
-| B3 | <= 8 | 7.62 | 4.12 | both |
-| B4 | <= 8 | 4.94 | 2.35 | both |
-| B5 | <= 40 | 21.97 | 24.14 | both |
-| B6 | <= 15 | 12.53 (fast path) | 15.66 (before the fast path) | MSVC |
-| B7 | <= 10 | 11.12 | 8.69 | Clang |
-| B8 | <= 250 | 487.19 | 267.08 | neither |
+| B1 | <= 6 | 7.09 | 5.58 | Clang |
+| B2 | <= 8 | 8.94 | 6.23 | Clang |
+| B3 | <= 8 | 7.55 | 4.69 | both |
+| B4 | <= 8 | 5.58 | 2.75 | both |
+| B5 | <= 40 | 28.41 | 28.47 | both |
+| B6 | <= 15 | 12.13 | 10.13 | both |
+| B7 | <= 10 | 12.81 | 10.22 | neither |
+| B8 | <= 250 | 577.86 | 345.77 | neither |
 
 Misses to report to the human:
 
-- **B6, strict parse.** The run above measured 23.38 ns (MSVC) and 15.66 ns (Clang) against 15
-  ns, slower than C#'s 21.55 ns on MSVC: `parse` scanned the input character by character. The
-  review added a fast path for exactly `YYYY<sep>MM<sep>DD` in ASCII digits, which goes straight
-  to `make_date` with the same result as the loop (tested against the loop on 142,800 inputs).
-  MSVC B6 is now 12.53 ns (802 ns per 64, CPU time, 10 repetitions, machine at 56 % load,
-  2026-10-15), under the target and faster than C#. Clang was not re-measured; its row above is
-  from before the fast path.
-- **B8, patro month grid.** 487 ns (MSVC) and 267 ns (Clang) against 250 ns. One grid is about 30
-  `from_serial` calls plus 30 `info` lookups; MSVC's codegen for that loop is about 1.8 times
-  Clang's. The Go port's pinned prototype measured 226 ns on this machine.
-- **B1 and B7 on MSVC.** 6.91 ns against 6 and 11.12 ns against 10. Both met on Clang; the MSVC
-  misses are within the noise of the loaded machine (the CPU never left its 3.1 GHz base clock).
-
-No profile was captured: the machine is shared and the misses above are each a few dozen
-instructions per operation, not a hot loop that a profiler would newly reveal.
+- **B8, patro month grid.** 577.86 ns (MSVC, 23 % load) and 345.77 ns (Clang, 11 % load) against
+  250 ns. C7-03 stepped the serial incrementally from the month's first cell instead of iterating
+  a date_range; the same-process before/after was MSVC 749 ns to 617 ns (7 % load) and Clang
+  450 ns to 351 ns (16 % load). A callgrind profile (clang, WSL) puts 47 % of the instructions in
+  the grid loop (from_serial plus the consume), 26 % in patro::info (to_serial plus the four table
+  reads) and 17 % in event::name and tithi::name. Walking the event-start table forward to remove
+  the per-day from_serial/to_serial round trip would need a patro library change, which this phase
+  forbids (no library change except C7-01).
+- **B1 and B2 on MSVC, B7 on both.** 7.09 ns against 6, 8.94 ns against 8, and 12.81 ns (MSVC) /
+  10.22 ns (Clang) against 10. B1 and B7 on MSVC missed in C5 too; these are within the noise of
+  the loaded machine (the CPU never left its 3.1 GHz base clock).
 
 ## The ADR-0002 section 8 variant of B1
 
 The bench also times the variant that stores the AD date of each BS month start (14 KB extra
-table). It measured 7.60 ns (MSVC) and 3.81 ns (Clang) against B1's 6.91 ns and 4.31 ns. It wins on
+table). It measured 8.72 ns (MSVC) and 4.50 ns (Clang) against B1's 7.09 ns and 5.58 ns. It wins on
 Clang but loses on MSVC, so it does not beat B1 by 10 percent on both compilers; the library keeps
 Neri-Schneider (ADR-0002 section 8).
