@@ -8,9 +8,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include <chrono>
-#include <cstdint>
 
-using nepdate::date;
 using nepdate::errc;
 namespace chr = std::chrono;
 

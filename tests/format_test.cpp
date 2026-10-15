@@ -3,14 +3,15 @@
 
 #include "vectors.hpp"
 
+#include <nepdate/date.hpp>
 #include <nepdate/date_range.hpp>
 #include <nepdate/format.hpp>
 
+#include <catch2/catch_message.hpp>
 #include <catch2/catch_test_macros.hpp>
 
 #include <array>
 #include <cstddef>
-#include <string>
 #include <string_view>
 #include <system_error>
 
@@ -116,12 +117,14 @@ TEST_CASE("to_string, to_iso_string and their to_chars forms", "[format]") {
           "2081/04/15");
 }
 
+// NOLINTNEXTLINE(readability-function-cognitive-complexity): one loop over 2081, one check per writer
 TEST_CASE("every 2081 output fits the size bounds; one byte less fails without overrun",
           "[format]") {
     std::size_t longest_short = 0;
     std::size_t longest_long = 0;
     std::array<char, nepdate::max_long_size + 1> buf{};
-    for (const date d : nepdate::date_range::of_year(2081).value()) {
+    const nepdate::date_range all = nepdate::date_range::of_year(2081).value();
+    for (const date d : all) {
         for (const lang l : {lang::en, lang::ne}) {
             for (const bool pad : {true, false}) {
                 for (const date_order o : kOrders) {

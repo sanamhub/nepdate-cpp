@@ -30,7 +30,7 @@ namespace nepdate::detail {
 // Writes value with at least min_width digits (leading zeros), ASCII or Devanagari. Returns the
 // end of the output, or nullptr when [first, last) is too small; nothing is written then.
 // Precondition: first <= last.
-[[nodiscard]] constexpr char* write_number(char* first, char* last, std::uint32_t value,
+[[nodiscard]] constexpr char* write_number(char* first, const char* last, std::uint32_t value,
                                            int min_width, lang l) noexcept {
     const int count = digit_count(value);
     // min_width can be any int; widening keeps width * 3 from overflowing.
@@ -43,6 +43,7 @@ namespace nepdate::detail {
     char* p = end;
     if (l == lang::ne) {
         // Devanagari digit k is U+0966 + k: the bytes E0 A5 (A6 + k).
+        // NOLINTNEXTLINE(cppcoreguidelines-avoid-do-while): zero still writes one digit
         do {
             const std::uint32_t k = value % 10U;
             value /= 10U;

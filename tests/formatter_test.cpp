@@ -1,12 +1,13 @@
 // C3-04: std::formatter<nepdate::date>. Compiled out where the standard library has no <format>;
 // the test named below then reports itself as skipped.
 
-#include <nepdate/format.hpp>
+#include <nepdate/date.hpp>
+#include <nepdate/format.hpp> // IWYU pragma: keep: provides the std::formatter<nepdate::date> specialization used implicitly by std::format
 
 #include <catch2/catch_test_macros.hpp>
 
 #include <string>
-#include <version>
+#include <version> // IWYU pragma: keep: __cpp_lib_format comes from here
 
 #if defined(__cpp_lib_format) && __cpp_lib_format >= 201907L
 #include <format>

@@ -271,8 +271,24 @@ if("coverage" IN_LIST gates)
     else()
         ci_preset(coverage)
         set(coverage_dir "${root}/build/${PRESET_PREFIX}coverage")
-        set(gcovr_args --root "${root}" --filter "${root}/include/" --filter "${root}/patro/"
+        # Library code only: patro/tests/ holds Catch2 files whose assertion branches are not code
+        # under test.
+        set(gcovr_args --root "${root}" --filter "${root}/include/"
+            --filter "${root}/patro/include/" --filter "${root}/patro/src/"
             "${coverage_dir}")
+        # gcov must be the version of the compiler that wrote the .gcno files, or it rejects them.
+        # CI sets GCOV; locally, derive gcov-N from g++-N in the build's cache.
+        if(ci_rc EQUAL 0 AND NOT DEFINED ENV{GCOV})
+            file(STRINGS "${coverage_dir}/CMakeCache.txt" cxx_line
+                REGEX "^CMAKE_CXX_COMPILER:FILEPATH=")
+            string(REGEX REPLACE "^.*=" "" cxx "${cxx_line}")
+            get_filename_component(cxx_dir "${cxx}" DIRECTORY)
+            get_filename_component(cxx_name "${cxx}" NAME)
+            string(REPLACE "g++" "gcov" gcov_name "${cxx_name}")
+            if(EXISTS "${cxx_dir}/${gcov_name}")
+                list(PREPEND gcovr_args --gcov-executable "${cxx_dir}/${gcov_name}")
+            endif()
+        endif()
         if(ci_rc EQUAL 0)
             set(ci_step gcovr)
             ci_run("${gcovr}" ${gcovr_args} --json-summary "${coverage_dir}/coverage.json")

@@ -37,6 +37,7 @@ class date_range : public std::ranges::view_interface<date_range> {
             ++s_;
             return *this;
         }
+        // NOLINTBEGIN(cert-dcl21-cpp): postfix ++/-- must return the old iterator by value (std::random_access_iterator)
         constexpr iterator operator++(int) noexcept {
             const iterator old = *this;
             ++s_;
@@ -51,6 +52,7 @@ class date_range : public std::ranges::view_interface<date_range> {
             --s_;
             return old;
         }
+        // NOLINTEND(cert-dcl21-cpp)
         constexpr iterator& operator+=(difference_type n) noexcept {
             // Unsigned wrap-around gives the right serial for negative n as well.
             s_ += static_cast<std::uint32_t>(n);
@@ -151,6 +153,7 @@ class date_range : public std::ranges::view_interface<date_range> {
 
 // A date_range holds its two dates by value and its iterators hold serials, so an iterator
 // outlives the range it came from.
+// NOLINTNEXTLINE(cert-dcl58-cpp): enable_borrowed_range is the standard range customization point
 namespace std::ranges {
 template <> inline constexpr bool enable_borrowed_range<nepdate::date_range> = true;
 } // namespace std::ranges

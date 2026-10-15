@@ -77,9 +77,7 @@ inline constexpr std::string_view kLenientSeparators = "-/_\\ |,";
     std::size_t i = 0;
     while (i < t.size()) {
         const auto c = static_cast<unsigned char>(t[i]);
-        if (c == '.') {
-            ++i;
-        } else if (c >= '0' && c <= '9') {
+        if (c == '.' || (c >= '0' && c <= '9')) {
             ++i;
         } else if (c == 0xE0U && t.size() - i >= 3 &&
                    static_cast<unsigned char>(t[i + 1]) == 0xA5U &&
@@ -209,6 +207,7 @@ constexpr void read_digits(std::string_view t, int& digits, int& value) noexcept
 /// name with two numbers gives the date in any order, three numbers give Y M D or D M Y, and
 /// anything else is unrecognized. Error order: number_too_long, ambiguous, then unrecognized; a
 /// successful date then validates through make_date.
+// NOLINTNEXTLINE(readability-function-cognitive-complexity): PARSING section 2 steps in order; split planned (C7)
 [[nodiscard]] constexpr result<date> parse_lenient(std::string_view s) noexcept {
     if (const result<date> r = parse(s); r.has_value()) {
         return r;

@@ -100,8 +100,8 @@ namespace detail {
 // Output into [p, last). The first write that doesn't fit sets ok to false and p to last, so
 // every later write fails too and nothing lands past last.
 struct span_sink {
-    char* p;
-    char* last;
+    char* p = nullptr;
+    char* last = nullptr;
     bool ok = true;
 
     constexpr void fail() noexcept {
@@ -232,6 +232,8 @@ template <class Sink> constexpr void write_long(Sink& out, date d, long_format f
 
 // FORMATTING section 5: the standard patterns when the whole pattern is one of them, otherwise a
 // left-to-right scan. Token digits follow l; literal bytes are copied unchanged (D-15).
+// NOLINTBEGIN(readability-function-cognitive-complexity): one branch per FORMATTING section 5 token, in
+// the spec's order, so the code reads against the table; 451 pattern vectors cover it.
 template <class Sink>
 constexpr void write_pattern(Sink& out, date d, std::string_view p, lang l) noexcept {
     if (p.empty() || p == "G" || p == "g" || p == "d") {
@@ -303,6 +305,7 @@ constexpr void write_pattern(Sink& out, date d, std::string_view p, lang l) noex
         }
     }
 }
+// NOLINTEND(readability-function-cognitive-complexity)
 
 } // namespace detail
 
@@ -356,28 +359,28 @@ to_chars_pattern(char* first, char* last, date d, std::string_view pattern, lang
 [[nodiscard]] inline std::string to_string(date d) {
     std::array<char, max_long_size> buf{};
     const std::to_chars_result r = to_chars(buf.data(), buf.data() + buf.size(), d);
-    return std::string(buf.data(), r.ptr);
+    return {buf.data(), r.ptr};
 }
 
 /// Returns "2081-04-15". Allocates only the returned string.
 [[nodiscard]] inline std::string to_iso_string(date d) {
     std::array<char, max_long_size> buf{};
     const std::to_chars_result r = to_chars_iso(buf.data(), buf.data() + buf.size(), d);
-    return std::string(buf.data(), r.ptr);
+    return {buf.data(), r.ptr};
 }
 
 /// Returns what to_chars_short writes. Allocates only the returned string.
 [[nodiscard]] inline std::string format_short(date d, short_format f, lang l) {
     std::array<char, max_long_size> buf{};
     const std::to_chars_result r = to_chars_short(buf.data(), buf.data() + buf.size(), d, f, l);
-    return std::string(buf.data(), r.ptr);
+    return {buf.data(), r.ptr};
 }
 
 /// Returns what to_chars_long writes. Allocates only the returned string.
 [[nodiscard]] inline std::string format_long(date d, long_format f, lang l) {
     std::array<char, max_long_size> buf{};
     const std::to_chars_result r = to_chars_long(buf.data(), buf.data() + buf.size(), d, f, l);
-    return std::string(buf.data(), r.ptr);
+    return {buf.data(), r.ptr};
 }
 
 /// Returns what to_chars_pattern writes, however long. Allocates only the returned string.
@@ -386,7 +389,7 @@ to_chars_pattern(char* first, char* last, date d, std::string_view pattern, lang
     const std::to_chars_result r =
         to_chars_pattern(buf.data(), buf.data() + buf.size(), d, pattern, l);
     if (r.ec == std::errc{}) {
-        return std::string(buf.data(), r.ptr);
+        return {buf.data(), r.ptr};
     }
     // Longer than the stack buffer: measure, then write straight into the string.
     detail::count_sink count;
@@ -454,8 +457,10 @@ template <> struct std::formatter<nepdate::date, char> {
 
     /// Takes everything up to the closing '}' as the pattern; an empty one means "YYYY/MM/DD".
     constexpr std::format_parse_context::iterator parse(std::format_parse_context& ctx) {
+        // NOLINTBEGIN(readability-qualified-auto): the iterator is a class on MSVC and libc++ but a const char* on libstdc++
         auto it = ctx.begin();
         const auto start = it;
+        // NOLINTEND(readability-qualified-auto)
         while (it != ctx.end() && *it != '}') {
             ++it;
         }

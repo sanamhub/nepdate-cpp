@@ -4,6 +4,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include <array>
 #include <chrono>
 #include <climits>
 
@@ -54,10 +55,13 @@ TEST_CASE("ALGORITHM section 9 reference values", "[civil]") {
         unsigned ad_m, ad_d;
         unsigned weekday; // 0 = Sunday
     };
-    constexpr row rows[] = {
-        {1901, 1, 1, 1844, 4, 11, 4}, {2081, 1, 1, 2024, 4, 13, 6},   {2082, 1, 1, 2025, 4, 14, 1},
-        {2083, 1, 1, 2026, 4, 14, 2}, {2199, 12, 30, 2143, 4, 15, 9},
-    };
+    constexpr std::array<row, 5> rows = {{
+        {1901, 1, 1, 1844, 4, 11, 4},
+        {2081, 1, 1, 2024, 4, 13, 6},
+        {2082, 1, 1, 2025, 4, 14, 1},
+        {2083, 1, 1, 2026, 4, 14, 2},
+        {2199, 12, 30, 2143, 4, 15, 9},
+    }};
     for (const row& r : rows) {
         const date bs = make_date(r.bs_y, r.bs_m, r.bs_d).value();
         CHECK(bs.to_year_month_day() == ymd(r.ad_y, r.ad_m, r.ad_d));

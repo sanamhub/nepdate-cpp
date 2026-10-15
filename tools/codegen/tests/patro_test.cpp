@@ -4,7 +4,9 @@
 #include "calendar.hpp"
 #include "patro.hpp"
 
+#include <catch2/catch_message.hpp>
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
 #include <cstddef>
@@ -13,7 +15,7 @@
 #include <ios>
 #include <iterator>
 #include <string>
-#include <utility>
+#include <string_view>
 #include <vector>
 
 using Catch::Matchers::ContainsSubstring;
@@ -24,7 +26,7 @@ namespace {
 std::string read_file(const std::string& path) {
     std::ifstream in(path, std::ios::binary);
     REQUIRE(in.is_open());
-    return std::string(std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>());
+    return {std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>()};
 }
 
 struct built {

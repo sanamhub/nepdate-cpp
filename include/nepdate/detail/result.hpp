@@ -73,10 +73,10 @@ template <class T> class [[nodiscard]] result {
 
   public:
     // Implicit, so `return d;` and `return errc::out_of_range;` work.
-    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-member-init): error_ marks value_ as active
     constexpr result(T value) noexcept : value_(value) {}
-    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-member-init): value_ stays inactive on an error
-    constexpr result(errc error) noexcept : error_(error) {}
+    // empty_ is the active member on an error, so a constexpr error result is fully initialised
+    // (GCC 14.3+ rejects a constant whose union has no active member).
+    constexpr result(errc error) noexcept : empty_{}, error_(error) {}
 
     /// Returns true when the result holds a value.
     [[nodiscard]] constexpr bool has_value() const noexcept { return error_ == errc{}; }
@@ -125,8 +125,11 @@ template <class T> class [[nodiscard]] result {
     }
 
   private:
-    // A union, so T needs no default constructor (date has none, D-01).
+    struct empty {};
+    // A union, so T needs no default constructor (date has none, D-01). empty_ is active when
+    // error_ is set, value_ otherwise.
     union {
+        empty empty_;
         T value_;
     };
     errc error_{};

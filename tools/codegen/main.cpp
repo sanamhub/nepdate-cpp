@@ -12,10 +12,10 @@
 
 #include <algorithm>
 #include <cstddef>
-#include <cstdio>
 #include <filesystem>
 #include <fstream>
 #include <ios>
+#include <iostream>
 #include <iterator>
 #include <optional>
 #include <span>
@@ -81,25 +81,25 @@ bool write_file(const fs::path& path, const std::string& content) {
 int main(int argc, char** argv) {
     const auto opts = parse_args(std::span<char*>(argv, static_cast<std::size_t>(argc)));
     if (!opts) {
-        std::fputs("usage: nepdate_codegen --shared <dir> --out <dir> [--check]\n", stderr);
+        std::cerr << "usage: nepdate_codegen --shared <dir> --out <dir> [--check]\n";
         return 2;
     }
 
     const fs::path calendar_path = opts->shared / "data" / "calendar" / "bs-calendar.json";
     const auto calendar_json = read_file(calendar_path);
     if (!calendar_json) {
-        std::fprintf(stderr, "cannot read %s\n", calendar_path.generic_string().c_str());
+        std::cerr << "cannot read " << calendar_path.generic_string() << '\n';
         return 2;
     }
     const auto parsed = nepdate::codegen::parse_calendar(*calendar_json);
     if (!parsed.error.empty()) {
-        std::fprintf(stderr, "%s\n", parsed.error.c_str());
+        std::cerr << parsed.error << '\n';
         return 2;
     }
 
     const auto built = nepdate::codegen::build_tables(parsed.value);
     if (!built.error.empty()) {
-        std::fprintf(stderr, "%s\n", built.error.c_str());
+        std::cerr << built.error << '\n';
         return 2;
     }
 
@@ -114,27 +114,27 @@ int main(int argc, char** argv) {
     }
     std::sort(patro_paths.begin(), patro_paths.end());
     if (patro_paths.empty()) {
-        std::fprintf(stderr, "no patro year files under %s\n", patro_dir.generic_string().c_str());
+        std::cerr << "no patro year files under " << patro_dir.generic_string() << '\n';
         return 2;
     }
     std::vector<std::string> patro_jsons;
     for (const fs::path& path : patro_paths) {
         const auto text = read_file(path);
         if (!text) {
-            std::fprintf(stderr, "cannot read %s\n", path.generic_string().c_str());
+            std::cerr << "cannot read " << path.generic_string() << '\n';
             return 2;
         }
         patro_jsons.push_back(*text);
     }
     const auto patro_parsed = nepdate::codegen::parse_patro(patro_jsons);
     if (!patro_parsed.error.empty()) {
-        std::fprintf(stderr, "%s\n", patro_parsed.error.c_str());
+        std::cerr << patro_parsed.error << '\n';
         return 2;
     }
     const auto patro =
         nepdate::codegen::build_patro_tables(patro_parsed.value, built.value.month_start);
     if (!patro.error.empty()) {
-        std::fprintf(stderr, "%s\n", patro.error.c_str());
+        std::cerr << patro.error << '\n';
         return 2;
     }
 
@@ -157,10 +157,10 @@ int main(int argc, char** argv) {
             continue;
         }
         if (opts->check) {
-            std::fprintf(stderr, "out of date: %s\n", path.generic_string().c_str());
+            std::cerr << "out of date: " << path.generic_string() << '\n';
             status = 1;
         } else if (!write_file(path, file.content)) {
-            std::fprintf(stderr, "cannot write %s\n", path.generic_string().c_str());
+            std::cerr << "cannot write " << path.generic_string() << '\n';
             return 2;
         }
     }

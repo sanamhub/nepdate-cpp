@@ -1,6 +1,7 @@
 // C4-05: from_sys_time, today and the <chrono> interop (PORT-PLAN phase 4).
 
 #include <nepdate/date.hpp>
+#include <nepdate/detail/calendar_tables.hpp>
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -77,8 +78,10 @@ TEST_CASE("from_sys_time floors before the epoch", "[time]") {
 TEST_CASE("today is the current instant shifted by the offset", "[time]") {
     const nepdate::result<date> t = nepdate::today();
     REQUIRE(t.has_value());
+    // NOLINTBEGIN(misc-include-cleaner): floor and days live in an internal libstdc++ header; <chrono> is the correct include
     const chr::sys_seconds now = chr::floor<chr::seconds>(chr::system_clock::now());
     CHECK(*t == nepdate::from_sys_days(chr::floor<chr::days>(now + nepdate::nepal_utc_offset)));
+    // NOLINTEND(misc-include-cleaner)
     // The today-in-zone form: an explicit offset changes the day where the zones differ.
     CHECK(nepdate::today(chr::minutes{0}).has_value());
 }

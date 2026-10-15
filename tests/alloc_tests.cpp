@@ -25,8 +25,10 @@ namespace {
 constexpr int kRuns = 1000;
 
 // Keeps the optimiser from dropping the measured calls.
+// NOLINTBEGIN(cppcoreguidelines-avoid-non-const-global-variables): sinks the optimiser can't see through
 volatile std::size_t g_sink = 0;
 int* volatile g_escape = nullptr;
+// NOLINTEND(cppcoreguidelines-avoid-non-const-global-variables)
 
 void sink(std::size_t value) {
     g_sink = g_sink + value;
@@ -126,7 +128,8 @@ TEST_CASE("date_range construction and a full iteration of of_year(2081) allocat
         sink(r->size() + month->size() + year->size() + static_cast<std::size_t>(r->contains(a)));
     });
     const auto iterate = allocations_of([](int /*i*/) {
-        for (const date d : nepdate::date_range::of_year(2081).value()) {
+        const nepdate::date_range year = nepdate::date_range::of_year(2081).value();
+        for (const date d : year) {
             sink(static_cast<std::size_t>(d.day()));
         }
     });
@@ -176,7 +179,7 @@ TEST_CASE("every to_chars_* writes without allocating", "[alloc]") {
 TEST_CASE("month and weekday names allocate nothing", "[alloc]") {
     const date d = make_date(2081, 4, 15).value();
     const auto n = allocations_of([d](int i) {
-        const nepdate::month m = static_cast<nepdate::month>(1 + i % 12);
+        const auto m = static_cast<nepdate::month>(1 + i % 12);
         sink(nepdate::month_name(m, nepdate::lang::en).size() +
              nepdate::month_name(m, nepdate::lang::ne).size() +
              nepdate::month_short_name(m, nepdate::lang::en).size() +

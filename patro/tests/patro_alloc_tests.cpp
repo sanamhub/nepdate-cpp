@@ -9,6 +9,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include <cstddef>
+#include <span>
 #include <string>
 
 using nepdate::date;
@@ -22,7 +23,9 @@ namespace {
 constexpr int kRuns = 1000;
 
 // Keeps the optimiser from dropping the measured calls.
+// NOLINTBEGIN(cppcoreguidelines-avoid-non-const-global-variables): a sink the optimiser can't see through
 volatile std::size_t g_sink = 0;
+// NOLINTEND(cppcoreguidelines-avoid-non-const-global-variables)
 
 void sink(std::size_t value) {
     g_sink = g_sink + value;

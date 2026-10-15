@@ -4,7 +4,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
-#include <cstdio>
+#include <format>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -25,9 +25,7 @@ std::string literal(std::string_view text) {
         if (byte >= 0x20U && byte < 0x7FU && c != '"' && c != '\\') {
             out += c;
         } else {
-            std::array<char, 8> octal{};
-            std::snprintf(octal.data(), octal.size(), "\\%03o", static_cast<unsigned>(byte));
-            out += octal.data();
+            out += std::format("\\{:03o}", static_cast<unsigned>(byte));
         }
     }
     out += '"';
@@ -59,12 +57,10 @@ std::string code_points(std::string_view text) {
         }
         non_ascii = non_ascii || extra > 0;
         i += extra + 1;
-        std::array<char, 16> buf{};
-        std::snprintf(buf.data(), buf.size(), "U+%04X", static_cast<unsigned>(cp));
         if (!out.empty()) {
             out += ' ';
         }
-        out += buf.data();
+        out += std::format("U+{:04X}", static_cast<unsigned>(cp));
     }
     return non_ascii ? out : std::string{};
 }

@@ -4,6 +4,7 @@
 #include <nepdate/format.hpp>
 #include <nepdate/patro.hpp>
 
+#include <catch2/catch_message.hpp>
 #include <catch2/catch_test_macros.hpp>
 
 #include <cstddef>
@@ -12,6 +13,9 @@
 #include <string_view>
 #include <type_traits>
 #include <vector>
+
+// NOLINTBEGIN(bugprone-unchecked-optional-access): every std::optional is dereferenced
+// after a REQUIRE(has_value()) guard, which the purely syntactic check cannot see.
 
 using nepdate::date;
 using nepdate::lang;
@@ -126,3 +130,4 @@ TEST_CASE("the patro types have the ADR-0002 section 7 layout", "[patro]") {
     STATIC_REQUIRE(std::is_trivially_copyable_v<patro::tithi>);
     STATIC_REQUIRE(std::is_trivially_copyable_v<patro::event>);
 }
+// NOLINTEND(bugprone-unchecked-optional-access)

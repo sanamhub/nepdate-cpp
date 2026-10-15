@@ -6,6 +6,7 @@
 
 #include "../src/patro_tables.hpp"
 
+#include <nepdate/detail/calendar_tables.hpp>
 #include <nepdate/patro.hpp>
 
 #include <catch2/catch_test_macros.hpp>
@@ -13,6 +14,9 @@
 #include <cstddef>
 #include <cstdint>
 #include <string_view>
+
+// NOLINTBEGIN(bugprone-unchecked-optional-access): every std::optional is dereferenced
+// after a REQUIRE(has_value()) guard, which the purely syntactic check cannot see.
 
 using nepdate::date;
 using nepdate::lang;
@@ -28,8 +32,8 @@ date d(int y, int m, int day) {
 
 std::string_view name_of(std::size_t k, lang l) {
     const std::uint32_t i = static_cast<std::uint32_t>(k) * 2U + (l == lang::ne ? 0U : 1U);
-    return std::string_view(detail::kNameBlob.data() + detail::kNameOffsets[i],
-                            detail::kNameOffsets[i + 1] - detail::kNameOffsets[i]);
+    return {detail::kNameBlob.data() + detail::kNameOffsets[i],
+            detail::kNameOffsets[i + 1] - detail::kNameOffsets[i]};
 }
 
 } // namespace
@@ -297,3 +301,4 @@ TEST_CASE("CalendarDataTests.CalendarInfo_EventArrays_AreNeverNull", "[cs]") {
     // The port's span is always valid; a day with events yields a non-empty one.
     CHECK_FALSE(patro::info(d(2081, 1, 1)).events().empty());
 }
+// NOLINTEND(bugprone-unchecked-optional-access)

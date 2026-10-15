@@ -1,6 +1,7 @@
 // C1-04: serial conversion (ADR-0002 §3).
 
 #include <nepdate/date.hpp>
+#include <nepdate/detail/calendar_tables.hpp>
 #include <nepdate/detail/serial.hpp>
 
 #include <catch2/catch_test_macros.hpp>

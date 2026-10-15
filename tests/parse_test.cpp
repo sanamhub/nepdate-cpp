@@ -3,11 +3,14 @@
 
 #include "vectors.hpp"
 
+#include <nepdate/date.hpp>
 #include <nepdate/format.hpp>
 #include <nepdate/parse.hpp>
 
+#include <catch2/catch_message.hpp>
 #include <catch2/catch_test_macros.hpp>
 
+#include <array>
 #include <cstddef>
 #include <string>
 #include <string_view>
@@ -180,7 +183,8 @@ TEST_CASE("to_chars then parse gives the same date for every 32nd day", "[parse]
 TEST_CASE("the YYYY<sep>MM<sep>DD fast path gives the same result as the general loop", "[parse]") {
     // A leading space makes the input 11 bytes, so it skips the fast path, and the loop ignores
     // leading separators: parse(" " + s) is the loop's answer for s.
-    constexpr std::string_view years[] = {"0000", "1900", "1901", "2081", "2199", "2200", "9999"};
+    constexpr std::array<std::string_view, 7> years = {"0000", "1900", "1901", "2081",
+                                                       "2199", "2200", "9999"};
     constexpr std::string_view seps = "-/._| ";
     std::size_t checked = 0;
     std::size_t mismatches = 0;
@@ -201,7 +205,7 @@ TEST_CASE("the YYYY<sep>MM<sep>DD fast path gives the same result as the general
             }
         }
     }
-    CHECK(checked == 7U * 100U * 34U * 6U);
+    CHECK(checked == std::size_t{7U} * 100U * 34U * 6U);
     CHECK(mismatches == 0);
     // Backslash separators, and near misses that must not take the fast path.
     CHECK(parse("2081\\04\\15") == make_date(2081, 4, 15));

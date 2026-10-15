@@ -2,8 +2,10 @@
 
 #include "vectors.hpp"
 
+#include <nepdate/date.hpp>
 #include <nepdate/fiscal_year.hpp>
 
+#include <catch2/catch_message.hpp>
 #include <catch2/catch_test_macros.hpp>
 
 #include <array>
@@ -49,7 +51,7 @@ std::string label_into_buffer(fiscal_year fy, lang l) {
     std::array<char, 64> buffer{};
     const auto r = fy.to_chars_label(buffer.data(), buffer.data() + buffer.size(), l);
     CHECK(r.ec == std::errc{});
-    return std::string(buffer.data(), r.ptr);
+    return {buffer.data(), r.ptr};
 }
 
 } // namespace

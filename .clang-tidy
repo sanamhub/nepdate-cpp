@@ -6,6 +6,18 @@
 # - modernize-use-trailing-return-type: docs/API.md uses leading return types.
 # - misc-non-private-member-variables-in-classes: aggregates such as date_diff have public members
 #   on purpose (docs/API.md).
+# - readability-identifier-length: the port's date notation y/m/d is the documented API and the
+#   C# original (PARITY §1), and the calendar algorithms use their published single-letter names
+#   (Neri-Schneider and Hinnant in ALGORITHM §5: y, m, d, j, c, z, era, doe, yoe, mp); renaming
+#   them would diverge from the spec the port transcribes. The 3-character minimum also flags the
+#   loop indices i/j throughout tests and tools.
+# - cppcoreguidelines-pro-bounds-pointer-arithmetic: the public output API is std::to_chars style
+#   (char* first, char* last), so every writer walks a caller's buffer by pointer. Each walk is
+#   bounded by an explicit last/size check; ASan, UBSan and the libFuzzer targets cover them.
+# - bugprone-easily-swappable-parameters: the public API is make_date/from_gregorian(year, month,
+#   day), a documented, spec-mandated order that the exhaustive round-trip and catalogue tests
+#   cover; the detail helpers use the (first, last, ...) iterator-pair convention. The check cannot
+#   be satisfied without wrapping primitives or renaming to less informative names.
 Checks: >
   -*,
   bugprone-*,
@@ -13,11 +25,14 @@ Checks: >
   cppcoreguidelines-*,
   -cppcoreguidelines-avoid-magic-numbers,
   -cppcoreguidelines-pro-bounds-constant-array-index,
+  -cppcoreguidelines-pro-bounds-pointer-arithmetic,
+  -bugprone-easily-swappable-parameters,
   modernize-*,
   -modernize-use-trailing-return-type,
   performance-*,
   readability-*,
   -readability-magic-numbers,
+  -readability-identifier-length,
   misc-*,
   -misc-non-private-member-variables-in-classes
 WarningsAsErrors: '*'
@@ -25,3 +40,10 @@ HeaderFilterRegex: '(include|patro)/'
 CheckOptions:
   # The NEPDATE_VERSION_* macros are API (docs/API.md), so they can't become constexpr variables.
   cppcoreguidelines-macro-usage.AllowedRegexp: '^NEPDATE_'
+  # nlohmann/json.hpp declares nlohmann::json in json_fwd.hpp and includes it; include-cleaner
+  # can't see that facade, so it wants the tools to include json_fwd.hpp directly. Treat the whole
+  # third-party header family as always available instead.
+  misc-include-cleaner.IgnoreHeaders: 'nlohmann/.*'
+  # Catch2's REQUIRE/CHECK expand to branches; count only the code a person wrote, so a long
+  # TEST_CASE of assertions is not "complex" while a real nested loop still is.
+  readability-function-cognitive-complexity.IgnoreMacros: true

@@ -1,6 +1,7 @@
 #include "calendar.hpp"
 
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 #include <nlohmann/json.hpp>
 
@@ -19,7 +20,7 @@ namespace {
 
 std::string read_calendar_json() {
     std::ifstream in(NEPDATE_SHARED_DIR "/data/calendar/bs-calendar.json", std::ios::binary);
-    return std::string(std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>());
+    return {std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>()};
 }
 
 nlohmann::json calendar_doc() {
