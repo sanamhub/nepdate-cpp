@@ -9,6 +9,7 @@
 #include <string>
 #include <string_view>
 #include <utility>
+#include <vector>
 
 namespace nepdate::codegen {
 namespace {
@@ -73,7 +74,7 @@ bool name_pair(const json* object, std::pair<std::string, std::string>& out) {
 
 std::string date_text(int year, int month, int day) {
     const auto pad = [](int value) {
-        std::string s = std::to_string(value);
+        const std::string s = std::to_string(value);
         return s.size() < 2 ? "0" + s : s;
     };
     return std::to_string(year) + "-" + pad(month) + "-" + pad(day);
@@ -106,9 +107,8 @@ std::string char_literal(unsigned char byte) {
     if (byte >= 0x20U && byte < 0x7FU && byte != '\'' && byte != '\\') {
         return std::string("'") + static_cast<char>(byte) + "'";
     }
-    return "'\\" + std::to_string(static_cast<unsigned>(byte / 64U)) +
-           std::to_string(static_cast<unsigned>(byte / 8U % 8U)) +
-           std::to_string(static_cast<unsigned>(byte % 8U)) + "'";
+    return "'\\" + std::to_string(byte / 64U) + std::to_string(byte / 8U % 8U) +
+           std::to_string(byte % 8U) + "'";
 }
 
 // One name's bytes as char literals, 16 per line.
@@ -235,11 +235,8 @@ patro_tables_result build_patro_tables(const patro_input& input,
     const auto valid = [&](const patro_day& d) -> bool {
         const auto y = static_cast<std::uint32_t>(d.year) - static_cast<std::uint32_t>(kMinYear);
         const auto i = y * kMonthsPerYear + static_cast<std::uint32_t>(d.month) - 1U;
-        if (i >= months || d.day < 1 ||
-            static_cast<std::uint32_t>(d.day) > month_start[i + 1] - month_start[i]) {
-            return false;
-        }
-        return true;
+        return i < months && d.day >= 1 &&
+               static_cast<std::uint32_t>(d.day) <= month_start[i + 1] - month_start[i];
     };
     for (const patro_day& d : input.days) {
         if (!valid(d)) {
@@ -450,7 +447,11 @@ std::string render_patro_tables(const patro_tables& t,
     out += "inline constexpr std::array<char, " + std::to_string(t.name_blob.size()) +
            "> kNameBlob = {\n";
     for (const auto& [np, en] : t.names) {
-        out += "    // " + np + " (" + en + ")\n";
+        out += "    // ";
+        out += np;
+        out += " (";
+        out += en;
+        out += ")\n";
         blob_bytes(out, np);
         blob_bytes(out, en);
     }

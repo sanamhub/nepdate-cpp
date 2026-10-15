@@ -20,7 +20,9 @@ endif()
 catch_discover_tests(nepdate_patro_tests)
 
 # C4-06: allocation counting for the patro paths, with the same counter as the core allocation
-# tests (ADR-0004 section 3).
+# tests (ADR-0004 section 3). ThreadSanitizer intercepts the global operators itself, so this
+# executable can't link under tsan (C6).
+if(NOT NEPDATE_SANITIZE MATCHES "thread")
 add_executable(nepdate_patro_alloc_tests
     "${PROJECT_SOURCE_DIR}/tests/alloc_counter.cpp"
     "${PROJECT_SOURCE_DIR}/tests/alloc_counter.hpp"
@@ -33,6 +35,7 @@ if(NEPDATE_NO_EXCEPTIONS)
     target_compile_definitions(nepdate_patro_alloc_tests PRIVATE CATCH_CONFIG_DISABLE_EXCEPTIONS)
 endif()
 catch_discover_tests(nepdate_patro_alloc_tests)
+endif()
 
 # C4-03 AC: a wrong calendar fingerprint must fail to compile, and a control build without the
 # fake value must succeed. Both targets stay out of the normal build; the tests build them.

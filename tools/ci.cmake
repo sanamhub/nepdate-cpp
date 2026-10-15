@@ -272,7 +272,7 @@ if("coverage" IN_LIST gates)
         ci_preset(coverage)
         set(coverage_dir "${root}/build/${PRESET_PREFIX}coverage")
         set(gcovr_args --root "${root}" --filter "${root}/include/" --filter "${root}/patro/"
-            "${coverage_dir}")
+            --gcov-ignore-parse-errors=negative_hits.warn "${coverage_dir}")
         if(ci_rc EQUAL 0)
             set(ci_step gcovr)
             ci_run("${gcovr}" ${gcovr_args} --json-summary "${coverage_dir}/coverage.json")

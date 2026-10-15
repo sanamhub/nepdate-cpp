@@ -4,8 +4,9 @@
 #include <nepdate/nepdate.hpp>
 
 #include <array>
+#include <charconv>
 #include <cstddef>
-#include <cstdio>
+#include <iostream>
 
 int main() {
     const nepdate::date d = nepdate::from_gregorian(2024, 7, 30).value();
@@ -13,6 +14,6 @@ int main() {
     const std::to_chars_result r =
         nepdate::to_chars_iso(buffer.data(), buffer.data() + buffer.size(), d);
     buffer[static_cast<std::size_t>(r.ptr - buffer.data())] = '\n';
-    std::fputs(buffer.data(), stdout);
+    std::cout << buffer.data();
     return 0;
 }

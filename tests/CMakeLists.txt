@@ -46,7 +46,9 @@ endif()
 catch_discover_tests(nepdate_tests)
 
 # C1-08: allocation counting replaces the global operator new, so it gets its own executable and
-# Catch2's own allocations stay outside the measured loops (ADR-0004 section 3).
+# Catch2's own allocations stay outside the measured loops (ADR-0004 section 3). ThreadSanitizer
+# intercepts the global operators itself, so this executable can't link under tsan (C6).
+if(NOT NEPDATE_SANITIZE MATCHES "thread")
 add_executable(nepdate_alloc_tests alloc_counter.cpp alloc_tests.cpp)
 target_link_libraries(nepdate_alloc_tests PRIVATE nepdate::nepdate Catch2::Catch2WithMain)
 nepdate_set_warnings(nepdate_alloc_tests)
@@ -55,6 +57,7 @@ if(NEPDATE_NO_EXCEPTIONS)
     target_compile_definitions(nepdate_alloc_tests PRIVATE CATCH_CONFIG_DISABLE_EXCEPTIONS)
 endif()
 catch_discover_tests(nepdate_alloc_tests)
+endif()
 
 # C3-07: libFuzzer targets for strict and lenient parsing, built only by the fuzz preset (Clang
 # with -fsanitize=address,undefined,fuzzer-no-link). The seed corpus in fuzz/corpus runs through
