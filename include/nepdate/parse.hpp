@@ -77,9 +77,7 @@ inline constexpr std::string_view kLenientSeparators = "-/_\\ |,";
     std::size_t i = 0;
     while (i < t.size()) {
         const auto c = static_cast<unsigned char>(t[i]);
-        if (c == '.') {
-            ++i;
-        } else if (c >= '0' && c <= '9') {
+        if (c == '.' || (c >= '0' && c <= '9')) {
             ++i;
         } else if (c == 0xE0U && t.size() - i >= 3 &&
                    static_cast<unsigned char>(t[i + 1]) == 0xA5U &&

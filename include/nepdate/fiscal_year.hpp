@@ -75,7 +75,8 @@ class fiscal_year {
         if (!last) {
             return last.error();
         }
-        return *date_range::make(*first, *last);
+        return *date_range::make( // NOLINT(bugprone-unchecked-optional-access): first < last here
+            *first, *last);
     }
 
     /// Returns the days of quarter q of this fiscal year, or out_of_range when they are outside
@@ -94,7 +95,8 @@ class fiscal_year {
         if (!first) {
             return first.error();
         }
-        return *date_range::make(*first, make_date(year, months[2], 1)->last_of_month());
+        return *date_range::make( // NOLINT(bugprone-unchecked-optional-access): first < last here
+            *first, make_date(year, months[2], 1)->last_of_month());
     }
 
     /// Writes the label "2082/83" (lang::en) or the same with Devanagari digits (lang::ne) into
@@ -133,7 +135,7 @@ class fiscal_year {
         std::array<char, 38> buffer{};
         const std::to_chars_result r =
             to_chars_label(buffer.data(), buffer.data() + buffer.size(), l);
-        return std::string(buffer.data(), r.ptr);
+        return {buffer.data(), r.ptr};
     }
 
     friend constexpr bool operator==(fiscal_year, fiscal_year) noexcept = default;

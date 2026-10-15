@@ -119,8 +119,9 @@ class date {
 
     /// Returns the day of the year, 1..367.
     [[nodiscard]] constexpr int day_of_year() const noexcept {
-        const std::uint32_t year_start =
-            detail::kMonthStart[detail::month_index(*this) / 12U * 12U];
+        const std::size_t year_start_month =
+            static_cast<std::size_t>(detail::month_index(*this) / 12U) * 12U;
+        const std::uint32_t year_start = detail::kMonthStart[year_start_month];
         return static_cast<int>(detail::to_serial(*this) - year_start + 1U);
     }
 
