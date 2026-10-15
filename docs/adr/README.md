@@ -11,3 +11,4 @@ once Accepted and C0 is merged; supersede with a new ADR.
 | [0003](0003-api-conventions-errors-and-parity.md) | API conventions, errors and parity mapping | Accepted |
 | [0004](0004-testing-and-quality-gates.md) | Testing and quality gates | Accepted |
 | [0005](0005-releases.md) | Releases | Accepted |
+| [0006](0006-result-rvalue-accessors.md) | `result<T>` accessors return by value on an rvalue (amends 0003) | Accepted |

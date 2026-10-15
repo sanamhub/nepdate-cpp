@@ -34,6 +34,8 @@ PR, and waits for the human review before the next phase.**
 | C3 | `C3-format-and-parse.md` | names, `to_chars_*`, `std::formatter`, strict and lenient parse, fuzzing |
 | C4 | `C4-patro-and-interop.md` | `nepdate::patro` library, isolation gate, `<chrono>` interop, `today` |
 | C5 | `C5-docs-bench-release.md` | doc comments, README examples, benchmarks vs competitors and C#, packages, release workflow, v0.1.0 |
+| C6 | (no plan file; review follow-up) | clang-tidy gate passes; instrumented patro; library-only coverage |
+| C7 | `C7-hardening.md` | `result<T>` rvalue accessors (ADR-0006), `parse_lenient` split, B8 on MSVC, re-bench |
 
 ## The C# test catalogue
 
