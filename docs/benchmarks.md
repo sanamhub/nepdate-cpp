@@ -157,8 +157,9 @@ Misses to report to the human:
   faster (and the MSVC gain was within noise), so the review reverted it. A callgrind profile
   (clang, WSL) puts 47 % of the instructions in the grid loop (iterator dereference through
   from_serial, plus the consume), 26 % in patro::info (to_serial plus four table reads) and 17 % in
-  event::name and tithi::name. The library fix is phase C8: a date_range iterator that steps the
-  date itself, and a patro lookup that doesn't convert back to a serial.
+  event::name and tithi::name. Closing the gap is left to a profile-led pass on a quiet machine before
+  the release run (the loaded laptop moves even B1 by a few percent between runs); candidates are
+  the per-day out-of-line `info` call and the name lookups, not the benchmark loop.
 - **B1 and B2 on MSVC, B7 on both.** 7.09 ns against 6, 8.94 ns against 8, and 12.81 ns (MSVC) /
   10.22 ns (Clang) against 10. B1 and B7 on MSVC missed in C5 too; these are within the noise of
   the loaded machine (the CPU never left its 3.1 GHz base clock).
