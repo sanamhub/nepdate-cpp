@@ -58,15 +58,14 @@ The three programs in `examples/` (built and run by CTest) show the main feature
 ```cpp
 #include <nepdate/nepdate.hpp>
 
-#include <cstdio>
+#include <iostream>
 
 int main() {
     const nepdate::date d = nepdate::make_date(2081, 4, 15).value();
     const auto ad = d.to_year_month_day();
-    std::printf("%s\n", nepdate::to_string(d).c_str());
-    std::printf("%d-%02u-%02u\n", static_cast<int>(ad.year()), static_cast<unsigned>(ad.month()),
-                static_cast<unsigned>(ad.day()));
-    std::printf("%s\n", nepdate::to_string(nepdate::from_gregorian(ad).value()).c_str());
+    std::cout << nepdate::to_string(d) << '\n';
+    std::cout << ad << '\n';
+    std::cout << nepdate::to_string(nepdate::from_gregorian(ad).value()) << '\n';
 }
 ```
 
@@ -75,18 +74,17 @@ int main() {
 ```cpp
 #include <nepdate/patro.hpp>
 
-#include <cstdio>
-#include <string>
+#include <iostream>
 
 int main() {
     const nepdate::date d = nepdate::make_date(2081, 4, 15).value();
     const nepdate::patro::day_info day = nepdate::patro::info(d);
     if (const auto t = day.tithi()) {
-        std::printf("%s\n", std::string(t->name(nepdate::lang::en)).c_str());
+        std::cout << t->name(nepdate::lang::en) << '\n';
     }
-    std::printf("holiday: %d\n", day.is_public_holiday() ? 1 : 0);
+    std::cout << "holiday: " << (day.is_public_holiday() ? 1 : 0) << '\n';
     for (const nepdate::patro::event e : day.events()) {
-        std::printf("%s\n", std::string(e.name(nepdate::lang::en)).c_str());
+        std::cout << e.name(nepdate::lang::en) << '\n';
     }
 }
 ```
@@ -96,13 +94,13 @@ int main() {
 ```cpp
 #include <nepdate/nepdate.hpp>
 
-#include <cstdio>
+#include <iostream>
 
 int main() {
     const nepdate::result<nepdate::date> strict = nepdate::parse("2081/04/15");
     const nepdate::result<nepdate::date> lenient = nepdate::parse_lenient("2081 Shrawan 15");
-    std::printf("%s\n", nepdate::to_string(strict.value()).c_str());
-    std::printf("%s\n", nepdate::to_string(lenient.value()).c_str());
+    std::cout << nepdate::to_string(strict.value()) << '\n';
+    std::cout << nepdate::to_string(lenient.value()) << '\n';
 }
 ```
 

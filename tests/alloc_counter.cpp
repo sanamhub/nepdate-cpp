@@ -11,11 +11,14 @@
 
 namespace {
 
+// NOLINTBEGIN(cppcoreguidelines-avoid-non-const-global-variables): the counter must outlive every allocation
 std::atomic<std::size_t> g_allocations{0};
+// NOLINTEND(cppcoreguidelines-avoid-non-const-global-variables)
 
+// NOLINTBEGIN(cppcoreguidelines-no-malloc, cppcoreguidelines-owning-memory): operator new and delete are implemented with malloc and free on purpose
 void* allocate(std::size_t size) noexcept {
     g_allocations.fetch_add(1, std::memory_order_relaxed);
-    return std::malloc(size == 0 ? 1 : size); // NOLINT(cppcoreguidelines-no-malloc): this is new
+    return std::malloc(size == 0 ? 1 : size);
 }
 
 void* allocate_aligned(std::size_t size, std::align_val_t align) noexcept {
@@ -26,7 +29,7 @@ void* allocate_aligned(std::size_t size, std::align_val_t align) noexcept {
 #if defined(_WIN32)
     return _aligned_malloc(rounded, alignment);
 #else
-    return std::aligned_alloc(alignment, rounded); // NOLINT(cppcoreguidelines-no-malloc): new
+    return std::aligned_alloc(alignment, rounded);
 #endif
 }
 
@@ -38,16 +41,17 @@ void* checked(void* p) noexcept {
 }
 
 void release(void* p) noexcept {
-    std::free(p); // NOLINT(cppcoreguidelines-no-malloc): this is operator delete
+    std::free(p);
 }
 
 void release_aligned(void* p) noexcept {
 #if defined(_WIN32)
     _aligned_free(p);
 #else
-    std::free(p); // NOLINT(cppcoreguidelines-no-malloc): this is operator delete
+    std::free(p);
 #endif
 }
+// NOLINTEND(cppcoreguidelines-no-malloc, cppcoreguidelines-owning-memory)
 
 } // namespace
 

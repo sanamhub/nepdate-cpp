@@ -5,11 +5,13 @@
 #include "../vectors.hpp"
 #include "fuzz_property.hpp"
 
+#include <catch2/catch_message.hpp>
 #include <catch2/catch_test_macros.hpp>
 
 #include <cstddef>
 #include <filesystem>
 #include <fstream>
+#include <ios>
 #include <iterator>
 #include <set>
 #include <string>

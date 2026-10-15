@@ -21,6 +21,9 @@
 #include <optional>
 #include <vector>
 
+// NOLINTBEGIN(bugprone-unchecked-optional-access): every std::optional is dereferenced
+// after a REQUIRE(has_value()) guard, which the purely syntactic check cannot see.
+
 using nepdate::date;
 using nepdate::date_range;
 using nepdate::errc;
@@ -871,3 +874,4 @@ TEST_CASE("NepaliDateRangeExtendedTests.OperatorNotEquals_DifferentRanges_Return
     CHECK(a != b);
     CHECK_FALSE(a == b);
 }
+// NOLINTEND(bugprone-unchecked-optional-access)

@@ -12,12 +12,13 @@
 #include <nepdate/format.hpp>
 #include <nepdate/parse.hpp>
 
+#include <catch2/catch_message.hpp>
 #include <catch2/catch_test_macros.hpp>
 
 #include <cstddef>
 #include <string>
 #include <string_view>
-#include <version>
+#include <version> // IWYU pragma: keep: __cpp_lib_format comes from here
 
 #if defined(__cpp_lib_format) && __cpp_lib_format >= 201907L
 #include <format>
@@ -29,11 +30,9 @@
 using nepdate::date;
 using nepdate::date_order;
 using nepdate::lang;
-using nepdate::long_format;
 using nepdate::make_date;
 using nepdate::month;
 using nepdate::separator;
-using nepdate::short_format;
 
 namespace {
 

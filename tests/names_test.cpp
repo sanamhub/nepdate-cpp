@@ -1,13 +1,14 @@
 // C3-01: month and weekday names (FORMATTING section 1) and to_chars_number. This file is UTF-8;
 // the library headers hold the same text as octal escapes.
 
+#include <nepdate/date.hpp>
 #include <nepdate/format.hpp>
 
+#include <catch2/catch_message.hpp>
 #include <catch2/catch_test_macros.hpp>
 
 #include <array>
 #include <chrono>
-#include <cstddef>
 #include <string>
 #include <string_view>
 #include <system_error>
@@ -26,7 +27,7 @@ std::string number(unsigned value, int width, lang l) {
     std::array<char, 64> buf{};
     const auto r = nepdate::to_chars_number(buf.data(), buf.data() + buf.size(), value, width, l);
     REQUIRE(r.ec == std::errc{});
-    return std::string(buf.data(), r.ptr);
+    return {buf.data(), r.ptr};
 }
 
 } // namespace

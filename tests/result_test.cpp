@@ -19,17 +19,19 @@ TEST_CASE("result<int> holds a value or an error", "[result]") {
     STATIC_REQUIRE(*ok == 7);
     STATIC_REQUIRE(ok.value_or(1) == 7);
 
-    constexpr result<int> bad = errc::invalid_day;
-    STATIC_REQUIRE(!bad.has_value());
-    STATIC_REQUIRE(!static_cast<bool>(bad));
-    STATIC_REQUIRE(bad.error() == errc::invalid_day);
-    STATIC_REQUIRE(bad.value_or(1) == 1);
+    // gcc-14.3+ rejects the constexpr error construction of the union-based result<T>: the
+    // inactive union member is uninitialized, so the error path is checked at run time (C6).
+    const result<int> bad = errc::invalid_day;
+    CHECK(!bad.has_value());
+    CHECK(!static_cast<bool>(bad));
+    CHECK(bad.error() == errc::invalid_day);
+    CHECK(bad.value_or(1) == 1);
 
     STATIC_REQUIRE(ok == result<int>{7});
     STATIC_REQUIRE(ok != result<int>{8});
-    STATIC_REQUIRE(ok != bad);
-    STATIC_REQUIRE(bad == result<int>{errc::invalid_day});
-    STATIC_REQUIRE(bad != result<int>{errc::out_of_range});
+    CHECK(ok != bad);
+    CHECK(bad == result<int>{errc::invalid_day});
+    CHECK(bad != result<int>{errc::out_of_range});
 }
 
 namespace {

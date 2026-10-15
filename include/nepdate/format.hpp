@@ -454,8 +454,10 @@ template <> struct std::formatter<nepdate::date, char> {
 
     /// Takes everything up to the closing '}' as the pattern; an empty one means "YYYY/MM/DD".
     constexpr std::format_parse_context::iterator parse(std::format_parse_context& ctx) {
-        const auto* it = ctx.begin();
-        const auto* const start = it;
+        // NOLINTBEGIN(readability-qualified-auto): the iterator is a class on MSVC and libc++ but a const char* on libstdc++
+        auto it = ctx.begin();
+        const auto start = it;
+        // NOLINTEND(readability-qualified-auto)
         while (it != ctx.end() && *it != '}') {
             ++it;
         }

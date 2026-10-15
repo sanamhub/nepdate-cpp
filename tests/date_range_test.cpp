@@ -1,13 +1,18 @@
 // C2-05: date_range, its iterator and the range concepts.
 
+#include <nepdate/date.hpp>
 #include <nepdate/date_range.hpp>
 
+#include <catch2/catch_message.hpp>
 #include <catch2/catch_test_macros.hpp>
 
 #include <cstddef>
 #include <iterator>
 #include <ranges>
 #include <type_traits>
+
+// NOLINTBEGIN(bugprone-unchecked-optional-access): every std::optional is dereferenced
+// after a REQUIRE(has_value()) guard, which the purely syntactic check cannot see.
 
 using nepdate::date;
 using nepdate::date_range;
@@ -127,3 +132,4 @@ TEST_CASE("date_range works in a constant expression", "[range][constexpr]") {
                    bs(2081, 1, 1).add_days(100).value());
     STATIC_REQUIRE(date_range::of_year(2081)->contains(bs(2081, 12, 30)));
 }
+// NOLINTEND(bugprone-unchecked-optional-access)

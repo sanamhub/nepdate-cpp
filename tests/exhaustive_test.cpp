@@ -3,6 +3,7 @@
 #include "hinnant_reference.hpp"
 
 #include <nepdate/date.hpp>
+#include <nepdate/detail/calendar_tables.hpp>
 #include <nepdate/detail/civil.hpp>
 #include <nepdate/detail/serial.hpp>
 

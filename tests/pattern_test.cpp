@@ -2,8 +2,10 @@
 
 #include "vectors.hpp"
 
+#include <nepdate/date.hpp>
 #include <nepdate/format.hpp>
 
+#include <catch2/catch_message.hpp>
 #include <catch2/catch_test_macros.hpp>
 
 #include <array>

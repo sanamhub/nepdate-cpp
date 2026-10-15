@@ -9,7 +9,6 @@
 #include <catch2/generators/catch_generators.hpp>
 
 #include <climits>
-#include <cstdint>
 #include <optional>
 
 using nepdate::date;

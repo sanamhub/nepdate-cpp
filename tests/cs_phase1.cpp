@@ -365,8 +365,10 @@ TEST_CASE("NepaliDatePropertiesTests.Today_ReturnsCurrentNepaliDate", "[cs]") {
     // C# compares Today with new NepaliDate(DateTime.Today); the port compares today() with the
     // current instant shifted by Nepal's offset.
     const nepdate::date t = nepdate::today().value();
+    // NOLINTBEGIN(misc-include-cleaner): floor and days live in an internal libstdc++ header; <chrono> is the correct include
     const std::chrono::sys_seconds now = chr::floor<chr::seconds>(chr::system_clock::now());
     CHECK(t == nepdate::from_sys_days(chr::floor<chr::days>(now + nepdate::nepal_utc_offset)));
+    // NOLINTEND(misc-include-cleaner)
 }
 
 TEST_CASE("NepaliDatePropertiesTests.DayOfYear_FirstDayOfYear_Returns1", "[cs]") {
