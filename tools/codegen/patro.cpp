@@ -129,6 +129,7 @@ void blob_bytes(std::string& out, std::string_view text) {
 
 } // namespace
 
+// NOLINTNEXTLINE(readability-function-cognitive-complexity): one validation per JSON field, build-time tool
 patro_input_result parse_patro(const std::vector<std::string>& year_jsons) {
     patro_input_result result;
     for (const std::string& text : year_jsons) {
@@ -216,6 +217,7 @@ patro_input_result parse_patro(const std::vector<std::string>& year_jsons) {
     return result;
 }
 
+// NOLINTNEXTLINE(readability-function-cognitive-complexity): one pass per table, build-time tool
 patro_tables_result build_patro_tables(const patro_input& input,
                                        const std::vector<std::uint32_t>& month_start) {
     patro_tables_result result;

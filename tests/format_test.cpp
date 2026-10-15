@@ -117,6 +117,7 @@ TEST_CASE("to_string, to_iso_string and their to_chars forms", "[format]") {
           "2081/04/15");
 }
 
+// NOLINTNEXTLINE(readability-function-cognitive-complexity): one loop over 2081, one check per writer
 TEST_CASE("every 2081 output fits the size bounds; one byte less fails without overrun",
           "[format]") {
     std::size_t longest_short = 0;

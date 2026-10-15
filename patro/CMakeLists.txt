@@ -38,6 +38,12 @@ target_include_directories(nepdate_patro PUBLIC
     "$<INSTALL_INTERFACE:include>")
 target_link_libraries(nepdate_patro PUBLIC nepdate::nepdate)
 nepdate_set_warnings(nepdate_patro)
+# The compiled library gets the same sanitizer, no-exceptions and coverage flags as the tests, so
+# the asan-ubsan, tsan, noexcept and coverage gates also cover src/patro.cpp. Absent when patro/ is
+# built on its own (the Conan recipe), where those presets don't apply.
+if(COMMAND nepdate_set_instrumentation)
+    nepdate_set_instrumentation(nepdate_patro)
+endif()
 if(MSVC)
     # The generated patro_tables.hpp carries readable UTF-8 comments (C4-02); the public headers
     # stay 7-bit ASCII, so /utf-8 is private to this target and never propagates to users.

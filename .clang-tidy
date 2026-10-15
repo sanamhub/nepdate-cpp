@@ -11,13 +11,9 @@
 #   (Neri-Schneider and Hinnant in ALGORITHM §5: y, m, d, j, c, z, era, doe, yoe, mp); renaming
 #   them would diverge from the spec the port transcribes. The 3-character minimum also flags the
 #   loop indices i/j throughout tests and tools.
-# - cppcoreguidelines-pro-bounds-pointer-arithmetic: the no-allocation guarantee (ADR-0002 §6) is
-#   implemented by writing into caller-provided char buffers through checked pointers (write_number,
-#   span_sink); every *--p and *p++ is bounded by an explicit last/size guard the check can't see.
-# - readability-function-cognitive-complexity: the two algorithmic functions it flags (write_pattern,
-#   parse_lenient) transcribe the FORMATTING/PARSING token grammar directly, and every Catch2
-#   TEST_CASE is one generated function (INTERNAL_CATCH_UNIQUE_NAME(dummyFunction)) whose many
-#   branches are assertions, not logic. Splitting either would diverge from the spec.
+# - cppcoreguidelines-pro-bounds-pointer-arithmetic: the public output API is std::to_chars style
+#   (char* first, char* last), so every writer walks a caller's buffer by pointer. Each walk is
+#   bounded by an explicit last/size check; ASan, UBSan and the libFuzzer targets cover them.
 # - bugprone-easily-swappable-parameters: the public API is make_date/from_gregorian(year, month,
 #   day), a documented, spec-mandated order that the exhaustive round-trip and catalogue tests
 #   cover; the detail helpers use the (first, last, ...) iterator-pair convention. The check cannot
@@ -37,7 +33,6 @@ Checks: >
   readability-*,
   -readability-magic-numbers,
   -readability-identifier-length,
-  -readability-function-cognitive-complexity,
   misc-*,
   -misc-non-private-member-variables-in-classes
 WarningsAsErrors: '*'
@@ -49,3 +44,6 @@ CheckOptions:
   # can't see that facade, so it wants the tools to include json_fwd.hpp directly. Treat the whole
   # third-party header family as always available instead.
   misc-include-cleaner.IgnoreHeaders: 'nlohmann/.*'
+  # Catch2's REQUIRE/CHECK expand to branches; count only the code a person wrote, so a long
+  # TEST_CASE of assertions is not "complex" while a real nested loop still is.
+  readability-function-cognitive-complexity.IgnoreMacros: true

@@ -207,6 +207,7 @@ constexpr void read_digits(std::string_view t, int& digits, int& value) noexcept
 /// name with two numbers gives the date in any order, three numbers give Y M D or D M Y, and
 /// anything else is unrecognized. Error order: number_too_long, ambiguous, then unrecognized; a
 /// successful date then validates through make_date.
+// NOLINTNEXTLINE(readability-function-cognitive-complexity): PARSING section 2 steps in order; split planned (C7)
 [[nodiscard]] constexpr result<date> parse_lenient(std::string_view s) noexcept {
     if (const result<date> r = parse(s); r.has_value()) {
         return r;

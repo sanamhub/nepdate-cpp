@@ -4,7 +4,9 @@
 // BS date <-> serial day (days since BS 1901-01-01), ADR-0002 section 3. Not public API.
 // <nepdate/date.hpp> includes this file after it defines date.
 
-#include <nepdate/date.hpp> // NOLINT(misc-header-include-cycle): split-header pair, see date.hpp#include <nepdate/detail/calendar_tables.hpp>
+// NOLINTNEXTLINE(misc-header-include-cycle): split-header pair, see date.hpp
+#include <nepdate/date.hpp>
+#include <nepdate/detail/calendar_tables.hpp>
 
 #include <cstdint>
 

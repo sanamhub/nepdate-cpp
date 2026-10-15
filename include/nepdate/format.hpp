@@ -232,6 +232,8 @@ template <class Sink> constexpr void write_long(Sink& out, date d, long_format f
 
 // FORMATTING section 5: the standard patterns when the whole pattern is one of them, otherwise a
 // left-to-right scan. Token digits follow l; literal bytes are copied unchanged (D-15).
+// NOLINTBEGIN(readability-function-cognitive-complexity): one branch per FORMATTING section 5 token, in
+// the spec's order, so the code reads against the table; 451 pattern vectors cover it.
 template <class Sink>
 constexpr void write_pattern(Sink& out, date d, std::string_view p, lang l) noexcept {
     if (p.empty() || p == "G" || p == "g" || p == "d") {
@@ -303,6 +305,7 @@ constexpr void write_pattern(Sink& out, date d, std::string_view p, lang l) noex
         }
     }
 }
+// NOLINTEND(readability-function-cognitive-complexity)
 
 } // namespace detail
 

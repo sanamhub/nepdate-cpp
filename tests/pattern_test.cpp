@@ -78,6 +78,33 @@ TEST_CASE("csharp-golden/format-pattern.tsv", "[format][vectors]") {
     CHECK(checked == 444);
 }
 
+// format_pattern sizes its string with count_sink when the output outruns the stack buffer, so the
+// count must equal what span_sink then writes, for every token and both languages. Only very long
+// patterns reach that path through the public API, so this drives the two sinks directly.
+TEST_CASE("count_sink measures exactly what span_sink writes", "[format][vectors]") {
+    const auto t = read_vectors("csharp-golden/format-pattern.tsv", '\t');
+    REQUIRE(t.rows.size() == 451);
+    const std::size_t bs = t.column("bs");
+    const std::size_t pattern = t.column("pattern");
+    std::array<char, 512> buf{};
+    std::size_t checked = 0;
+    for (const auto& row : t.rows) {
+        const auto b = parse_ymd(row[bs]);
+        const date d = ymd(b.year, b.month, b.day);
+        for (const lang l : {lang::en, lang::ne}) {
+            INFO(row[bs] << " " << row[pattern] << " " << static_cast<int>(l));
+            nepdate::detail::count_sink count;
+            nepdate::detail::write_pattern(count, d, row[pattern], l);
+            nepdate::detail::span_sink sink{buf.data(), buf.data() + buf.size()};
+            nepdate::detail::write_pattern(sink, d, row[pattern], l);
+            REQUIRE(sink.ok);
+            CHECK(count.n == static_cast<std::size_t>(sink.p - buf.data()));
+            ++checked;
+        }
+    }
+    CHECK(checked == 902);
+}
+
 TEST_CASE("FORMATTING section 5 examples", "[format]") {
     const date d = ymd(2081, 4, 15);
     CHECK(format_pattern(d, "yyyy-MM-dd", lang::en) == "2081-04-15");
