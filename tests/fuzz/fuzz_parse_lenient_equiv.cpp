@@ -15,7 +15,8 @@ extern "C" int LLVMFuzzerTestOneInput(const std::uint8_t* data, std::size_t size
     // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast): fuzzer bytes viewed as char
     const std::string_view input(reinterpret_cast<const char*>(data), size);
     const nepdate::result<nepdate::date> split = nepdate::parse_lenient(input);
-    const nepdate::result<nepdate::date> reference = nepdate_test::reference::parse_lenient_reference(input);
+    const nepdate::result<nepdate::date> reference =
+        nepdate_test::reference::parse_lenient_reference(input);
     if (split != reference) {
         std::abort();
     }

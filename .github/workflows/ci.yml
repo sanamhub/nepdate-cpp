@@ -175,8 +175,8 @@ jobs:
           key: vcpkg-lint-${{ hashFiles('vcpkg.json') }}
       - name: Set up vcpkg
         run: .github/scripts/setup-vcpkg.sh
-      - name: Gates 1, 2, 3 and 6
-        run: cmake -DONLY=format,ascii,codegen,tidy -DSTRICT=ON -P tools/ci.cmake
+      - name: Gates 1, 2, 3, 6 and 10
+        run: cmake -DONLY=format,ascii,codegen,tidy,docs -DSTRICT=ON -P tools/ci.cmake
 
   sanitizers:
     runs-on: ubuntu-24.04

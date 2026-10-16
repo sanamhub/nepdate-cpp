@@ -15,7 +15,8 @@ namespace nepdate_test::reference {
 // The pre-split parse_lenient (PARSING section 2). The library's parse_lenient must give the
 // same value or error for every input.
 // NOLINTNEXTLINE(readability-function-cognitive-complexity): reference copy kept verbatim
-[[nodiscard]] inline nepdate::result<nepdate::date> parse_lenient_reference(std::string_view s) noexcept {
+[[nodiscard]] inline nepdate::result<nepdate::date>
+parse_lenient_reference(std::string_view s) noexcept {
     if (const nepdate::result<nepdate::date> r = nepdate::parse(s); r.has_value()) {
         return r;
     }
