@@ -29,7 +29,7 @@ class NepdatePatroConan(ConanFile):
 
     def source(self):
         # The CI packages job builds the recipe from the working tree. A Conan Center recipe
-        # downloads the release archive here, added by the human after the tag exists (ADR-0005).
+        # downloads the release archive here, added by the maintainer after the tag exists (ADR-0005).
         local = os.environ.get("NEPDATE_CPP_SOURCE")
         if local:
             copy(self, pattern="*", src=local, dst=self.source_folder)

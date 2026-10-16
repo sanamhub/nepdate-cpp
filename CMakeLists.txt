@@ -84,8 +84,11 @@ if(NEPDATE_BUILD_PATRO)
     endif()
 endif()
 
-# Gate 9: the core-only program the isolation gate builds in Release.
-add_subdirectory(tools/coreonly)
+# Gate 9: the core-only program the isolation gate builds in Release. Not built when this project
+# is pulled in with FetchContent or add_subdirectory.
+if(PROJECT_IS_TOP_LEVEL)
+    add_subdirectory(tools/coreonly)
+endif()
 
 if(NEPDATE_BUILD_TESTS)
     add_subdirectory(tests)

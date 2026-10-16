@@ -1,7 +1,7 @@
 # `nepdate` (C++): public API contract (v0.1)
 
 The complete public surface for v0.1. Implement exactly this; adding a public name needs this file
-changed in the same PR, approved by the human. Behaviour: `shared/spec/` (`ALGORITHM.md`,
+changed in the same PR, approved by the maintainer. Behaviour: `shared/spec/` (`ALGORITHM.md`,
 `FORMATTING.md`, `PARSING.md`, `PATRO.md`, `PARITY.md`). Decisions: ADR-0002 (representation),
 ADR-0003 (conventions and errors).
 

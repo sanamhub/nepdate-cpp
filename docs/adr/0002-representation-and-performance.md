@@ -177,7 +177,7 @@ holiday and event-start tables, and would cost up to 11 comparisons per query.
 
 A throwaway prototype of §1 to §3 (not kept in this repository), built with zig 0.17.0
 (`zig c++`, Clang 22.1.8, libc++, `-std=c++20 -O2`, baseline x86-64), run on the reference machine
-pinned to logical CPU 2. **Other agents' jobs were running, including a C# BenchmarkDotNet run on the
+pinned to logical CPU 2. **Other build jobs were running, including a C# BenchmarkDotNet run on the
 same CPU,** so means were 2 to 5 times higher than the minimums and unstable. The table shows the
 best of 60 repetitions per run, range over three runs; read it as "how fast it can go", not as a
 published number. The prototype allocated 0 bytes, and every `static_assert` on the `constexpr`
@@ -214,7 +214,7 @@ measured by `bench/` (ADR-0004 §6):
 Each target is at least 1.4 times faster than C# (BENCHMARK §6 only asks for faster) and no looser
 than the Go port's pinned prototype on the same machine (`sanamhub/nepdate-go` ADR-0002 §8: B5
 30.6 ns, B8 226 ns), since C++ and Rust are meant to be the fastest ports. A missed target
-is reported to the human with the numbers and a profile before release; features aren't dropped to
+is reported to the maintainer with the numbers and a profile before release; features aren't dropped to
 meet it.
 
 ## Consequences

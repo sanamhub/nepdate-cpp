@@ -7,11 +7,10 @@
 
 Bikram Sambat dates for C++20. `nepdate` converts between the Bikram Sambat (Nepali) and
 Gregorian calendars for BS 1901-01-01 to 2199-12-30 (AD 1844-04-11 to 2143-04-15), with
-arithmetic, formatting and parsing. Three facts the rest of the page supports: the core is
-header-only with no dependencies, the `to_chars` and parse paths allocate nothing (0 bytes,
-checked by the allocation tests), and conversion is `constexpr`, so it also runs at compile time.
-BS to AD is 7.09 ns on MSVC and 5.58 ns on Clang against 13.29 ns for C# NepDate
-([`docs/benchmarks.md`](docs/benchmarks.md)).
+arithmetic, formatting and parsing. The core is header-only with no dependencies, the
+`to_chars` and parse paths allocate nothing (0 bytes, checked by the allocation tests), and
+conversion is `constexpr`, so it also runs at compile time. BS to AD takes 7.09 ns on MSVC and
+5.58 ns on Clang, against 13.29 ns for C# NepDate ([`docs/benchmarks.md`](docs/benchmarks.md)).
 
 ```cpp
 #include <nepdate/nepdate.hpp>
@@ -47,8 +46,19 @@ conan create conan/nepdate
 conan create conan/nepdate-patro
 ```
 
-With CMake, either `FetchContent` (pin to the release tag, for example `v0.1.0`, once it exists)
-or build and install, then `find_package`:
+With CMake `FetchContent`, pinned to a release tag (`v0.1.0` once it exists):
+
+```cmake
+include(FetchContent)
+FetchContent_Declare(nepdate
+    GIT_REPOSITORY https://github.com/sanamhub/nepdate-cpp.git
+    GIT_TAG v0.1.0)
+FetchContent_MakeAvailable(nepdate)
+target_link_libraries(your_app PRIVATE nepdate::nepdate nepdate::patro)
+```
+
+Set `NEPDATE_BUILD_PATRO` to `OFF` before `FetchContent_MakeAvailable` if you need only the core.
+Or build and install, then `find_package`:
 
 ```cmake
 find_package(nepdate CONFIG REQUIRED)
@@ -138,15 +148,16 @@ differences from the original are the `D-xx` rows in
 
 ## Performance
 
-Faster than C# NepDate with zero allocation, measured with Google Benchmark on the reference
-machine. Details and the misses are in [`docs/benchmarks.md`](docs/benchmarks.md).
+Every row is faster than C# NepDate and allocates nothing, measured with Google Benchmark on a
+laptop that was not idle. B8 still misses its own 250 ns target. Details are in
+[`docs/benchmarks.md`](docs/benchmarks.md).
 
 | Operation | MSVC ns/op | Clang ns/op | C# ns/op |
 |---|---:|---:|---:|
 | B1 BS to AD | 7.09 | 5.58 | 13.29 |
 | B2 AD to BS | 8.94 | 6.23 | 18.64 |
 | B6 strict parse | 12.13 | 10.13 | 21.55 |
-| B8 patro month grid | 516.64 | 450 | 3,132.66 |
+| B8 patro month grid | 516.64 | about 450 | 3,132.66 |
 
 ## Documentation
 

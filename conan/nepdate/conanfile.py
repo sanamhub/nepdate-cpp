@@ -25,7 +25,7 @@ class NepdateConan(ConanFile):
     def source(self):
         # The CI packages job builds the recipe from the working tree. A Conan Center recipe
         # downloads the release archive here (conandata.yml with url and sha256), added by the
-        # human after the tag exists (ADR-0005).
+        # maintainer after the tag exists (ADR-0005).
         local = os.environ.get("NEPDATE_CPP_SOURCE")
         if local:
             copy(self, pattern="*", src=local, dst=self.source_folder)

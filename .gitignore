@@ -32,7 +32,7 @@ oom-*
 /conan/*/test_package/build/
 /conan/*/test_package/CMakeUserPresets.json
 
-# Agent scaffolding and internal plans live in E:\github\sanamhub\nepdate-internal\cpp\
+# Local working notes, never published.
 /AGENTS.md
 /CLAUDE.md
 /docs/plan/

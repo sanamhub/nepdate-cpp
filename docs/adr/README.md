@@ -4,7 +4,7 @@ Decisions for this repository only. Decisions that bind every port are in the hu
 (`sanamhub/nepdate`, `docs/adr/`), in particular hub ADR-0004 (patro in a separate package). Immutable
 once Accepted; supersede with a new ADR.
 
-Edited on 2026-10-16 to remove links to internal plans before the first public release; no decision changed.
+Edited on 2026-10-16 to remove links to internal plans and process wording before the first public release; no decision changed.
 
 | ADR | Title | Status |
 |---|---|---|

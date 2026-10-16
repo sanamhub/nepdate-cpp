@@ -18,7 +18,7 @@ through [`bench/`](../bench/). The C# column is copied from the hub's
 | Power plan | Ultimate Performance |
 | Affinity | logical CPU 2 (mask `0x4`), set with `start /affinity 4` |
 
-The laptop was not idle during these runs (other agent jobs were active, and the CPU sat at its
+The laptop was not idle during these runs (other build jobs were active, and the CPU sat at its
 3.1 GHz base clock). The numbers are indicative; BENCHMARK.md section 1 asks for a quiet machine,
 which the final release run should use. Loads at the re-bench: MSVC 23 %, Clang 11 %.
 The MSVC B8 row was re-measured on its own (see the B8 note).
@@ -42,7 +42,7 @@ Both build trees were configured from the repository root with the vcpkg toolcha
 feature (which brings `benchmark`). The benchmark runs 10 repetitions per operation, reports the
 aggregate mean and standard deviation, writes JSON, and is pinned to logical CPU 2.
 
-MSVC (the reviewer's `vcvars64` environment, reused):
+MSVC (from a `vcvars64` environment):
 
 ```
 cmake -S bench -B <dir> -G Ninja -DCMAKE_BUILD_TYPE=Release
@@ -148,7 +148,7 @@ compilers. ADR-0002 section 9 sets tighter targets for all eight:
 | B7 | <= 10 | 12.81 | 10.22 | neither |
 | B8 | <= 250 | 516.64 | 450 | neither |
 
-Misses to report to the human:
+Misses:
 
 - **B8, patro month grid.** 516.64 ns (MSVC, 33,064 ns per 64 grids, CPU time, 10 repetitions,
   2026-10-15) and about 450 ns (Clang, 16 % load) against 250 ns. Both iterate the month with the
