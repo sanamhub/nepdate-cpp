@@ -13,7 +13,8 @@ bump may still change it.
 
 - BS and AD conversion. `date` is a 4-byte Bikram Sambat date; `make_date`, `from_gregorian`,
   `from_sys_days` and the `to_*` members convert both ways. Conversion is `constexpr` and
-  allocates nothing. Checked against the shared vectors for every day from BS 1901 to 2199.
+  allocates nothing. All 109,212 days from BS 1901 to 2199 round-trip BS to AD to BS in the
+  tests, and the shared conversion vectors pass.
 - Arithmetic and fiscal year. `add_days`, `add_months`, `add_years`, `diff`, `date_range` and
   `fiscal_year`, with the shared clamp and spill rules.
 - Formatting and parsing. `to_chars_*` write into the caller's buffer and allocate nothing;
