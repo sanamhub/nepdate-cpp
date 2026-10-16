@@ -31,3 +31,8 @@ oom-*
 # Conan test_package build trees (conan create runs them in-tree)
 /conan/*/test_package/build/
 /conan/*/test_package/CMakeUserPresets.json
+
+# Agent scaffolding and internal plans live in E:\github\sanamhub\nepdate-internal\cpp\
+/AGENTS.md
+/CLAUDE.md
+/docs/plan/
