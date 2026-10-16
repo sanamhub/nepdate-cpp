@@ -1,98 +1,63 @@
 # Contributing
 
-This is the C++ port of the NepDate family. Behaviour is fixed by the shared spec in `shared/spec/`
-and decisions by the ADRs in `docs/adr/`, so most changes follow a task in `docs/plan/`. The rules
-for agents, which also apply to people, are in [`AGENTS.md`](AGENTS.md).
+Bug reports, fixes and documentation improvements are welcome. For a new feature or an API change,
+open an issue first so the design can be agreed before you write code.
 
-## Data and spec changes go to the hub
+This project follows the [Code of Conduct](CODE_OF_CONDUCT.md). Report security problems as
+described in [SECURITY.md](SECURITY.md), not in a public issue.
 
-`shared/` is a read-only copy of [`sanamhub/nepdate`](https://github.com/sanamhub/nepdate). A wrong
-month length, holiday or tithi, or a question about the spec, goes there as an issue. Never edit
-`shared/` here, and never edit a generated table by hand: change `tools/codegen` and run
-`cmake --build build/dev --target codegen`.
+## Scope
 
-## Build and checks
+The shared calendar and patro data, the spec and the golden vectors live in the hub
+([`sanamhub/nepdate`](https://github.com/sanamhub/nepdate)) and are copied into `shared/`
+read-only. A wrong date, holiday or tithi is a data issue: report it in the hub, not here.
 
-You need CMake 3.25 or later, Ninja, a C++20 compiler (ADR-0001 §1) and vcpkg with `VCPKG_ROOT`
-set. Then:
+## Setup
 
-```bash
-cmake --workflow --preset dev   # configure, build, test
-cmake -P tools/ci.cmake          # every gate; run before a PR
+You need CMake 3.25 or newer, Ninja, a C++20 compiler (GCC 12, Clang 16, Apple Clang 16 or MSVC
+19.44, or newer) and vcpkg with `VCPKG_ROOT` set. The test dependencies (Catch2, Google Benchmark,
+nlohmann-json) come from the vcpkg manifest's `dev` feature.
+
+```sh
+cmake --preset dev
+cmake --build --preset dev
+ctest --preset dev
 ```
 
-The last line of `tools/ci.cmake` reads `ci: <passed>/<total> gates passed (<skipped> skipped)`.
-Locally, a gate whose tool is missing (clang-format 18, clang-tidy, gcovr, a sanitizer runtime) is
-skipped with a warning; CI runs every gate with `-DSTRICT=ON`.
+## Gates
 
-### A compiler the presets don't find
+`cmake -P tools/ci.cmake` runs every gate in order and stops at the first failure. `-DONLY=...`
+runs a subset. The gates are `format`, `ascii`, `codegen`, `build-and-test`, `no-exceptions`,
+`tidy`, `sanitizers`, `coverage`, `isolation` and `docs`.
 
-The committed presets let CMake pick the compiler, which is what CI wants. When your compiler needs
-a toolchain file or a vcpkg triplet of its own, put presets named `local-<name>` in
-`CMakeUserPresets.json` (git ignores it). Each one inherits a committed preset and adds your
-settings; `tools/ci.cmake` uses the `local-` presets on its own when `local-dev` exists. A sketch
-for a zig toolchain, with your own paths in place of the `<...>` parts:
+- `format` needs clang-format 18.
+- `tidy` needs clang-tidy 18 and a toolchain whose standard library it can parse.
+- `sanitizers` needs Clang with ASan and UBSan. ThreadSanitizer runs with `cmake --preset tsan`.
+- `coverage` needs GCC and gcovr.
+- `docs` is a plain CMake script and needs nothing.
 
-```json
-{
-  "version": 6,
-  "configurePresets": [
-    {
-      "name": "local",
-      "hidden": true,
-      "environment": { "VCPKG_ROOT": "<vcpkg>" },
-      "cacheVariables": {
-        "VCPKG_TARGET_TRIPLET": "<triplet>",
-        "VCPKG_HOST_TRIPLET": "<triplet>",
-        "VCPKG_OVERLAY_TRIPLETS": "<triplet dir>",
-        "VCPKG_CHAINLOAD_TOOLCHAIN_FILE": "<toolchain>.cmake"
-      }
-    },
-    { "name": "local-dev", "inherits": ["local", "dev"] },
-    { "name": "local-noexcept", "inherits": ["local", "noexcept"] }
-  ],
-  "buildPresets": [
-    { "name": "local-dev", "configurePreset": "local-dev" },
-    { "name": "local-noexcept", "configurePreset": "local-noexcept" }
-  ],
-  "testPresets": [
-    { "name": "local-dev", "configurePreset": "local-dev" },
-    { "name": "local-noexcept", "configurePreset": "local-noexcept" }
-  ],
-  "workflowPresets": [
-    {
-      "name": "local-dev",
-      "steps": [
-        { "type": "configure", "name": "local-dev" },
-        { "type": "build", "name": "local-dev" },
-        { "type": "test", "name": "local-dev" }
-      ]
-    }
-  ]
-}
-```
+On a machine where the default compiler is not the one you want, copy `CMakePresets.json` to the
+gitignored `CMakeUserPresets.json` and add `local-*` presets; the script picks them up when it sees
+`local-dev`.
 
-Add `local-tidy`, `local-asan-ubsan` and `local-coverage` the same way. A preset that is missing
-makes its gate fail, not skip.
+## Pull requests
 
-## Rules
+- Keep a pull request to one change.
+- Add or update a test for any behaviour change. The shared vector suites must keep passing.
+- Public API changes go in `docs/API.md` in the same commit.
+- Add a line to the `Unreleased` section of [CHANGELOG.md](CHANGELOG.md) for anything a user would
+  notice.
+- A significant design decision gets an ADR in `docs/adr/`. Accepted ADRs are not edited; a later
+  ADR supersedes an earlier one.
+- CI must pass.
 
-- The libraries depend on the standard library only; Catch2, nlohmann-json and Google Benchmark are
-  dev dependencies (vcpkg feature `dev`).
-- No public name beyond [`docs/API.md`](docs/API.md).
-- Headers under `include/` are 7-bit ASCII (ADR-0001 §6).
-- Never weaken, skip or delete a test to get CI green. A skipped parity row names its deviation
-  from `shared/spec/PARITY.md`.
+## Commit messages
 
-## Commits and PRs
+[Conventional Commits](https://www.conventionalcommits.org/): `type(scope): summary`, imperative,
+lower case, no trailing period. Types: `feat`, `fix`, `docs`, `chore`, `refactor`, `test`, `build`,
+`ci`, `perf`. The body says why, not what.
 
-- [Conventional Commits](https://www.conventionalcommits.org/): `type(scope): summary`, with the
-  task ID first when there is one (`feat(nepdate): C1-04 serial conversion`).
-- One phase per PR. Fill in the PR template, including "What to look at first" and the
-  `tools/ci.cmake` line.
-- Prose, comments and commit messages follow
-  [`.claude/skills/writing-style/SKILL.md`](.claude/skills/writing-style/SKILL.md): no em dashes,
-  no filler, exact numbers and IDs, and no AI attribution lines.
+## Releases
 
-By contributing you agree that your contribution is licensed under the MIT license
-([LICENSE](LICENSE)).
+Releasing and rolling back are described in
+[`docs/runbooks/release.md`](docs/runbooks/release.md).
