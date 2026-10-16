@@ -1,59 +1,17 @@
 # nepdate-cpp
 
-Bikram Sambat (Nepali calendar) for C++20. Part of the NepDate family: shared data and spec live in
-the hub [`sanamhub/nepdate`](https://github.com/sanamhub/nepdate); the C# original is
-[NepDate](https://github.com/RajuPrasai/NepDate).
+<img src="docs/assets/nepdate-cpp-128.png" width="128" alt="NepDate logo" align="right">
 
-- Two libraries from one repository and one version (hub ADR-0004):
+[![CI](https://github.com/sanamhub/nepdate-cpp/actions/workflows/ci.yml/badge.svg)](https://github.com/sanamhub/nepdate-cpp/actions/workflows/ci.yml)
+[![License](https://img.shields.io/badge/license-MIT-blue)](https://github.com/sanamhub/nepdate-cpp/blob/main/LICENSE)
 
-  | Library | vcpkg / Conan | CMake target | Header | Namespace |
-  |---|---|---|---|---|
-  | core: dates, BS ↔ AD, arithmetic, fiscal year, formatting, parsing | `nepdate` | `nepdate::nepdate` (header-only) | `<nepdate/nepdate.hpp>` | `nepdate` |
-  | patro (पात्रो, the Nepali almanac): tithi, public holidays, events | `nepdate-patro` | `nepdate::patro` (compiled) | `<nepdate/patro.hpp>` | `nepdate::patro` |
-
-  The core never includes the patro, so a program that only converts dates links no tithi, holiday
-  or event strings.
-- No dependencies. No heap allocation, no exceptions and no RTTI needed on any path except the
-  functions that return `std::string`. Conversions are `constexpr`, so they also run at compile time.
-- Built to be faster than C# NepDate on every benchmark operation (ADR-0002, `shared/spec/BENCHMARK.md`).
-- BS 1901-01-01 to 2199-12-30 (AD 1844-04-11 to 2143-04-15). Same results as C# NepDate and every
-  other port, except the deviations in [shared/spec/PARITY.md](shared/spec/PARITY.md), proved by the
-  shared vectors.
-- Patro data covers BS 2077-01-01 to 2084-08-20 only ([shared/spec/PATRO.md](shared/spec/PATRO.md)).
-- Needs a C++20 compiler: GCC 12, Clang 16, Apple Clang 16 (Xcode 16), MSVC 19.44 (Visual Studio
-  2022 17.14) or newer (ADR-0001).
-
-**Status:** v0.1.0 prepared, C5 checkpoint ready for review. Progress: [docs/plan/PROGRESS.md](docs/plan/PROGRESS.md).
-
-## Quick start
-
-`nepdate` is a header-only library; `nepdate-patro` is a compiled library on top of it. Both are
-installed from this repository, or from the vcpkg and Conan Center packages whose ports and
-recipes live in `ports/` and `conan/`.
-
-Install with vcpkg (overlay ports from this tree, until they land upstream):
-
-```sh
-vcpkg install nepdate nepdate-patro --overlay-ports=ports
-```
-
-Install with Conan:
-
-```sh
-conan create conan/nepdate
-conan create conan/nepdate-patro
-```
-
-Then use `find_package` and link the targets:
-
-```cmake
-find_package(nepdate CONFIG REQUIRED)
-find_package(nepdate-patro CONFIG REQUIRED)
-target_link_libraries(your_app PRIVATE nepdate::nepdate nepdate::patro)
-```
-
-The three programs in `examples/` (built and run by CTest) show the main features.
-`examples/quick_start.cpp` converts 2081-04-15 to AD and back:
+Bikram Sambat dates for C++20. `nepdate` converts between the Bikram Sambat (Nepali) and
+Gregorian calendars for BS 1901-01-01 to 2199-12-30 (AD 1844-04-11 to 2143-04-15), with
+arithmetic, formatting and parsing. Three facts the rest of the page supports: the core is
+header-only with no dependencies, the `to_chars` and parse paths allocate nothing (0 bytes,
+checked by the allocation tests), and conversion is `constexpr`, so it also runs at compile time.
+BS to AD is 7.09 ns on MSVC and 5.58 ns on Clang against 13.29 ns for C# NepDate
+([`docs/benchmarks.md`](docs/benchmarks.md)).
 
 ```cpp
 #include <nepdate/nepdate.hpp>
@@ -69,7 +27,53 @@ int main() {
 }
 ```
 
-`examples/patro.cpp` reads the tithi, holiday flag and events for one day:
+> **Status:** 0.x. The shared vector suites pass on every supported compiler and the public API is
+> listed in [`docs/API.md`](docs/API.md), but under SemVer a minor version may still change it.
+
+## Install
+
+One repository, two packages, one version. The core `nepdate` is header-only; `nepdate-patro` is a
+compiled library on top of it for tithi, public holidays and events.
+
+The vcpkg and Conan Center submissions are prepared but not merged upstream yet. Until they are,
+the overlay ports and recipes in this tree work:
+
+```sh
+vcpkg install nepdate nepdate-patro --overlay-ports=ports
+```
+
+```sh
+conan create conan/nepdate
+conan create conan/nepdate-patro
+```
+
+With CMake, either `FetchContent` (pin to the release tag, for example `v0.1.0`, once it exists)
+or build and install, then `find_package`:
+
+```cmake
+find_package(nepdate CONFIG REQUIRED)
+find_package(nepdate-patro CONFIG REQUIRED)
+target_link_libraries(your_app PRIVATE nepdate::nepdate nepdate::patro)
+```
+
+`cmake --install` works today. `find_package` for `nepdate-patro` pulls in `nepdate` through
+`find_dependency`, so linking `nepdate::patro` alone is enough.
+
+## Usage
+
+**Conversion.** Build a date, read its fields, convert to and from Gregorian. The example above is
+`examples/quick_start.cpp`, run by the test suite.
+
+**Arithmetic and fiscal year.** `add_days`, `add_months` and `add_years` return `result<date>`
+with `overflow::clamp` or `overflow::spill`. `diff` returns whole years, months and days.
+`fiscal_year` gives the start, end, range and the `2082/83` label.
+
+**Formatting.** `to_chars`, `to_chars_iso`, `to_chars_short`, `to_chars_long` and
+`to_chars_pattern` write into the caller's buffer and allocate nothing. The `to_string` twins
+return `std::string`. `std::formatter<nepdate::date>` prints `{}` as `YYYY/MM/DD` and
+`{:<pattern>}` through the shared pattern language, where the standard library has `<format>`.
+
+**Patro.** `nepdate::patro::info(d)` returns the tithi, public-holiday flag and events for one day:
 
 ```cpp
 #include <nepdate/patro.hpp>
@@ -89,7 +93,8 @@ int main() {
 }
 ```
 
-`examples/parse.cpp` parses strict and lenient text:
+**Parsing.** `parse` reads strict `year month day` text; `parse_lenient` accepts human input such
+as `2081 Shrawan 15`. Both are `constexpr` over `std::string_view` and reject rather than guess:
 
 ```cpp
 #include <nepdate/nepdate.hpp>
@@ -104,33 +109,57 @@ int main() {
 }
 ```
 
-## Where to start
+**`<chrono>` interop.** `to_year_month_day`, `to_sys_days`, `from_gregorian`, `from_sys_days` and
+`from_sys_time` use the standard calendar types. `today(utc_offset)` returns the current BS date in
+a fixed-offset zone, defaulting to Nepal's +05:45.
 
-| You are | Read |
+## Supported compilers and data range
+
+CI builds and tests on every compiler below; the floors are what CI proves, not a guess at what
+might work.
+
+| Compiler | Minimum |
 |---|---|
-| an AI agent implementing a phase | [AGENTS.md](AGENTS.md) → [docs/plan/00-ROADMAP.md](docs/plan/00-ROADMAP.md) |
-| reviewing the API | [docs/API.md](docs/API.md) |
-| comparing with other C and C++ libraries | [docs/competitors.md](docs/competitors.md) |
-| wondering "why is it like this?" | [docs/adr/README.md](docs/adr/README.md) |
-| looking for the algorithm or data | [shared/spec/README.md](shared/spec/README.md) (changes go to the hub) |
-| releasing | [docs/runbooks/release.md](docs/runbooks/release.md) |
+| GCC | 12 |
+| Clang | 16, with libstdc++ and with libc++ |
+| Apple Clang | Xcode 16 |
+| MSVC | 19.44 (Visual Studio 2022 17.14) |
 
-## Layout
+The core covers BS 1901-01-01 to 2199-12-30. Patro data covers BS 2077-01-01 to 2084-08-20 only;
+`nepdate::patro::info` returns an empty `day_info` outside that range.
 
-```
-shared/                 hub copy: data/, spec/, VERSION (hub commit). Read-only.
-include/nepdate/        core headers; detail/calendar_tables.hpp is generated   (phase C0, C1)
-patro/                  the patro library: include/, src/ (patro_tables.hpp generated), tests/  (C4)
-tests/                  core tests (Catch2), fuzz/ (libFuzzer)                   (C1 to C3)
-tools/codegen/          table generator (C++, dev only)                         (C0)
-tools/ci.cmake          runs every gate: cmake -P tools/ci.cmake                (C0)
-tools/coreonly/         core-only program for the isolation gate                (C4)
-bench/                  separate CMake project: B1 to B8, competitors            (C5)
-ports/, conan/          vcpkg overlay ports and Conan recipes, tested in CI      (C5)
-docs/                   API.md, competitors.md, adr/, plan/, runbooks/
-```
+## Relationship to the C# original
+
+This port follows the shared spec and data in the hub
+[`sanamhub/nepdate`](https://github.com/sanamhub/nepdate). The original library and calendar data
+are [NepDate](https://github.com/RajuPrasai/NepDate) by Raju Prasai, MIT licensed. The deliberate
+differences from the original are the `D-xx` rows in
+[`shared/spec/PARITY.md`](shared/spec/PARITY.md).
+
+## Performance
+
+Faster than C# NepDate with zero allocation, measured with Google Benchmark on the reference
+machine. Details and the misses are in [`docs/benchmarks.md`](docs/benchmarks.md).
+
+| Operation | MSVC ns/op | Clang ns/op | C# ns/op |
+|---|---:|---:|---:|
+| B1 BS to AD | 7.09 | 5.58 | 13.29 |
+| B2 AD to BS | 8.94 | 6.23 | 18.64 |
+| B6 strict parse | 12.13 | 10.13 | 21.55 |
+| B8 patro month grid | 516.64 | 450 | 3,132.66 |
+
+## Documentation
+
+| Link | Contents |
+|---|---|
+| [`docs/API.md`](docs/API.md) | Every public name, with signatures |
+| [`docs/benchmarks.md`](docs/benchmarks.md) | Benchmarks, targets and the B8 miss |
+| [`docs/competitors.md`](docs/competitors.md) | The other C and C++ calendar libraries |
+| [`docs/adr/`](docs/adr) | Architecture decision records |
+| [`docs/runbooks/release.md`](docs/runbooks/release.md) | Releasing and rolling back |
 
 ## License
 
-MIT ([LICENSE](LICENSE)). Calendar and patro data from NepDate by Raju Prasai and contributors, MIT
-([shared/data/NOTICE](shared/data/NOTICE)). Not affiliated with the Government of Nepal.
+MIT, see [`LICENSE`](LICENSE). Calendar and patro data from NepDate by Raju Prasai and
+contributors, MIT, see [`THIRD-PARTY-NOTICES.txt`](THIRD-PARTY-NOTICES.txt). Not affiliated with
+the Government of Nepal.
