@@ -275,7 +275,7 @@ generated tables. It is not API.
   declaration of `date_range` come before `date`, because `date`'s members use them.
 - `max_short_size` and `max_long_size` are upper bounds with margin: outputs are at most 26 bytes
   (padded Nepali short) and 68 bytes (Nepali long with weekday: a 24-byte weekday, a 21-byte month,
-  6 bytes of day, 12 of year, 5 of punctuation). A C3 test formats every
+  6 bytes of day, 12 of year, 5 of punctuation). A test formats every
   date of 2081 with every option and checks the bound.
 - `spill` is the neutral name for the spec's "Overflow" mode; `overflow` is the type, so the
   enumerator can't share the name (same as the Go port).

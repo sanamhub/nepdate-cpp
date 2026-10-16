@@ -1,4 +1,4 @@
-// C2-06: the phase-2 rows of C# NepDate's own tests (shared/spec/vectors/csharp-tests/catalog.tsv).
+// The phase-2 rows of C# NepDate's own tests (shared/spec/vectors/csharp-tests/catalog.tsv).
 // Each row is a TEST_CASE named after its id, or a cs-deviation / cs-n/a line. The CTest test
 // catalog_coverage (tools/check_catalog.cmake) checks that every row up to phase 2 is here.
 //
@@ -7,8 +7,8 @@
 // rows build the same dates through fiscal_year and quarter_range.
 //
 // Following the hub PORT-PLAN rule, rows that need a later task's API carry a pending marker: the
-// DateTime rows use from_sys_time(t, 0min) (C4-05) and the Current* rows read the clock through
-// today() (C4-05).
+// DateTime rows use from_sys_time(t, 0min) and the Current* rows read the clock through
+// today().
 
 #include <nepdate/date.hpp>
 #include <nepdate/date_range.hpp>

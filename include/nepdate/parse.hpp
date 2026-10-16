@@ -366,14 +366,14 @@ constexpr void classify_word(std::string_view token, lenient_state& st) noexcept
 
 /// Same as parse(std::string_view) on the same bytes, for u8"" literals.
 [[nodiscard]] inline result<date> parse(std::u8string_view s) noexcept {
-    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast): char8_t view as char (AGENTS.md)
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast): char8_t view as char (docs/API.md)
     const auto* bytes = reinterpret_cast<const char*>(s.data());
     return parse(std::string_view(bytes, s.size()));
 }
 
 /// Same as parse_lenient(std::string_view) on the same bytes, for u8"" literals.
 [[nodiscard]] inline result<date> parse_lenient(std::u8string_view s) noexcept {
-    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast): char8_t view as char (AGENTS.md)
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast): char8_t view as char (docs/API.md)
     const auto* bytes = reinterpret_cast<const char*>(s.data());
     return parse_lenient(std::string_view(bytes, s.size()));
 }

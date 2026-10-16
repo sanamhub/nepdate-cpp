@@ -1,4 +1,4 @@
-// C4-03: the patro queries (PATRO section 2) against the PATRO section 4 anchors. This file is
+// The patro queries (PATRO section 2) against the PATRO section 4 anchors. This file is
 // UTF-8; the library headers are ASCII.
 
 #include <nepdate/format.hpp>

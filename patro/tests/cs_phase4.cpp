@@ -1,4 +1,4 @@
-// C4-06: the patro rows of phase 4 of the C# catalogue (shared/spec/vectors/csharp-tests/
+// The patro rows of phase 4 of the C# catalogue (shared/spec/vectors/csharp-tests/
 // catalog.tsv). The CalendarDataTests rows check C#'s internal tables; here they check this
 // port's tables of ADR-0002 section 7 (dense per-day layout instead of sorted offsets, PATRO
 // section 3), so the mapped checks are noted. The interop rows live in tests/cs_phase4.cpp. This
@@ -244,7 +244,7 @@ TEST_CASE("CalendarDataTests.GetCalendarInfo_TithiMatchesFlatProperties", "[cs]"
 
 TEST_CASE("CalendarDataTests.AllDaysInScrapedRange_OffsetsAreInBounds", "[cs]") {
     // Every covered day resolves its tithi, holiday bit and event slice without leaving the
-    // tables: the indices stay in range because the generator checked them (C4-02).
+    // tables: the indices stay in range because the generator checked them.
     std::size_t failures = 0;
     for (std::uint32_t i = 0; i < detail::kDays; ++i) {
         const std::uint8_t tithi_index = detail::kDayTithi[i];

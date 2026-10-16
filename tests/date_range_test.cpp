@@ -1,4 +1,4 @@
-// C2-05: date_range, its iterator and the range concepts.
+// date_range, its iterator and the range concepts.
 
 #include <nepdate/date.hpp>
 #include <nepdate/date_range.hpp>

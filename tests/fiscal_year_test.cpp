@@ -1,4 +1,4 @@
-// C2-04: fiscal_year, quarter_of and months_of (ALGORITHM section 8b, D-08).
+// fiscal_year, quarter_of and months_of (ALGORITHM section 8b, D-08).
 
 #include "vectors.hpp"
 

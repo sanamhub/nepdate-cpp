@@ -294,7 +294,7 @@ if("coverage" IN_LIST gates)
             ci_run("${gcovr}" ${gcovr_args} --json-summary "${coverage_dir}/coverage.json")
         endif()
         if(ci_rc EQUAL 0)
-            # gcovr counts 0 of 0 lines as 0 %, which would fail the skeleton of phase C0, where
+            # gcovr counts 0 of 0 lines as 0 %, which would fail a fresh repository, where
             # include/ has no executable line yet.
             file(READ "${coverage_dir}/coverage.json" summary)
             string(JSON line_total GET "${summary}" line_total)
@@ -311,7 +311,7 @@ if("coverage" IN_LIST gates)
     endif()
 endif()
 
-# ---- gate 9: isolation (C4-04) ----
+# ---- gate 9: isolation ----
 if("isolation" IN_LIST gates)
     ci_run("${CMAKE_COMMAND}" --preset "${PRESET_PREFIX}release")
     if(ci_rc EQUAL 0)

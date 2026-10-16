@@ -1,4 +1,4 @@
-// C1-02: errc and the generic result<T>. result<date> is tested in date_test.cpp.
+// errc and the generic result<T>. result<date> is tested in date_test.cpp.
 
 #include <nepdate/date.hpp>
 #include <nepdate/detail/result.hpp>

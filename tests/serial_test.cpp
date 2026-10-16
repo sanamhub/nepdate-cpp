@@ -1,4 +1,4 @@
-// C1-04: serial conversion (ADR-0002 §3).
+// Serial conversion (ADR-0002 §3).
 
 #include <nepdate/date.hpp>
 #include <nepdate/detail/calendar_tables.hpp>

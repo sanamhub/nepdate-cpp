@@ -1,4 +1,4 @@
-// C3-02: to_chars, to_chars_iso, to_chars_short, to_chars_long and the std::string functions
+// to_chars, to_chars_iso, to_chars_short, to_chars_long and the std::string functions
 // (FORMATTING sections 2 to 4). This file is UTF-8.
 
 #include "vectors.hpp"

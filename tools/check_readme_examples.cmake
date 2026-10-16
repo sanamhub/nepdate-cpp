@@ -1,4 +1,4 @@
-# C5-01: extracts the ```cpp fenced blocks of README.md and compares each, in order, with the
+# Extracts the ```cpp fenced blocks of README.md and compares each, in order, with the
 # body of one example file. The README quick start shows exactly the example programs, character
 # for character (CRLF folded to LF first). Blocks are fenced with exactly ```cpp and ```.
 #

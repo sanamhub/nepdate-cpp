@@ -1,4 +1,4 @@
-// C2-01 to C2-03: add_days, next, prev, days_until, add_months, add_years and diff
+// add_days, next, prev, days_until, add_months, add_years and diff
 // (ALGORITHM section 8 and 8a). The golden files are in vectors_test.cpp.
 
 #include "random_pairs.hpp"
@@ -141,7 +141,7 @@ TEST_CASE("diff: the ALGORITHM section 8a table", "[arith][diff]") {
     STATIC_REQUIRE(bs(2081, 3, 15).diff(bs(2081, 3, 15)) == date_diff{false, 0, 0, 0, 0});
 }
 
-TEST_CASE("diff: the extra rows of C2-03", "[arith][diff]") {
+TEST_CASE("diff: the extra rows", "[arith][diff]") {
     CHECK(bs(2081, 4, 32).diff(bs(2081, 6, 30)) == date_diff{false, 0, 2, 0, 61});
     CHECK(bs(2081, 1, 1).diff(bs(2082, 1, 1)) == date_diff{false, 1, 0, 0, 366});
     CHECK(bs(2081, 4, 15).diff(bs(2083, 2, 10)) == date_diff{false, 1, 9, 26, 663});

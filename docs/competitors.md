@@ -2,7 +2,7 @@
 
 Checked 2026-10-08 against GitHub (repository search for "nepali date", "nepali calendar",
 "bikram sambat", "nepdate", "patro", languages C and C++), the vcpkg ports tree and the Conan Center
-recipes tree, and the sources themselves. Used by task C5-02 (benchmarks).
+recipes tree, and the sources themselves. Used by the benchmarks.
 
 No C or C++ **library** is published in a package manager: vcpkg (2874 ports) and Conan Center (1951
 recipes) have nothing for the Nepali calendar. What exists is code inside CLI tools and desktop
@@ -22,7 +22,7 @@ fiscal year or patro data, and every one disagreeing with NepDate's data in some
 Apple's `Calendar.Identifier.vikram` (iOS 26) is Foundation, not available to portable C++, and is
 the Indian lunisolar Vikram Samvat, not Nepal's solar Bikram Sambat (checked for the family on 2026-10-07).
 
-## Benchmarked against (C5-02)
+## Benchmarked against
 
 "Differing years" compares each table's month lengths with `shared/data/calendar/bs-calendar.json`
 over the years both cover (script run 2026-10-08).
@@ -33,7 +33,7 @@ over the years both cover (script run 2026-10-08).
 | `aatishnn/nepdate` `date.c` (`18e5d3f9`) | GPL (GitHub metadata says GPL-2.0, the file header says GPL-3.0 or later) | no release, 2015-03-18 | 2000 to 2090 | C structs with fixed `char[10]` names; sums years, then **walks day by day** (`while (total_eDays != 0)`) | 2062, 2081, 2082, 2083, 2087, 2090 |
 | `nepali-bhasa/nepali-calendar` library `nepalical` (`3ea885a8`) | GPL-3.0 | no release, 2017-01-26 | 2000-09-17 to 2090-12-30 | classes `Bs`/`Ad` over an abstract `Date`; each date owns a heap-allocated data object (`delete data` in the destructor), so every conversion allocates | 2062, 2081, 2082, 2083, 2087, 2090 |
 
-Calls to benchmark (confirm the month base, 0 or 1, from the source in C5-02):
+Calls to benchmark (confirm the month base, 0 or 1, from the source):
 
 | Code | BS → AD | AD → BS |
 |---|---|---|
@@ -43,7 +43,7 @@ Calls to benchmark (confirm the month base, 0 or 1, from the source in C5-02):
 
 Only B1 and B2 apply to them (none has month arithmetic with clamp, Nepali long format, strict parse
 or patro data); the other columns say "n/a". If one of them doesn't compile with C++20 and our
-warning flags relaxed for its sources only, C5-02 records why and moves it to the next table.
+warning flags relaxed for its sources only; the reason is recorded in the next table.
 
 The 64 benchmark dates (BS 2000-01-01 to 2090-12-30) include 2081 to 2087, where these tables
 disagree with NepDate, so the "agrees" column will not be 64/64 for any of them.

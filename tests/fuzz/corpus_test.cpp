@@ -1,4 +1,4 @@
-// C3-07: the seed corpus under tests/fuzz/corpus/ must be exactly the parse.tsv inputs, and every
+// The seed corpus under tests/fuzz/corpus/ must be exactly the parse.tsv inputs, and every
 // file passes the fuzz property (ADR-0004 section 3). Runs as a normal test on every platform and
 // in every preset, no libFuzzer needed.
 

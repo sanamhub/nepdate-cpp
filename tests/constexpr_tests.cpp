@@ -1,4 +1,4 @@
-// C1-08: compile-time checks (ADR-0004 §3). Every STATIC_REQUIRE here is evaluated by the compiler.
+// Compile-time checks (ADR-0004 §3). Every STATIC_REQUIRE here is evaluated by the compiler.
 
 #include <nepdate/date.hpp>
 #include <nepdate/fiscal_year.hpp>
@@ -51,7 +51,7 @@ TEST_CASE("ALGORITHM section 9 holds at compile time", "[constexpr]") {
     STATIC_REQUIRE(make_date(2083, 1, 1)->weekday() == chr::Tuesday);
 }
 
-TEST_CASE("sizes and traits of C1-02 and C1-03", "[constexpr]") {
+TEST_CASE("sizes and traits of date and result", "[constexpr]") {
     STATIC_REQUIRE(sizeof(date) == 4);
     STATIC_REQUIRE(sizeof(result<date>) == 4);
     STATIC_REQUIRE(std::is_trivially_copyable_v<date>);
@@ -62,7 +62,7 @@ TEST_CASE("sizes and traits of C1-02 and C1-03", "[constexpr]") {
     STATIC_REQUIRE(from_gregorian(2023, 2, 29).error() == errc::invalid_gregorian);
 }
 
-TEST_CASE("C2: the ALGORITHM section 8 examples and a fiscal year at compile time", "[constexpr]") {
+TEST_CASE("the ALGORITHM section 8 examples and a fiscal year at compile time", "[constexpr]") {
     constexpr date d = make_date(2081, 4, 32).value();
     STATIC_REQUIRE(d.add_months(2, nepdate::overflow::clamp) == make_date(2081, 6, 30));
     STATIC_REQUIRE(d.add_months(2, nepdate::overflow::spill) == make_date(2081, 7, 2));
@@ -74,7 +74,7 @@ TEST_CASE("C2: the ALGORITHM section 8 examples and a fiscal year at compile tim
         static_cast<std::size_t>(make_date(2081, 4, 1)->days_until(make_date(2082, 4, 1).value())));
 }
 
-TEST_CASE("C3: a Nepali long format fits a std::array<char, 80> at compile time", "[constexpr]") {
+TEST_CASE("a Nepali long format fits a std::array<char, 80> at compile time", "[constexpr]") {
     STATIC_REQUIRE([] {
         constexpr date d = make_date(2081, 4, 15).value();
         std::array<char, 80> buf{};

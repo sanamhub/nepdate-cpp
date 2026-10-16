@@ -1,4 +1,4 @@
-// C3-05 and C3-06: strict and lenient parsing (PARSING sections 1 and 2) against
+// Strict and lenient parsing (PARSING sections 1 and 2) against
 // shared/spec/vectors/parse.tsv. This file is UTF-8.
 
 #include "vectors.hpp"

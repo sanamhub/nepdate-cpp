@@ -1,4 +1,4 @@
-// C1-06: all 109,212 serials, BS -> serial -> AD -> BS, and Neri-Schneider against Hinnant.
+// All 109,212 serials, BS -> serial -> AD -> BS, and Neri-Schneider against Hinnant.
 
 #include "hinnant_reference.hpp"
 

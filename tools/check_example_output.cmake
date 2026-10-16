@@ -1,4 +1,4 @@
-# C5-01: runs one example program and compares its standard output with the expected-output file,
+# Runs one example program and compares its standard output with the expected-output file,
 # after folding CRLF to LF (Windows text mode turns '\n' into "\r\n"). Fails and prints both
 # outputs on a mismatch.
 #

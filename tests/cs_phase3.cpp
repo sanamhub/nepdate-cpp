@@ -1,4 +1,4 @@
-// C3-08: the phase-3 rows of C# NepDate's own tests (shared/spec/vectors/csharp-tests/catalog.tsv).
+// The phase-3 rows of C# NepDate's own tests (shared/spec/vectors/csharp-tests/catalog.tsv).
 // Each row is a TEST_CASE named after its id, or a cs-deviation / cs-n/a line. The CTest test
 // catalog_coverage (tools/check_catalog.cmake) checks that every row up to phase 3 is here.
 //

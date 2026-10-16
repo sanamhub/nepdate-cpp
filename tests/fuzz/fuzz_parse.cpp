@@ -1,10 +1,10 @@
-// C3-07: the libFuzzer target for strict parsing. Clang only (preset fuzz, which compiles with
+// The libFuzzer target for strict parsing. Clang only (preset fuzz, which compiles with
 // -fsanitize=fuzzer-no-link,address,undefined); the seed corpus runs through the same property as
 // a normal test on every platform (corpus_test.cpp). A violation aborts, so libFuzzer reports it
 // as a finding and saves the input.
 //
 // The input is parsed in place, not copied: libFuzzer hands over an exactly sized heap buffer, so
-// ASan reports any read past its end (the C3 checkpoint item "parse never reads past the input").
+// ASan reports any read past its end.
 
 #include "fuzz_property.hpp"
 

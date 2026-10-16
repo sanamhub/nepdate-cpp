@@ -1,4 +1,4 @@
-// C3-01 and C3-06: the name lists in tools/codegen/names.hpp equal the tables of
+// The name lists in tools/codegen/names.hpp equal the tables of
 // shared/spec/FORMATTING.md section 1 and PARSING.md sections 2 and 3, and the rendered header is
 // ASCII.
 

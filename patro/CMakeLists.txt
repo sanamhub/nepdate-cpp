@@ -1,5 +1,5 @@
 # The patro (PATRO.md, hub ADR-0004): tithi, holidays and events, in its own package on top of the
-# core. Built from the top level, or on its own against an installed core (C4-01 AC):
+# core. Built from the top level, or on its own against an installed core:
 #
 #   cmake --install <core build> --prefix <prefix>
 #   cmake -S patro -B <dir> -DCMAKE_PREFIX_PATH=<prefix>
@@ -45,13 +45,13 @@ if(COMMAND nepdate_set_instrumentation)
     nepdate_set_instrumentation(nepdate_patro)
 endif()
 if(MSVC)
-    # The generated patro_tables.hpp carries readable UTF-8 comments (C4-02); the public headers
+    # The generated patro_tables.hpp carries readable UTF-8 comments; the public headers
     # stay 7-bit ASCII, so /utf-8 is private to this target and never propagates to users.
     target_compile_options(nepdate_patro PRIVATE /utf-8)
 endif()
 
 # <nepdate/patro_export.hpp>, generated at configure time. Only functions are exported, never data
-# (ADR-0001 section 2; the C4-01 dumpbin AC checks the shared build).
+# (ADR-0001 section 2; a dumpbin check verifies the shared build).
 include(GenerateExportHeader)
 generate_export_header(nepdate_patro
     BASE_NAME patro

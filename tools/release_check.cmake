@@ -4,7 +4,7 @@
 #   cmake -DVERSION=X.Y.Z -P tools/release_check.cmake
 #
 # Locations: project() in CMakeLists.txt, NEPDATE_VERSION_* in include/nepdate/version.hpp,
-# ports/*/vcpkg.json and conan/*/conanfile.py (checked once C5 creates them), and a
+# ports/*/vcpkg.json and conan/*/conanfile.py, and a
 # `## [X.Y.Z] - YYYY-MM-DD` heading in CHANGELOG.md.
 
 cmake_minimum_required(VERSION 3.25)

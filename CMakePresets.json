@@ -74,7 +74,7 @@
     {
       "name": "fuzz",
       "inherits": "base",
-      "description": "Clang with libFuzzer instrumentation, ASan and UBSan (fuzz targets arrive in C3)",
+      "description": "Clang with libFuzzer instrumentation, ASan and UBSan",
       "cacheVariables": {
         "NEPDATE_SANITIZE": "address,undefined,fuzzer-no-link"
       }

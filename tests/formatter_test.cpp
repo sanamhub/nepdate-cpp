@@ -1,4 +1,4 @@
-// C3-04: std::formatter<nepdate::date>. Compiled out where the standard library has no <format>;
+// std::formatter<nepdate::date>. Compiled out where the standard library has no <format>;
 // the test named below then reports itself as skipped.
 
 #include <nepdate/date.hpp>

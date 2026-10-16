@@ -489,7 +489,7 @@ std::string render_patro_config(std::uint64_t calendar_fingerprint) {
     out += "#ifndef NEPDATE_PATRO_CONFIG_HPP\n";
     out += "#define NEPDATE_PATRO_CONFIG_HPP\n";
     out += "\n";
-    out += "// Kept overridable so the C4-03 compile-fail test can inject a wrong value.\n";
+    out += "// Kept overridable so a compile-fail test can inject a wrong value.\n";
     out += "#ifndef NEPDATE_PATRO_CALENDAR_FINGERPRINT\n";
     out += "#define NEPDATE_PATRO_CALENDAR_FINGERPRINT " + hex(calendar_fingerprint, 16) + "\n";
     out += "#endif\n";

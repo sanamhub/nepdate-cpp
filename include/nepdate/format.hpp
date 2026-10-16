@@ -402,7 +402,7 @@ to_chars_pattern(char* first, char* last, date d, std::string_view pattern, lang
 
 } // namespace nepdate
 
-// The one feature-test #if of the library (AGENTS.md): std::formatter exists only where the
+// The one feature-test #if of the library (docs/API.md): std::formatter exists only where the
 // standard library has <format>.
 #if defined(__cpp_lib_format) && __cpp_lib_format >= 201907L
 #include <format>

@@ -1,7 +1,7 @@
 #ifndef NEPDATE_TESTS_FUZZ_PROPERTY_HPP
 #define NEPDATE_TESTS_FUZZ_PROPERTY_HPP
 
-// C3-07: the property every parse input must satisfy (ADR-0004 section 3), shared by the two
+// The property every parse input must satisfy (ADR-0004 section 3), shared by the two
 // libFuzzer targets and the corpus CTest test. Test code, not part of the library.
 
 #include <nepdate/format.hpp>
