@@ -1,4 +1,4 @@
-// C1-08 and C3-08: the paths of ADR-0002 §6 allocate nothing. Each runs 1000 times between two
+// The paths of ADR-0002 §6 allocate nothing. Each runs 1000 times between two
 // reads of the counter; no Catch2 macro runs inside the measured block.
 
 #include "alloc_counter.hpp"

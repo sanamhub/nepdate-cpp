@@ -1,38 +1,33 @@
 # Changelog
 
-All notable changes to `nepdate` and `nepdate-patro` are recorded here. Both libraries share one
-version (ADR-0005). The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
-and versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.1.0] - 2026-10-15
+## [Unreleased]
+
+First release of the two packages: header-only `nepdate` and the compiled `nepdate-patro`. The
+public surface is in `docs/API.md`. The surface is complete for 0.1.0, but 0.x means a minor
+bump may still change it.
 
 ### Added
 
-- `nepdate::date`: a 4-byte Bikram Sambat date for BS 1901-01-01 to 2199-12-30, with `year`,
-  `month`, `day`, `weekday`, `day_of_year`, `month_length`, `year_length`, `first_of_month`,
-  `last_of_month`, `min`, `max`, `==`, `<=>` and `std::hash`.
-- `make_date`, `from_gregorian`, `from_sys_days`, `from_local_days`, `to_year_month_day` and
-  `to_sys_days`: BS to AD and back, `constexpr` and without allocation.
-- `errc`, `to_string(errc)`, `is_parse_error` and `result<T>`; `result<date>` is 4 bytes.
-- `month` and `lang` enumerations.
-- `date::add_days`, `next`, `prev` and `days_until` (D-03, D-07).
-- `date::add_months` and `add_years` with `overflow::clamp` or `overflow::spill` (D-02).
-- `date::diff` and `date_diff`: years, months and days between two dates (ALGORITHM §8a).
-- `date_range` (`<nepdate/date_range.hpp>`): an inclusive, random-access view of dates with
-  `make`, `of_month`, `of_year`, `size` and `contains` (D-09).
-- `fiscal_year`, `quarter`, `quarter_of` and `months_of` (`<nepdate/fiscal_year.hpp>`): start,
-  end, range, quarter ranges and the label `2082/83` or `२०८२/८३` (D-08).
-- Formatting (`<nepdate/format.hpp>`): `to_chars`, `to_chars_iso`, `to_chars_short`,
-  `to_chars_long`, `to_chars_pattern` and `to_chars_number` write into the caller's buffer; the
-  matching `std::string` functions are `to_string`, `to_iso_string`, `format_short`,
-  `format_long` and `format_pattern`. Names come from `month_name`, `month_short_name` (D-04),
-  `weekday_name` and `weekday_short_name`. `std::formatter<nepdate::date>` prints `{}` as
-  `YYYY/MM/DD` and `{:<pattern>}` through FORMATTING §5, behind the one `__cpp_lib_format` guard.
-- Parsing (`<nepdate/parse.hpp>`): `parse` (strict) and `parse_lenient`, both `constexpr` over
-  `std::string_view`, plus the `char8_t` overloads for `u8""` literals.
-- Clock and time zone interop (`<nepdate/date.hpp>`): `nepal_utc_offset`, `from_sys_time` and
-  `today`, which default to Nepal's fixed +05:45 offset.
-- `nepdate::patro` (`<nepdate/patro.hpp>`): `info`, `coverage`, `public_holidays`, `tithi`,
-  `event` and `day_info` for the tithi, holidays and events of BS 2077-01-01 to 2084-08-20.
-- vcpkg overlay ports (`ports/nepdate`, `ports/nepdate-patro`) and Conan recipes
-  (`conan/nepdate`, `conan/nepdate-patro`) for the two packages.
+- BS and AD conversion. `date` is a 4-byte Bikram Sambat date; `make_date`, `from_gregorian`,
+  `from_sys_days` and the `to_*` members convert both ways. Conversion is `constexpr` and
+  allocates nothing. All 109,212 days from BS 1901 to 2199 round-trip BS to AD to BS in the
+  tests, and the shared conversion vectors pass.
+- Arithmetic and fiscal year. `add_days`, `add_months`, `add_years`, `diff`, `date_range` and
+  `fiscal_year`, with the shared clamp and spill rules.
+- Formatting and parsing. `to_chars_*` write into the caller's buffer and allocate nothing;
+  `parse` and `parse_lenient` are `constexpr` over `std::string_view` and reject rather than
+  guess.
+- The patro. `nepdate::patro` provides `info`, `coverage`, `public_holidays`, `tithi` and `event`
+  for tithi, public holidays and events over BS 2077 to 2084.
+- vcpkg overlay ports and Conan recipes for both packages.
+- C++20, built and tested on GCC 12, Clang 16 (with libstdc++ and with libc++), Apple Clang 16 and
+  MSVC 19.44, each also with exceptions and RTTI disabled.
+
+### Notes
+
+- Benchmarks against C# NepDate are in `docs/benchmarks.md`. BS to AD is 7.09 ns on MSVC and
+  5.58 ns on Clang against 13.29 ns for C# NepDate, with zero allocation. The patro month grid
+  (B8) misses its target and is reported there.

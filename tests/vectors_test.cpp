@@ -1,4 +1,4 @@
-// C1-06: the shared vectors and the spec cross-check (ALGORITHM §2).
+// The shared vectors and the spec cross-check (ALGORITHM §2).
 
 #include "vectors.hpp"
 

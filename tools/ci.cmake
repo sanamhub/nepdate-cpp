@@ -42,7 +42,7 @@ if(PRESET_PREFIX)
     message(STATUS "ci: using presets ${PRESET_PREFIX}<name>")
 endif()
 
-set(all_gates format ascii codegen build-and-test no-exceptions tidy sanitizers coverage isolation)
+set(all_gates format ascii codegen build-and-test no-exceptions tidy sanitizers coverage isolation docs)
 if(DEFINED ONLY)
     string(REPLACE "," ";" gates "${ONLY}")
     foreach(gate IN LISTS gates)
@@ -294,7 +294,7 @@ if("coverage" IN_LIST gates)
             ci_run("${gcovr}" ${gcovr_args} --json-summary "${coverage_dir}/coverage.json")
         endif()
         if(ci_rc EQUAL 0)
-            # gcovr counts 0 of 0 lines as 0 %, which would fail the skeleton of phase C0, where
+            # gcovr counts 0 of 0 lines as 0 %, which would fail a fresh repository, where
             # include/ has no executable line yet.
             file(READ "${coverage_dir}/coverage.json" summary)
             string(JSON line_total GET "${summary}" line_total)
@@ -311,7 +311,7 @@ if("coverage" IN_LIST gates)
     endif()
 endif()
 
-# ---- gate 9: isolation (C4-04) ----
+# ---- gate 9: isolation ----
 if("isolation" IN_LIST gates)
     ci_run("${CMAKE_COMMAND}" --preset "${PRESET_PREFIX}release")
     if(ci_rc EQUAL 0)
@@ -368,6 +368,15 @@ if("isolation" IN_LIST gates)
             ci_fail(isolation "${relative} includes the patro")
         endif()
     endforeach()
+    ci_pass()
+endif()
+
+# ---- gate 10: docs ----
+if("docs" IN_LIST gates)
+    ci_run("${CMAKE_COMMAND}" -P "${root}/tools/check_docs.cmake")
+    if(NOT ci_rc EQUAL 0)
+        ci_fail(docs "tools/check_docs.cmake")
+    endif()
     ci_pass()
 endif()
 

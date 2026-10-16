@@ -5,7 +5,7 @@
 #   cmake -DPHASE=1 -DCATALOG=<catalog.tsv> -DTEST_EXES=<exe;exe> -DTEST_DIRS=<dir;dir>
 #         -P tools/check_catalog.cmake
 #
-# Since C4-06 the tests live in two executables (core and patro); TEST_EXES and TEST_DIRS are
+# The tests live in two executables (core and patro); TEST_EXES and TEST_DIRS are
 # semicolon lists.
 
 cmake_minimum_required(VERSION 3.25)

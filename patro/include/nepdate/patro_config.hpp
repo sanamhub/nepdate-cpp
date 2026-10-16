@@ -6,7 +6,7 @@
 #ifndef NEPDATE_PATRO_CONFIG_HPP
 #define NEPDATE_PATRO_CONFIG_HPP
 
-// Kept overridable so the C4-03 compile-fail test can inject a wrong value.
+// Kept overridable so a compile-fail test can inject a wrong value.
 #ifndef NEPDATE_PATRO_CALENDAR_FINGERPRINT
 #define NEPDATE_PATRO_CALENDAR_FINGERPRINT 0xc2cdd10a9b668dc3
 #endif

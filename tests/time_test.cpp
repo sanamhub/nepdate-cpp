@@ -1,4 +1,4 @@
-// C4-05: from_sys_time, today and the <chrono> interop (PORT-PLAN phase 4).
+// from_sys_time, today and the <chrono> interop (PORT-PLAN phase 4).
 
 #include <nepdate/date.hpp>
 #include <nepdate/detail/calendar_tables.hpp>

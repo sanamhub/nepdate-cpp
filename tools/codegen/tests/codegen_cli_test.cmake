@@ -1,4 +1,4 @@
-# Runs nepdate_codegen as a user would and checks the C0-03 acceptance criteria.
+# Runs nepdate_codegen as a user would and checks the command-line behaviour.
 # Inputs: -DCODEGEN=<exe> -DSHARED=<shared dir> -DCOMMITTED=<committed header> -DWORK=<scratch dir>
 
 set(relative "include/nepdate/detail/calendar_tables.hpp")
@@ -23,7 +23,7 @@ if(NOT rc EQUAL 0)
     message(FATAL_ERROR "${COMMITTED} is out of date: build the codegen target")
 endif()
 
-# C3-01: the names header sits next to the calendar header and must match it too.
+# The names header sits next to the calendar header and must match it too.
 set(names "include/nepdate/detail/names_tables.hpp")
 get_filename_component(committed_dir "${COMMITTED}" DIRECTORY)
 foreach(other IN ITEMS "${WORK}/b/${names}" "${committed_dir}/names_tables.hpp")

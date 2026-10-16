@@ -1,4 +1,4 @@
-// C4-06: the interop rows of phase 4 of the C# catalogue (shared/spec/vectors/csharp-tests/
+// The interop rows of phase 4 of the C# catalogue (shared/spec/vectors/csharp-tests/
 // catalog.tsv), plus the NepaliDateIsRelativeTests rows as D-14 deviations (PARITY.md D-14: the
 // relative predicates are not ported; compare with today() and add_days(+-1)). The patro rows
 // live in patro/tests/cs_phase4.cpp.

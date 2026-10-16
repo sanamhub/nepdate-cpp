@@ -1,6 +1,7 @@
 #ifndef NEPDATE_VERSION_HPP
 #define NEPDATE_VERSION_HPP
 
+// Licensed under the MIT License (see LICENSE).
 // Kept equal to project() in CMakeLists.txt by tools/release_check.cmake (ADR-0005). The macros
 // are public API (docs/API.md), so they stay macros rather than becoming enums or constexpr
 // variables.

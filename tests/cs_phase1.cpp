@@ -1,9 +1,9 @@
-// C1-07: the phase-1 rows of C# NepDate's own tests (shared/spec/vectors/csharp-tests/catalog.tsv).
+// The phase-1 rows of C# NepDate's own tests (shared/spec/vectors/csharp-tests/catalog.tsv).
 // Each row is a TEST_CASE named after its id, or a cs-deviation / cs-n/a line. The CTest test
 // catalog_coverage (tools/check_catalog.cmake) checks that every phase-1 row is here.
 //
-// Rows that build a date from a string use parse (C3-05). The row that reads the clock uses
-// today() (C4-05).
+// Rows that build a date from a string use parse. The row that reads the clock uses
+// today().
 
 #include <nepdate/date.hpp>
 #include <nepdate/parse.hpp>

@@ -1,20 +1,17 @@
 # Security policy
 
-`nepdate-cpp` is two libraries with no dependencies, no network access and no file access. A
-security problem is most likely undefined behaviour or a read past a table on hostile input to
-`parse` or `parse_lenient`, or a problem in a workflow (`.github/workflows/`).
-
 ## Supported versions
 
-The latest `0.x` release gets fixes. A bad release is fixed by a new patch version; published tags
-never move (ADR-0005).
+Only the latest release receives fixes.
 
 ## Reporting a vulnerability
 
 Report privately through
 [GitHub security advisories](https://github.com/sanamhub/nepdate-cpp/security/advisories/new).
-Don't open a public issue. Expect a first reply within a week. Say which version, compiler and
-function are affected and give an input that reproduces it.
+Do not open a public issue.
 
-A wrong date, holiday or tithi isn't a security problem: report it in the hub,
-[`sanamhub/nepdate`](https://github.com/sanamhub/nepdate/issues/new/choose).
+Include the input that triggers it, the platform and the package version. Expect a first reply
+within a week.
+
+A wrong calendar result, where nepdate-cpp and the shared data give the same wrong answer, belongs
+to the hub: [sanamhub/nepdate security policy](https://github.com/sanamhub/nepdate/security/policy).

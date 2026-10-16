@@ -27,7 +27,7 @@ without bash or Python) runs, in order, stopping at the first failure, and ends 
 8. **coverage:** preset `coverage` (GCC `--coverage`, `gcovr --fail-under-line 90
    --fail-under-branch 80`, filters `include/` and `patro/`). Skipped with a warning when `gcovr` is
    not found. Org target is 80 % lines; this port asks for 90.
-9. **isolation** (added in C4): the core-only program `tools/coreonly` is built in Release; its
+9. **isolation**: the core-only program `tools/coreonly` is built in Release; its
    binary must not contain the bytes `World Day Against Human Trafficking`, and a CMake check
    asserts that `nepdate::nepdate`'s `INTERFACE_LINK_LIBRARIES` is empty. The patro test binary
    must contain the string, so the check can't pass by accident (hub ADR-0004).
@@ -93,8 +93,8 @@ exhaustively (109,212 serials), which beats random sampling. Catch2 generators c
 | sanitizers | `ubuntu-24.04` | Clang 18 | gate 7, TSan test |
 | coverage | `ubuntu-24.04` | GCC 14 + gcovr | gate 8 |
 | fuzz | `ubuntu-24.04` | Clang 18 | 60 s per target |
-| packages | `ubuntu-24.04`, `windows-2025-vs2026` | default | overlay ports via vcpkg, recipes via `conan create` (C5) |
-| isolation | `ubuntu-24.04`, `windows-2025-vs2026` | default | gate 9 (C4) |
+| packages | `ubuntu-24.04`, `windows-2025-vs2026` | default | overlay ports via vcpkg, recipes via `conan create` |
+| isolation | `ubuntu-24.04`, `windows-2025-vs2026` | default | gate 9 |
 | shared-check | hub reusable workflow | | `shared/` matches `shared/VERSION` |
 
 Every `uses:` is pinned to a 40-character commit SHA with the version in a comment, including the
@@ -123,7 +123,7 @@ deviation.
 - Run on the reference machine with `start /affinity 4 /wait build\bench\nepdate_bench.exe
   --benchmark_repetitions=10 --benchmark_report_aggregates_only=true --benchmark_out=...json`, once
   built with MSVC and once with Clang (both Release, `/O2` or `-O2`, no `-march`).
-- Not run per PR. Results go to `docs/benchmarks.md` (C5).
+- Not run per PR. Results go to `docs/benchmarks.md`.
 
 ## Consequences
 

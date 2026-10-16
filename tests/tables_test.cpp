@@ -1,4 +1,4 @@
-// C1-01: the generated tables of ADR-0002 §2.
+// The generated tables of ADR-0002 §2.
 
 #include <nepdate/detail/calendar_tables.hpp>
 

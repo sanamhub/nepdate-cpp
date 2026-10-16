@@ -1,4 +1,4 @@
-// C1-05: Gregorian conversion and the AD side of date.
+// Gregorian conversion and the AD side of date.
 
 #include <nepdate/date.hpp>
 

@@ -9,7 +9,7 @@ nepdate_set_warnings(nepdate_codegen_tests)
 nepdate_set_instrumentation(nepdate_codegen_tests)
 catch_discover_tests(nepdate_codegen_tests)
 
-# The command-line ACs of C0-03: identical bytes on two runs, LF only, --check exit codes.
+# The command-line checks: identical bytes on two runs, LF only, --check exit codes.
 add_test(NAME codegen_cli
     COMMAND "${CMAKE_COMMAND}"
         -DCODEGEN=$<TARGET_FILE:nepdate_codegen>

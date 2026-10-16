@@ -1,4 +1,4 @@
-// C1-02 (result<date>) and C1-03: construction, accessors, comparison and hashing.
+// result<date> and date itself: construction, accessors, comparison and hashing.
 
 #include <nepdate/date.hpp>
 

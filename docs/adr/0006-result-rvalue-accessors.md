@@ -7,7 +7,7 @@
 
 ## Context
 
-`result<T>::value()` and `operator*` return `const T&`, as `std::expected` does. In C6 the
+`result<T>::value()` and `operator*` return `const T&`, as `std::expected` does. The
 sanitizer gate found two tests that did
 
 ```cpp

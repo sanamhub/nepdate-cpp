@@ -1,4 +1,4 @@
-// C4-06: the ThreadSanitizer test of ADR-0004 section 3. Eight threads read info and do date
+// The ThreadSanitizer test of ADR-0004 section 3. Eight threads read info and do date
 // arithmetic over every covered day; all data is immutable, so TSan must stay clean. Runs on
 // every platform too, just without the race detector.
 #include <nepdate/patro.hpp>

@@ -1,4 +1,4 @@
-// C4-04: the core-only program of gate 9 (ADR-0004 section 1). It uses only <nepdate/nepdate.hpp>
+// The core-only program of gate 9 (ADR-0004 section 1). It uses only <nepdate/nepdate.hpp>
 // and links nothing but nepdate::nepdate. The isolation gate builds it in Release and fails when
 // its bytes contain patro data, so this program is the proof that the core carries none.
 #include <nepdate/nepdate.hpp>

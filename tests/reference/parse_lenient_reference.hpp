@@ -1,9 +1,8 @@
-#ifndef NEPDATE_TESTS_REFERENCE_PARSE_LENIENT_C6_HPP
-#define NEPDATE_TESTS_REFERENCE_PARSE_LENIENT_C6_HPP
+#ifndef NEPDATE_TESTS_REFERENCE_PARSE_LENIENT_REFERENCE_HPP
+#define NEPDATE_TESTS_REFERENCE_PARSE_LENIENT_REFERENCE_HPP
 
-// C7-02: the pre-split parse_lenient exactly as it was at the C6 review, kept as the reference the
-// new detail::tokenize/detail::assemble implementation must agree with on every input. Test code,
-// not part of the library.
+// The pre-split parse_lenient, kept as the reference the split detail::tokenize/detail::assemble
+// implementation must agree with on every input. Test code, not part of the library.
 
 #include <nepdate/parse.hpp>
 
@@ -13,10 +12,11 @@
 
 namespace nepdate_test::reference {
 
-// The C6 parse_lenient (PARSING section 2), renamed. The library's parse_lenient must give the
+// The pre-split parse_lenient (PARSING section 2). The library's parse_lenient must give the
 // same value or error for every input.
 // NOLINTNEXTLINE(readability-function-cognitive-complexity): reference copy kept verbatim
-[[nodiscard]] inline nepdate::result<nepdate::date> parse_lenient_c6(std::string_view s) noexcept {
+[[nodiscard]] inline nepdate::result<nepdate::date>
+parse_lenient_reference(std::string_view s) noexcept {
     if (const nepdate::result<nepdate::date> r = nepdate::parse(s); r.has_value()) {
         return r;
     }
@@ -135,4 +135,4 @@ namespace nepdate_test::reference {
 
 } // namespace nepdate_test::reference
 
-#endif // NEPDATE_TESTS_REFERENCE_PARSE_LENIENT_C6_HPP
+#endif // NEPDATE_TESTS_REFERENCE_PARSE_LENIENT_REFERENCE_HPP

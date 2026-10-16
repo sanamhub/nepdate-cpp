@@ -1,4 +1,4 @@
-// C3-01: month and weekday names (FORMATTING section 1) and to_chars_number. This file is UTF-8;
+// Month and weekday names (FORMATTING section 1) and to_chars_number. This file is UTF-8;
 // the library headers hold the same text as octal escapes.
 
 #include <nepdate/date.hpp>

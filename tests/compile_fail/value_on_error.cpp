@@ -1,4 +1,4 @@
-// C1-02: value() on an error can't be a constant expression (ADR-0003 §2). The test
+// value() on an error can't be a constant expression (ADR-0003 §2). The test
 // compile_fail_value_on_error builds this with NEPDATE_EXPECT_COMPILE_ERROR=1 and must fail;
 // compile_fail_control builds it with 0 and must pass, so the failure can't come from a typo.
 

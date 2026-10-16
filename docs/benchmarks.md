@@ -18,16 +18,16 @@ through [`bench/`](../bench/). The C# column is copied from the hub's
 | Power plan | Ultimate Performance |
 | Affinity | logical CPU 2 (mask `0x4`), set with `start /affinity 4` |
 
-The laptop was not idle during these runs (other agent jobs were active, and the CPU sat at its
+The laptop was not idle during these runs (other build jobs were active, and the CPU sat at its
 3.1 GHz base clock). The numbers are indicative; BENCHMARK.md section 1 asks for a quiet machine,
-which the final release run should use. Loads at the C7 re-bench: MSVC 23 %, Clang 11 %.
-The MSVC B8 row was re-measured on its own after the C7 review (see the B8 note).
+which the final release run should use. Loads at the re-bench: MSVC 23 %, Clang 11 %.
+The MSVC B8 row was re-measured on its own (see the B8 note).
 
 ## Toolchains and versions
 
 | Item | Value |
 |---|---|
-| nepdate-cpp | `main` at `1062363` (C0 to C6 merged), plus the C7 branch (`feat/C7-hardening`) |
+| nepdate-cpp | `main` at `3f2e6c0` |
 | MSVC | 19.51.36260 (Visual Studio 2026 Community 18), x64, Release `/O2 /DNDEBUG` |
 | Clang | 22.1.8 (zig 0.17.0, `x86_64-windows-gnu`, libc++), Release `-O3 -DNDEBUG` |
 | Google Benchmark | 1.9.5 (vcpkg, feature `dev`) |
@@ -42,7 +42,7 @@ Both build trees were configured from the repository root with the vcpkg toolcha
 feature (which brings `benchmark`). The benchmark runs 10 repetitions per operation, reports the
 aggregate mean and standard deviation, writes JSON, and is pinned to logical CPU 2.
 
-MSVC (the reviewer's `vcvars64` environment, reused):
+MSVC (from a `vcvars64` environment):
 
 ```
 cmake -S bench -B <dir> -G Ninja -DCMAKE_BUILD_TYPE=Release
@@ -124,12 +124,12 @@ Nepali long format, strict parsing or patro data, so the other cells are "n/a"
 microseconds; nepalical allocates four heap objects per conversion (about 4 allocs/op, 32
 bytes/op), the other two allocate nothing.
 
-## B-lenient (C7-02)
+## B-lenient
 
 The bench also times `parse_lenient` on the 64 dates written as `DD <month name> YYYY`, so the
 lenient tokenizer, classifier and assembler all run (strict parse fails first). It is not one of
-the published B1 to B8; C7-02 uses it to show the split of `parse_lenient` into per-step functions
-did not regress lenient parsing. MSVC, CPU time, 10 repetitions: 228.5 ns/op before (the C6 body)
+the published B1 to B8; it shows the split of `parse_lenient` into per-step functions did not
+regress lenient parsing. MSVC, CPU time, 10 repetitions: 228.5 ns/op before (the pre-split body)
 and 222.3 ns/op after (the split), 0 bytes both.
 
 ## Targets (ADR-0002 section 9)
@@ -148,20 +148,20 @@ compilers. ADR-0002 section 9 sets tighter targets for all eight:
 | B7 | <= 10 | 12.81 | 10.22 | neither |
 | B8 | <= 250 | 516.64 | 450 | neither |
 
-Misses to report to the human:
+Misses:
 
 - **B8, patro month grid.** 516.64 ns (MSVC, 33,064 ns per 64 grids, CPU time, 10 repetitions,
   2026-10-15) and about 450 ns (Clang, 16 % load) against 250 ns. Both iterate the month with the
-  public `date_range`, as a user would. C7-03 first rewrote the benchmark loop to step serials with
-  the internal `detail::from_serial`; that made the benchmark faster without making the library
-  faster (and the MSVC gain was within noise), so the review reverted it. A callgrind profile
+  public `date_range`, as a user would. An earlier rewrite stepped serials with the internal
+  `detail::from_serial`; that made the benchmark faster without making the library faster (and the
+  MSVC gain was within noise), so it was reverted. A callgrind profile
   (clang, WSL) puts 47 % of the instructions in the grid loop (iterator dereference through
   from_serial, plus the consume), 26 % in patro::info (to_serial plus four table reads) and 17 % in
   event::name and tithi::name. Closing the gap is left to a profile-led pass on a quiet machine before
   the release run (the loaded laptop moves even B1 by a few percent between runs); candidates are
   the per-day out-of-line `info` call and the name lookups, not the benchmark loop.
 - **B1 and B2 on MSVC, B7 on both.** 7.09 ns against 6, 8.94 ns against 8, and 12.81 ns (MSVC) /
-  10.22 ns (Clang) against 10. B1 and B7 on MSVC missed in C5 too; these are within the noise of
+  10.22 ns (Clang) against 10. B1 and B7 on MSVC missed in the earlier run too; these are within the noise of
   the loaded machine (the CPU never left its 3.1 GHz base clock).
 
 ## The ADR-0002 section 8 variant of B1

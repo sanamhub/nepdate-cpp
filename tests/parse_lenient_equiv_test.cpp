@@ -1,7 +1,7 @@
-// C7-02: the split parse_lenient must agree with the C6 reference (reference/parse_lenient_c6.hpp)
+// The split parse_lenient must agree with the reference (reference/parse_lenient_reference.hpp)
 // on every parse.tsv row, every corpus file and 200,000 generated inputs.
 
-#include "reference/parse_lenient_c6.hpp"
+#include "reference/parse_lenient_reference.hpp"
 #include "vectors.hpp"
 
 #include <nepdate/parse.hpp>
@@ -23,7 +23,7 @@ namespace {
 
 void check_equiv(std::string_view input) {
     INFO("input: [" << input << "]");
-    CHECK(nepdate::parse_lenient(input) == nepdate_test::reference::parse_lenient_c6(input));
+    CHECK(nepdate::parse_lenient(input) == nepdate_test::reference::parse_lenient_reference(input));
 }
 
 // Deterministic generator: mixes digits (ASCII and Devanagari), month names (ASCII and
@@ -80,7 +80,7 @@ std::string generated_input(std::mt19937& rng) {
 
 } // namespace
 
-TEST_CASE("split parse_lenient agrees with the C6 reference on parse.tsv", "[parse][equiv]") {
+TEST_CASE("split parse_lenient agrees with the reference on parse.tsv", "[parse][equiv]") {
     const nepdate_test::table t = nepdate_test::read_vectors("parse.tsv", '\t');
     REQUIRE(t.rows.size() == 67);
     const std::size_t input = t.column("input");
@@ -89,7 +89,7 @@ TEST_CASE("split parse_lenient agrees with the C6 reference on parse.tsv", "[par
     }
 }
 
-TEST_CASE("split parse_lenient agrees with the C6 reference on the fuzz corpus", "[parse][equiv]") {
+TEST_CASE("split parse_lenient agrees with the reference on the fuzz corpus", "[parse][equiv]") {
     const std::filesystem::path dir = NEPDATE_FUZZ_CORPUS_DIR;
     std::size_t files = 0;
     for (const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(dir)) {
@@ -105,7 +105,7 @@ TEST_CASE("split parse_lenient agrees with the C6 reference on the fuzz corpus",
     CHECK(files == 67);
 }
 
-TEST_CASE("split parse_lenient agrees with the C6 reference on 200,000 generated inputs",
+TEST_CASE("split parse_lenient agrees with the reference on 200,000 generated inputs",
           "[parse][equiv]") {
     // NOLINTNEXTLINE(cert-msc32-c,cert-msc51-cpp): a fixed seed keeps the test reproducible
     std::mt19937 rng(0xC7C7'0202U);

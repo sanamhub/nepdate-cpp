@@ -1,4 +1,4 @@
-# Patro tests (C4-03 and C4-06). Only built from the top-level build, where the vcpkg feature dev
+# Patro tests. Only built from the top-level build, where the vcpkg feature dev
 # provides Catch2.
 
 find_package(Catch2 3 CONFIG REQUIRED)
@@ -10,7 +10,7 @@ target_link_libraries(nepdate_patro_tests PRIVATE nepdate::patro Catch2::Catch2W
                                               Threads::Threads)
 target_compile_definitions(nepdate_patro_tests PRIVATE
     NEPDATE_SHARED_DIR="${PROJECT_SOURCE_DIR}/shared")
-# The catalogue rows check the port's generated tables directly (C4-06).
+# The catalogue rows check the port's generated tables directly.
 target_include_directories(nepdate_patro_tests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../src")
 nepdate_set_warnings(nepdate_patro_tests)
 nepdate_set_instrumentation(nepdate_patro_tests)
@@ -19,9 +19,9 @@ if(NEPDATE_NO_EXCEPTIONS)
 endif()
 catch_discover_tests(nepdate_patro_tests)
 
-# C4-06: allocation counting for the patro paths, with the same counter as the core allocation
+# Allocation counting for the patro paths, with the same counter as the core allocation
 # tests (ADR-0004 section 3). ThreadSanitizer intercepts the global operators itself, so this
-# executable can't link under tsan (C6).
+# executable can't link under tsan.
 if(NOT NEPDATE_SANITIZE MATCHES "thread")
 add_executable(nepdate_patro_alloc_tests
     "${PROJECT_SOURCE_DIR}/tests/alloc_counter.cpp"
@@ -37,7 +37,7 @@ endif()
 catch_discover_tests(nepdate_patro_alloc_tests)
 endif()
 
-# C4-03 AC: a wrong calendar fingerprint must fail to compile, and a control build without the
+# A wrong calendar fingerprint must fail to compile, and a control build without the
 # fake value must succeed. Both targets stay out of the normal build; the tests build them.
 foreach(expect_error IN ITEMS 0 1)
     set(target patro_compile_fail_${expect_error})

@@ -19,7 +19,7 @@
   notes from the changelog section and attaches the source archive
   `nepdate-cpp-X.Y.Z.tar.gz` (from `git archive`, including `shared/`) and its SHA-256 and SHA-512.
   The archive is attested with `actions/attest-build-provenance`.
-- **Package managers, after the GitHub Release, human tasks:**
+- **Package managers, after the GitHub Release, maintainer tasks:**
   - vcpkg: a PR to `microsoft/vcpkg` adding `ports/nepdate` and `ports/nepdate-patro` (copied from
     the overlay ports, `REF vX.Y.Z`, `SHA512` of the release archive) and the version database
     entries (`vcpkg x-add-version`).
@@ -36,4 +36,4 @@
 
 - The library is usable straight from the GitHub Release (CMake `FetchContent` or
   `find_package` after `cmake --install`) before the package-manager PRs merge.
-- A release touches two external repositories, so it needs a human for each.
+- A release touches two external repositories, and each needs a pull request from the maintainer.

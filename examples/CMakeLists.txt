@@ -1,4 +1,4 @@
-# C5-01: the three README examples, built and run by CTest. Built only with NEPDATE_BUILD_TESTS,
+# The three README examples, built and run by CTest. Built only with NEPDATE_BUILD_TESTS,
 # like the tests, so a library consumer never builds them. The patro example needs the patro
 # target, which a core-only build doesn't have.
 

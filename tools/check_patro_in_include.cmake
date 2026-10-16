@@ -1,5 +1,5 @@
 # Fails when patro data leaks into the core headers: no file under include/ may contain a patro
-# tithi or event name, in ASCII or as a Devanagari octal escape (C4-02 AC).
+# tithi or event name, in ASCII or as a Devanagari octal escape.
 #
 #   cmake -DINCLUDE_DIR=<include dir> -P tools/check_patro_in_include.cmake
 

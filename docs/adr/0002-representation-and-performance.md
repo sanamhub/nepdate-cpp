@@ -96,7 +96,7 @@ Gregorian conversion uses the Neri–Schneider algorithms (C. Neri and L. Schnei
 affine functions and their application to calendar algorithms", Software: Practice and Experience
 53(4), 2023, arXiv:2102.06959): days ↔ (y, m, d) with 32-bit multiplications and shifts instead of
 Hinnant's divisions. The results are identical to ALGORITHM §5; the experiment below checked every
-day from −50,000 to +70,000 Unix days, and the C1 tests check all 109,212 serials against a
+day from −50,000 to +70,000 Unix days, and the tests check all 109,212 serials against a
 line-by-line Hinnant reference written in the test file. We don't call the standard library's
 `year_month_day` ↔ `sys_days` conversions in the hot path, because their speed differs between
 standard libraries; `to_year_month_day()` only wraps our numbers in the standard types.
@@ -177,7 +177,7 @@ holiday and event-start tables, and would cost up to 11 comparisons per query.
 
 A throwaway prototype of §1 to §3 (not kept in this repository), built with zig 0.17.0
 (`zig c++`, Clang 22.1.8, libc++, `-std=c++20 -O2`, baseline x86-64), run on the reference machine
-pinned to logical CPU 2. **Other agents' jobs were running, including a C# BenchmarkDotNet run on the
+pinned to logical CPU 2. **Other build jobs were running, including a C# BenchmarkDotNet run on the
 same CPU,** so means were 2 to 5 times higher than the minimums and unstable. The table shows the
 best of 60 repetitions per run, range over three runs; read it as "how fast it can go", not as a
 published number. The prototype allocated 0 bytes, and every `static_assert` on the `constexpr`
@@ -192,7 +192,7 @@ tables and conversions compiled.
 | B3 add 1000 days | 3.6 to 4.6 ns | 10.3 to 15.0 ns | 17.50 |
 
 Not measured yet: B4 to B8, MSVC, and a variant that stores the AD date of each BS month start
-(C#'s idea, a further 14 KB) for B1. Task C1-09 measures that variant against Neri–Schneider and
+(C#'s idea, a further 14 KB) for B1. The bench measures that variant against Neri–Schneider and
 keeps it only if it is at least 10 % faster on B1 with both compilers.
 
 ### 9. Targets
@@ -214,7 +214,7 @@ measured by `bench/` (ADR-0004 §6):
 Each target is at least 1.4 times faster than C# (BENCHMARK §6 only asks for faster) and no looser
 than the Go port's pinned prototype on the same machine (`sanamhub/nepdate-go` ADR-0002 §8: B5
 30.6 ns, B8 226 ns), since C++ and Rust are meant to be the fastest ports. A missed target
-is reported to the human with the numbers and a profile before release; features aren't dropped to
+is reported to the maintainer with the numbers and a profile before release; features aren't dropped to
 meet it.
 
 ## Consequences

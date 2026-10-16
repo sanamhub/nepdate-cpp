@@ -1,4 +1,4 @@
-// C4-06: the patro paths of ADR-0002 section 6 allocate nothing. Each runs 1000 times between
+// The patro paths of ADR-0002 section 6 allocate nothing. Each runs 1000 times between
 // two reads of the counter (the same counter as tests/alloc_counter.cpp); no Catch2 macro runs
 // inside the measured block.
 

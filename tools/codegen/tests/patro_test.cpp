@@ -1,4 +1,4 @@
-// C4-02: the patro tables of ADR-0002 section 7 equal PATRO sections 2 and 3, and the generator
+// The patro tables of ADR-0002 section 7 equal PATRO sections 2 and 3, and the generator
 // rejects a tithi gap by naming the missing date.
 
 #include "calendar.hpp"

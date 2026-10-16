@@ -2,7 +2,9 @@
 
 Decisions for this repository only. Decisions that bind every port are in the hub
 (`sanamhub/nepdate`, `docs/adr/`), in particular hub ADR-0004 (patro in a separate package). Immutable
-once Accepted and C0 is merged; supersede with a new ADR.
+once Accepted; supersede with a new ADR.
+
+Edited on 2026-10-16 to remove links to internal plans and process wording before the first public release; no decision changed.
 
 | ADR | Title | Status |
 |---|---|---|

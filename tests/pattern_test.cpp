@@ -1,4 +1,4 @@
-// C3-03: to_chars_pattern and format_pattern (FORMATTING section 5). This file is UTF-8.
+// to_chars_pattern and format_pattern (FORMATTING section 5). This file is UTF-8.
 
 #include "vectors.hpp"
 

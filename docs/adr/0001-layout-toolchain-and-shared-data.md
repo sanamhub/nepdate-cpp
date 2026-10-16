@@ -73,7 +73,7 @@ tests/                    core tests; tests/fuzz/ libFuzzer targets and corpus
 tools/codegen/            the generator (§5); tools/ci.cmake; tools/coreonly/
 bench/                    separate CMake project (ADR-0004 §6)
 cmake/                    nepdateConfig.cmake.in, nepdate-patroConfig.cmake.in
-ports/nepdate, ports/nepdate-patro   vcpkg overlay ports (tested in CI, submitted upstream by the human)
+ports/nepdate, ports/nepdate-patro   vcpkg overlay ports (tested in CI, submitted upstream by the maintainer)
 conan/nepdate, conan/nepdate-patro   Conan 2 recipes (same)
 ```
 
@@ -100,7 +100,7 @@ recipes) has a port or recipe named `nepdate`, `nepdate-patro`, `nepali` or `bik
 
 Both are built from the same release tarball. The repository keeps both as overlay ports and as
 recipes, and CI installs them and builds a consumer (ADR-0004). Submitting them to
-`microsoft/vcpkg` and `conan-io/conan-center-index` is a human task after v0.1.0 (ADR-0005).
+`microsoft/vcpkg` and `conan-io/conan-center-index` is a maintainer task after v0.1.0 (ADR-0005).
 
 ### 5. Shared data and the generator
 

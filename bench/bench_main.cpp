@@ -1,4 +1,4 @@
-// C5-02: B1 to B8 of BENCHMARK section 3 for this library, the ADR-0002 section 8 variant of B1,
+// B1 to B8 of BENCHMARK section 3 for this library, the ADR-0002 section 8 variant of B1,
 // and B1/B2 for each competitor of docs/competitors.md, all over the 64 dates of BENCHMARK
 // section 2 (the patro inputs of section 3 for B7/B8). Each operation consumes every part of its
 // result, and the counting operator new (alloc_counter.cpp) feeds a benchmark::MemoryManager so
@@ -205,7 +205,7 @@ BENCHMARK(b6_strict_parse);
 
 // B-lenient: lenient parse of the 64 dates as "DD <month name> YYYY" (the PARSING section 2
 // month-name form), so the lenient tokenizer, classifier and assembler all run. Not one of the
-// published B1 to B8; C7-02 uses it to show the split didn't regress lenient parsing.
+// published B1 to B8; it shows the parse_lenient split didn't regress lenient parsing.
 std::array<std::string, kInputs> lenient_text_inputs() {
     constexpr std::array<std::string_view, 12> month_names = {
         "Baishakh", "Jestha",  "Ashad", "Shrawan", "Bhadra", "Ashoj",

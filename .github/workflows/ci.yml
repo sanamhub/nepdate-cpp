@@ -1,6 +1,5 @@
-# The jobs of ADR-0004 §4 that exist after phase C0. Each job runs its gates through
+# The jobs of ADR-0004 §4. Each job runs its gates through
 # tools/ci.cmake with STRICT=ON, so a missing tool fails the job instead of skipping a gate.
-# packages and isolation arrive with C5 and C4.
 name: ci
 
 on:
@@ -176,8 +175,8 @@ jobs:
           key: vcpkg-lint-${{ hashFiles('vcpkg.json') }}
       - name: Set up vcpkg
         run: .github/scripts/setup-vcpkg.sh
-      - name: Gates 1, 2, 3 and 6
-        run: cmake -DONLY=format,ascii,codegen,tidy -DSTRICT=ON -P tools/ci.cmake
+      - name: Gates 1, 2, 3, 6 and 10
+        run: cmake -DONLY=format,ascii,codegen,tidy,docs -DSTRICT=ON -P tools/ci.cmake
 
   sanitizers:
     runs-on: ubuntu-24.04

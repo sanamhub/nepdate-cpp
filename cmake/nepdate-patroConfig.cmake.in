@@ -1,3 +1,4 @@
+# Licensed under the MIT License (see LICENSE in the source distribution).
 @PACKAGE_INIT@
 
 include(CMakeFindDependencyMacro)
