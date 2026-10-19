@@ -1,6 +1,6 @@
 # Overlay port for the header-only core (ADR-0001 section 4). When the port runs from this
 # repository tree, NEPDATE_CPP_SOURCE points at the repository root (set by the CI packages job);
-# upstream submission uses vcpkg_from_github against the release archive, whose SHA512 the human
+# upstream submission uses vcpkg_from_github against the release archive, whose SHA512 the maintainer
 # fills after the tag exists (ADR-0005).
 
 vcpkg_minimum_required(VERSION 2024-05-24)

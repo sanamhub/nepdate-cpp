@@ -32,7 +32,3 @@ oom-*
 /conan/*/test_package/build/
 /conan/*/test_package/CMakeUserPresets.json
 
-# Local working notes, never published.
-/AGENTS.md
-/CLAUDE.md
-/docs/plan/

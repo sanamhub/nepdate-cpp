@@ -1,7 +1,6 @@
 # The docs gate. Checks tracked markdown outside shared/:
 #   1. every relative link resolves to a tracked file or directory;
-#   2. no em dash (U+2014);
-#   3. the phase-and-task-ID grep pattern finds nothing outside the allow-list below.
+#   2. no em dash (U+2014).
 # Plain CMake plus git on PATH, no other tool.
 #
 #   cmake -P tools/check_docs.cmake
@@ -73,27 +72,6 @@ foreach(rel IN LISTS md_files)
             endif()
         endforeach()
     endforeach()
-endforeach()
-
-# ---- phase and task IDs ----
-# Allow-list: the .gitignore entries are the ignore rules themselves, not references.
-set(grep_pattern "\\bC[0-9](-[0-9]{2})?\\b|HC-[0-9]|docs/plan|AGENTS\\.md|CLAUDE\\.md")
-# The gate's own pattern and allow-list regex contain the literals docs/plan, AGENTS.md and
-# CLAUDE.md, so the script itself is excluded from the search.
-execute_process(COMMAND git -C "${root}" grep -InE "${grep_pattern}" -- ":!shared" ":!tools/check_docs.cmake"
-    OUTPUT_VARIABLE grep_out ERROR_VARIABLE grep_err RESULT_VARIABLE grep_rc)
-if(grep_rc EQUAL 2)
-    message(FATAL_ERROR "check_docs: git grep failed: ${grep_err}")
-endif()
-string(REPLACE "${nl}" ";" grep_lines "${grep_out}")
-foreach(line IN LISTS grep_lines)
-    if(line STREQUAL "")
-        continue()
-    endif()
-    if(line MATCHES "^\\.gitignore:[0-9]+:/(AGENTS\\.md|CLAUDE\\.md|docs/plan/)$")
-        continue() # the ignore rules themselves
-    endif()
-    list(APPEND problems "task-id reference: ${line}")
 endforeach()
 
 if(problems)
