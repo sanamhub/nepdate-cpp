@@ -97,7 +97,7 @@ TEST_CASE("lenient parse errors", "[parse]") {
 
 TEST_CASE("parse.tsv: strict column", "[parse][vectors]") {
     const auto t = read_vectors("parse.tsv", '\t');
-    REQUIRE(t.rows.size() == 67);
+    REQUIRE(t.rows.size() == 69);
     const std::size_t input = t.column("input");
     const std::size_t strict = t.column("strict");
     REQUIRE(strict < t.header.size());
@@ -108,12 +108,12 @@ TEST_CASE("parse.tsv: strict column", "[parse][vectors]") {
         CHECK(actual_text(parse(row[input])) == expected_text(row[strict]));
         ++checked;
     }
-    CHECK(checked == 67);
+    CHECK(checked == 69);
 }
 
 TEST_CASE("parse.tsv: lenient column", "[parse][vectors]") {
     const auto t = read_vectors("parse.tsv", '\t');
-    REQUIRE(t.rows.size() == 67);
+    REQUIRE(t.rows.size() == 69);
     const std::size_t input = t.column("input");
     const std::size_t lenient = t.column("lenient");
     REQUIRE(lenient < t.header.size());
@@ -123,7 +123,7 @@ TEST_CASE("parse.tsv: lenient column", "[parse][vectors]") {
         CHECK(actual_text(nepdate::parse_lenient(row[input])) == expected_text(row[lenient]));
         ++checked;
     }
-    CHECK(checked == 67);
+    CHECK(checked == 69);
 }
 
 TEST_CASE("PARSING section 1 examples", "[parse]") {

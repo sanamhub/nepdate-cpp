@@ -82,7 +82,7 @@ std::string generated_input(std::mt19937& rng) {
 
 TEST_CASE("split parse_lenient agrees with the reference on parse.tsv", "[parse][equiv]") {
     const nepdate_test::table t = nepdate_test::read_vectors("parse.tsv", '\t');
-    REQUIRE(t.rows.size() == 67);
+    REQUIRE(t.rows.size() == 69);
     const std::size_t input = t.column("input");
     for (const auto& row : t.rows) {
         check_equiv(row[input]);
@@ -102,7 +102,7 @@ TEST_CASE("split parse_lenient agrees with the reference on the fuzz corpus", "[
             std::string(std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>()));
         ++files;
     }
-    CHECK(files == 67);
+    CHECK(files == 69);
 }
 
 TEST_CASE("split parse_lenient agrees with the reference on 200,000 generated inputs",
