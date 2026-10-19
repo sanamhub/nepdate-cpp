@@ -37,7 +37,7 @@ jobs:
         with:
           arch: x64
       - name: Gates 3 to 5 and ASan, Debug
-        run: cmake -DONLY=codegen,build-and-test,no-exceptions,sanitizers -DSTRICT=ON -P tools/ci.cmake
+        run: cmake "-DONLY=codegen,build-and-test,no-exceptions,sanitizers" -DSTRICT=ON -P tools/ci.cmake
       - name: Configure Release
         run: cmake --preset release
       - name: Build Release
@@ -66,7 +66,7 @@ jobs:
         with:
           arch: x64
       - name: Gates 4 and 5
-        run: cmake -DONLY=build-and-test,no-exceptions -DSTRICT=ON -P tools/ci.cmake
+        run: cmake "-DONLY=build-and-test,no-exceptions" -DSTRICT=ON -P tools/ci.cmake
 
   gcc:
     strategy:
@@ -328,7 +328,8 @@ jobs:
             vcpkg_bin="$VCPKG_ROOT/vcpkg.exe"
             consumer="consumer.exe"
           fi
-          "$vcpkg_bin" install nepdate-patro --overlay-ports=ports
+          # The repository root has a vcpkg.json, so classic mode must be asked for.
+          "$vcpkg_bin" install --classic nepdate-patro --overlay-ports=ports
           for std in 20 23; do
             dir="build/consumer-cxx${std}"
             cmake -S tests/consumer -B "$dir" -G Ninja \
