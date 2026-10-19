@@ -63,7 +63,7 @@ static_assert(std::is_trivially_copyable_v<event>);
 class day_info {
   public:
     /// Returns the day's tithi, or std::nullopt outside the tithi coverage.
-    [[nodiscard]] constexpr std::optional<tithi> tithi() const noexcept {
+    [[nodiscard]] constexpr std::optional<nepdate::patro::tithi> tithi() const noexcept {
         if (tithi_index_ == 0xFFU) {
             return std::nullopt;
         }
