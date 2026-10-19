@@ -88,6 +88,7 @@ jobs:
           path: ${{ runner.temp }}/vcpkg-cache
           key: vcpkg-gcc-${{ matrix.version }}-${{ hashFiles('vcpkg.json') }}
       - name: Set up vcpkg
+        shell: bash
         run: .github/scripts/setup-vcpkg.sh
       - name: Gates 4 and 5
         run: cmake -DONLY=build-and-test,no-exceptions -DSTRICT=ON -P tools/ci.cmake
@@ -128,6 +129,7 @@ jobs:
           path: ${{ runner.temp }}/vcpkg-cache
           key: vcpkg-clang-${{ matrix.version }}-${{ matrix.stdlib }}-${{ hashFiles('vcpkg.json') }}
       - name: Set up vcpkg
+        shell: bash
         run: .github/scripts/setup-vcpkg.sh
       - name: Gates 4 and 5
         run: cmake -DONLY=build-and-test,no-exceptions -DSTRICT=ON -P tools/ci.cmake
@@ -149,6 +151,7 @@ jobs:
           path: ${{ runner.temp }}/vcpkg-cache
           key: vcpkg-${{ matrix.runner }}-${{ hashFiles('vcpkg.json') }}
       - name: Set up vcpkg
+        shell: bash
         run: .github/scripts/setup-vcpkg.sh
       - name: Gates 4, 5 and 7
         run: cmake -DONLY=build-and-test,no-exceptions,sanitizers -DSTRICT=ON -P tools/ci.cmake
@@ -174,6 +177,7 @@ jobs:
           path: ${{ runner.temp }}/vcpkg-cache
           key: vcpkg-lint-${{ hashFiles('vcpkg.json') }}
       - name: Set up vcpkg
+        shell: bash
         run: .github/scripts/setup-vcpkg.sh
       - name: Gates 1, 2, 3, 6 and 10
         run: cmake -DONLY=format,ascii,codegen,tidy,docs -DSTRICT=ON -P tools/ci.cmake
@@ -199,6 +203,7 @@ jobs:
           path: ${{ runner.temp }}/vcpkg-cache
           key: vcpkg-sanitizers-${{ hashFiles('vcpkg.json') }}
       - name: Set up vcpkg
+        shell: bash
         run: .github/scripts/setup-vcpkg.sh
       - name: Gate 7
         run: cmake -DONLY=sanitizers -DSTRICT=ON -P tools/ci.cmake
@@ -229,6 +234,7 @@ jobs:
           path: ${{ runner.temp }}/vcpkg-cache
           key: vcpkg-coverage-${{ hashFiles('vcpkg.json') }}
       - name: Set up vcpkg
+        shell: bash
         run: .github/scripts/setup-vcpkg.sh
       - name: Gate 8
         run: cmake -DONLY=coverage -DSTRICT=ON -P tools/ci.cmake
@@ -254,6 +260,7 @@ jobs:
           path: ${{ runner.temp }}/vcpkg-cache
           key: vcpkg-fuzz-${{ hashFiles('vcpkg.json') }}
       - name: Set up vcpkg
+        shell: bash
         run: .github/scripts/setup-vcpkg.sh
       - name: Build the fuzz targets
         run: |
@@ -282,12 +289,14 @@ jobs:
         with:
           path: ${{ runner.temp }}/vcpkg-cache
           key: vcpkg-isolation-${{ matrix.runner }}-${{ hashFiles('vcpkg.json') }}
-      - name: Set up vcpkg
-        run: .github/scripts/setup-vcpkg.sh
+      # Same order as the package job: the Visual Studio environment sets its own VCPKG_ROOT.
       - uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1.13.0
         if: runner.os == 'Windows'
         with:
           arch: x64
+      - name: Set up vcpkg
+        shell: bash
+        run: .github/scripts/setup-vcpkg.sh
       - name: Gate 9
         run: cmake -DONLY=isolation -DSTRICT=ON -P tools/ci.cmake
 
@@ -316,6 +325,7 @@ jobs:
         with:
           arch: x64
       - name: Set up vcpkg
+        shell: bash
         run: .github/scripts/setup-vcpkg.sh
       - name: vcpkg overlay ports and consumer
         shell: bash
