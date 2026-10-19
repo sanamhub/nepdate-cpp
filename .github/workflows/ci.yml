@@ -309,12 +309,14 @@ jobs:
         with:
           path: ${{ runner.temp }}/vcpkg-cache
           key: vcpkg-packages-${{ matrix.runner }}-${{ hashFiles('vcpkg.json') }}
-      - name: Set up vcpkg
-        run: .github/scripts/setup-vcpkg.sh
+      # The Visual Studio environment sets VCPKG_ROOT to its bundled, manifest-only vcpkg, so it
+      # goes first and the clone below wins.
       - uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1.13.0
         if: runner.os == 'Windows'
         with:
           arch: x64
+      - name: Set up vcpkg
+        run: .github/scripts/setup-vcpkg.sh
       - name: vcpkg overlay ports and consumer
         shell: bash
         env:
