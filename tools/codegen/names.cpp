@@ -19,12 +19,9 @@ constexpr int kPairsPerLine = 25;
 std::string digits(std::uint32_t value, std::uint32_t base, std::size_t width) {
     constexpr std::string_view kDigits = "0123456789ABCDEF";
     std::string out;
-    do {
+    while (value != 0 || out.size() < width) {
         out.insert(out.begin(), kDigits[value % base]);
         value /= base;
-    } while (value != 0);
-    if (out.size() < width) {
-        out.insert(0, width - out.size(), '0');
     }
     return out;
 }
