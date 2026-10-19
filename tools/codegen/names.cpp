@@ -4,7 +4,6 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
-#include <format>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -16,6 +15,17 @@ namespace {
 // Pairs "00" to "99" per line of the digit table.
 constexpr int kPairsPerLine = 25;
 
+// Zero-padded digits. Not std::format: libstdc++ 12, the GCC floor, has no <format>.
+std::string digits(std::uint32_t value, std::uint32_t base, std::size_t width) {
+    constexpr std::string_view kDigits = "0123456789ABCDEF";
+    std::string out;
+    while (value != 0 || out.size() < width) {
+        out.insert(out.begin(), kDigits[value % base]);
+        value /= base;
+    }
+    return out;
+}
+
 // A C string literal for text: printable ASCII as is, every other byte as a three-digit octal
 // escape, which can't swallow the character after it (ADR-0001 section 6).
 std::string literal(std::string_view text) {
@@ -25,7 +35,7 @@ std::string literal(std::string_view text) {
         if (byte >= 0x20U && byte < 0x7FU && c != '"' && c != '\\') {
             out += c;
         } else {
-            out += std::format("\\{:03o}", static_cast<unsigned>(byte));
+            out += "\\" + digits(byte, 8U, 3U);
         }
     }
     out += '"';
@@ -60,7 +70,7 @@ std::string code_points(std::string_view text) {
         if (!out.empty()) {
             out += ' ';
         }
-        out += std::format("U+{:04X}", static_cast<unsigned>(cp));
+        out += "U+" + digits(cp, 16U, 4U);
     }
     return non_ascii ? out : std::string{};
 }

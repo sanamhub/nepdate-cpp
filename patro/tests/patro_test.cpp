@@ -31,7 +31,8 @@ date d(int y, int m, int day) {
 // The English event names of a day, in order.
 std::vector<std::string_view> events_en(date dt) {
     std::vector<std::string_view> names;
-    for (const patro::event e : patro::info(dt).events()) {
+    const patro::day_info day = patro::info(dt);
+    for (const patro::event e : day.events()) {
         names.push_back(e.name(lang::en));
     }
     return names;

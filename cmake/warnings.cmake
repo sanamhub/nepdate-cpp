@@ -15,11 +15,6 @@ function(nepdate_set_warnings target)
             -Wold-style-cast
             -Wnon-virtual-dtor
         )
-        # GCC 14.3+ warns that day_info::tithi() changes the meaning of the tithi class; the
-        # accessor name is public API (docs/API.md), so the warning is a false positive.
-        if(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
-            target_compile_options(${target} PRIVATE -Wno-changes-meaning)
-        endif()
         # Doc comments are checked by Clang only; GCC has no -Wdocumentation.
         if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
             target_compile_options(${target} PRIVATE -Wdocumentation)

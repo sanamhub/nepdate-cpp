@@ -227,7 +227,8 @@ TEST_CASE("CalendarDataTests.NepaliDate_OutsideTithiRange_TithiIsEmpty", "[cs]")
 }
 
 TEST_CASE("CalendarDataTests.NepaliDate_EventsNp_And_EventsEn_AlwaysHaveSameLength", "[cs]") {
-    for (const patro::event e : patro::info(d(2081, 1, 1)).events()) {
+    const patro::day_info day = patro::info(d(2081, 1, 1));
+    for (const patro::event e : day.events()) {
         CHECK_FALSE(e.name(lang::ne).empty());
         CHECK_FALSE(e.name(lang::en).empty());
     }
