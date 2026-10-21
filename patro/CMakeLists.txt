@@ -12,7 +12,16 @@ cmake_minimum_required(VERSION 3.25...4.1)
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
     # Standalone: the same version as the core it builds against.
     project(nepdate-patro VERSION 0.1.0 LANGUAGES CXX)
-    find_package(nepdate ${PROJECT_VERSION} EXACT CONFIG REQUIRED)
+    # Not find_package(... EXACT): Conan's generated config reports the full "0.1.0-beta.1",
+    # which never equals project()'s numeric "0.1.0", while this tree's own config reports
+    # "0.1.0". Compare the X.Y.Z part instead; release_check.cmake keeps the pre-release part
+    # equal in every recipe and port.
+    find_package(nepdate CONFIG REQUIRED)
+    string(REGEX MATCH "^[0-9]+\\.[0-9]+\\.[0-9]+" _nepdate_core_version "${nepdate_VERSION}")
+    if(NOT _nepdate_core_version VERSION_EQUAL PROJECT_VERSION)
+        message(FATAL_ERROR
+            "nepdate-patro ${PROJECT_VERSION} needs nepdate ${PROJECT_VERSION}, found ${nepdate_VERSION}")
+    endif()
     include("${CMAKE_CURRENT_SOURCE_DIR}/../cmake/warnings.cmake")
 endif()
 
