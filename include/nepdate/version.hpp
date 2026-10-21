@@ -10,6 +10,9 @@
 #define NEPDATE_VERSION_MINOR 1
 #define NEPDATE_VERSION_PATCH 0
 // NOLINTEND(cppcoreguidelines-macro-to-enum, modernize-macro-to-enum)
-#define NEPDATE_VERSION_STRING "0.1.0"
+// The semver pre-release part, without the leading "-"; empty for a stable version. project()
+// holds numbers only, so it lives here and in NEPDATE_VERSION_STRING.
+#define NEPDATE_VERSION_PRERELEASE "beta.1"
+#define NEPDATE_VERSION_STRING "0.1.0-beta.1"
 
 #endif // NEPDATE_VERSION_HPP

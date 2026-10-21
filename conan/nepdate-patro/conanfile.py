@@ -7,7 +7,7 @@ from conan.tools.files import copy
 
 class NepdatePatroConan(ConanFile):
     name = "nepdate-patro"
-    version = "0.1.0"
+    version = "0.1.0-beta.1"
     license = "MIT"
     description = "The patro (Nepali almanac) companion to nepdate: tithi, public holidays and events, BS 2077 to 2084."
     homepage = "https://github.com/sanamhub/nepdate-cpp"
@@ -22,7 +22,7 @@ class NepdatePatroConan(ConanFile):
         # patro.hpp includes nepdate headers, so consumers need them too. Conan 2 already passes
         # a header-library's headers on; saying so here keeps that true if nepdate's package
         # type ever changes. The test package links only nepdate::patro to prove it.
-        self.requires("nepdate/0.1.0", transitive_headers=True)
+        self.requires("nepdate/0.1.0-beta.1", transitive_headers=True)
 
     def layout(self):
         cmake_layout(self)

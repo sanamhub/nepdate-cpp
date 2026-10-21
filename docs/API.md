@@ -26,7 +26,8 @@ Headers: `<nepdate/nepdate.hpp>` includes all of the core. The pieces are `<nepd
 #define NEPDATE_VERSION_MAJOR 0
 #define NEPDATE_VERSION_MINOR 1
 #define NEPDATE_VERSION_PATCH 0
-#define NEPDATE_VERSION_STRING "0.1.0"
+#define NEPDATE_VERSION_PRERELEASE "beta.1"  // "" for a stable version
+#define NEPDATE_VERSION_STRING "0.1.0-beta.1"
 
 namespace nepdate {
 
