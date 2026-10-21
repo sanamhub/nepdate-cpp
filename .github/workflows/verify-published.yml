@@ -54,7 +54,12 @@ jobs:
         run: |
           set -euo pipefail
           archive="nepdate-cpp-$VERSION.tar.gz"
-          (cd dl && sha256sum -c SHA256SUMS && sha512sum -c SHA512SUMS)
+          # macOS has shasum but not always the GNU sha256sum and sha512sum.
+          if command -v sha256sum > /dev/null; then
+            (cd dl && sha256sum -c SHA256SUMS && sha512sum -c SHA512SUMS)
+          else
+            (cd dl && shasum -a 256 -c SHA256SUMS && shasum -a 512 -c SHA512SUMS)
+          fi
           gh attestation verify "dl/$archive" --repo "$GITHUB_REPOSITORY"
       # CMake on Windows is a native program: it gets C:/... paths from cygpath -m, not the /d/a/...
       # spelling of Git Bash, and the consumer is run by its full .exe name. Each step fails unless
