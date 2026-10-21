@@ -3,7 +3,8 @@
 # (tests/consumer, one conversion, a round trip and one patro lookup) twice on every runner OS:
 # with FetchContent from the release URL and its SHA-256, and with find_package from the archive
 # built and installed on its own. release.yml calls it after the release exists; it also runs by
-# hand for any released version.
+# hand for any released version. It needs no checkout: the consumer source comes from the
+# downloaded archive, so dispatching this file from main re-verifies any earlier tag.
 
 name: verify-published
 
@@ -55,6 +56,19 @@ jobs:
           archive="nepdate-cpp-$VERSION.tar.gz"
           (cd dl && sha256sum -c SHA256SUMS && sha512sum -c SHA512SUMS)
           gh attestation verify "dl/$archive" --repo "$GITHUB_REPOSITORY"
+      # CMake on Windows is a native program: it gets C:/... paths from cygpath -m, not the /d/a/...
+      # spelling of Git Bash, and the consumer is run by its full .exe name. Each step fails unless
+      # the program it built prints "consumer OK", so a skipped or missing run can't pass.
+      - name: Paths for this runner
+        run: |
+          set -euo pipefail
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            echo "ROOT=$(cygpath -m "$PWD")" >> "$GITHUB_ENV"
+            echo "EXE=.exe" >> "$GITHUB_ENV"
+          else
+            echo "ROOT=$PWD" >> "$GITHUB_ENV"
+            echo "EXE=" >> "$GITHUB_ENV"
+          fi
       - name: Consumer through FetchContent from the release URL
         run: |
           set -euo pipefail
@@ -74,23 +88,25 @@ jobs:
           target_link_libraries(consumer PRIVATE nepdate::nepdate nepdate::patro)
           target_compile_features(consumer PRIVATE cxx_std_20)
           EOF
-          cmake -S fc -B fc/build -DCMAKE_BUILD_TYPE=Release \
-            "-DCMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE=$PWD/fc/bin"
-          cmake --build fc/build --config Release --parallel 2
-          out="$(fc/bin/consumer)"
+          cmake -S "$ROOT/fc" -B "$ROOT/fc/build" -DCMAKE_BUILD_TYPE=Release \
+            "-DCMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE=$ROOT/fc/bin"
+          cmake --build "$ROOT/fc/build" --config Release --parallel 2
+          ls -l "fc/bin/consumer$EXE"
+          out="$("$ROOT/fc/bin/consumer$EXE")"
           echo "$out"
           test "$(echo "$out" | tr -d '\r')" = "consumer OK"
       - name: Consumer through find_package from the installed archive
         run: |
           set -euo pipefail
-          src="fetch/nepdate-cpp-$VERSION"
-          cmake -S "$src" -B core-build -DCMAKE_BUILD_TYPE=Release \
+          src="$ROOT/fetch/nepdate-cpp-$VERSION"
+          cmake -S "$src" -B "$ROOT/core-build" -DCMAKE_BUILD_TYPE=Release \
             -DNEPDATE_BUILD_TESTS=OFF -DNEPDATE_BUILD_TOOLS=OFF
-          cmake --build core-build --config Release --parallel 2
-          cmake --install core-build --config Release --prefix "$PWD/prefix"
-          cmake -S "$src/tests/consumer" -B consumer-build -DCMAKE_BUILD_TYPE=Release \
-            "-DCMAKE_PREFIX_PATH=$PWD/prefix" "-DCMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE=$PWD/consumer-bin"
-          cmake --build consumer-build --config Release --parallel 2
-          out="$(consumer-bin/consumer)"
+          cmake --build "$ROOT/core-build" --config Release --parallel 2
+          cmake --install "$ROOT/core-build" --config Release --prefix "$ROOT/prefix"
+          cmake -S "$src/tests/consumer" -B "$ROOT/consumer-build" -DCMAKE_BUILD_TYPE=Release \
+            "-DCMAKE_PREFIX_PATH=$ROOT/prefix" "-DCMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE=$ROOT/consumer-bin"
+          cmake --build "$ROOT/consumer-build" --config Release --parallel 2
+          ls -l "consumer-bin/consumer$EXE"
+          out="$("$ROOT/consumer-bin/consumer$EXE")"
           echo "$out"
           test "$(echo "$out" | tr -d '\r')" = "consumer OK"
