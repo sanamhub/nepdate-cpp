@@ -1,0 +1,96 @@
+# Checks a published release the way a user meets it: downloads the assets from the GitHub
+# Release, verifies SHA256SUMS, SHA512SUMS and the provenance attestation, then builds the consumer
+# (tests/consumer, one conversion, a round trip and one patro lookup) twice on every runner OS:
+# with FetchContent from the release URL and its SHA-256, and with find_package from the archive
+# built and installed on its own. release.yml calls it after the release exists; it also runs by
+# hand for any released version.
+
+name: verify-published
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: Released version, no leading v (for example 0.1.0-beta.1)
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Released version, no leading v (for example 0.1.0-beta.1)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  attestations: read
+
+jobs:
+  verify:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-15, windows-2025]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    env:
+      VERSION: ${{ inputs.version }}
+      GH_TOKEN: ${{ github.token }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Download the release assets
+        run: |
+          set -euo pipefail
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::version must look like X.Y.Z or X.Y.Z-PRERELEASE, got '$VERSION'"
+            exit 1
+          fi
+          gh release download "v$VERSION" --repo "$GITHUB_REPOSITORY" --dir dl
+          ls -l dl
+      - name: Checksums and provenance
+        run: |
+          set -euo pipefail
+          archive="nepdate-cpp-$VERSION.tar.gz"
+          (cd dl && sha256sum -c SHA256SUMS && sha512sum -c SHA512SUMS)
+          gh attestation verify "dl/$archive" --repo "$GITHUB_REPOSITORY"
+      - name: Consumer through FetchContent from the release URL
+        run: |
+          set -euo pipefail
+          archive="nepdate-cpp-$VERSION.tar.gz"
+          url="https://github.com/$GITHUB_REPOSITORY/releases/download/v$VERSION/$archive"
+          sha256="$(cut -d' ' -f1 dl/SHA256SUMS)"
+          mkdir -p fetch && tar -xzf "dl/$archive" -C fetch
+          mkdir -p fc
+          cp "fetch/nepdate-cpp-$VERSION/tests/consumer/consumer.cpp" fc/
+          cat > fc/CMakeLists.txt <<EOF
+          cmake_minimum_required(VERSION 3.25)
+          project(nepdate_fetch_consumer LANGUAGES CXX)
+          include(FetchContent)
+          FetchContent_Declare(nepdate URL "$url" URL_HASH SHA256=$sha256)
+          FetchContent_MakeAvailable(nepdate)
+          add_executable(consumer consumer.cpp)
+          target_link_libraries(consumer PRIVATE nepdate::nepdate nepdate::patro)
+          target_compile_features(consumer PRIVATE cxx_std_20)
+          EOF
+          cmake -S fc -B fc/build -DCMAKE_BUILD_TYPE=Release \
+            "-DCMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE=$PWD/fc/bin"
+          cmake --build fc/build --config Release --parallel 2
+          out="$(fc/bin/consumer)"
+          echo "$out"
+          test "$(echo "$out" | tr -d '\r')" = "consumer OK"
+      - name: Consumer through find_package from the installed archive
+        run: |
+          set -euo pipefail
+          src="fetch/nepdate-cpp-$VERSION"
+          cmake -S "$src" -B core-build -DCMAKE_BUILD_TYPE=Release \
+            -DNEPDATE_BUILD_TESTS=OFF -DNEPDATE_BUILD_TOOLS=OFF
+          cmake --build core-build --config Release --parallel 2
+          cmake --install core-build --config Release --prefix "$PWD/prefix"
+          cmake -S "$src/tests/consumer" -B consumer-build -DCMAKE_BUILD_TYPE=Release \
+            "-DCMAKE_PREFIX_PATH=$PWD/prefix" "-DCMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE=$PWD/consumer-bin"
+          cmake --build consumer-build --config Release --parallel 2
+          out="$(consumer-bin/consumer)"
+          echo "$out"
+          test "$(echo "$out" | tr -d '\r')" = "consumer OK"
