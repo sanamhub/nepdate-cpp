@@ -5,7 +5,7 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-## [0.1.0-beta.1] - 2026-10-21
+## [0.1.0-beta.1] - 2026-10-22
 
 First public pre-release. The API may still change before 0.1.0.
 
