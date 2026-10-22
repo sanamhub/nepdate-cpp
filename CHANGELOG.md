@@ -5,9 +5,12 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-First release of the two packages: header-only `nepdate` and the compiled `nepdate-patro`. The
-public surface is in `docs/API.md`. The surface is complete for 0.1.0, but 0.x means a minor
-bump may still change it.
+## [0.1.0-beta.1] - 2026-10-22
+
+First public pre-release. The API may still change before 0.1.0.
+
+Two packages from one tag: header-only `nepdate` and the compiled `nepdate-patro`. The public
+surface is in `docs/API.md`.
 
 ### Added
 
@@ -23,6 +26,9 @@ bump may still change it.
 - The patro. `nepdate::patro` provides `info`, `coverage`, `public_holidays`, `tithi` and `event`
   for tithi, public holidays and events over BS 2077 to 2084.
 - vcpkg overlay ports and Conan recipes for both packages.
+- `NEPDATE_VERSION_PRERELEASE` in `<nepdate/version.hpp>`: the semver pre-release part (`beta.1`),
+  empty for a stable version. `project()` holds numbers only, so `NEPDATE_VERSION_STRING` carries
+  the full version.
 - C++20, built and tested on GCC 12, Clang 16 (with libstdc++ and with libc++), Apple Clang 16 and
   MSVC 19.44, each also with exceptions and RTTI disabled.
 

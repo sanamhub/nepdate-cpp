@@ -105,6 +105,21 @@ add_test(NAME release_check_rejects_9.9.9
     COMMAND "${CMAKE_COMMAND}" -DVERSION=9.9.9 -P "${PROJECT_SOURCE_DIR}/tools/release_check.cmake")
 set_tests_properties(release_check_rejects_9.9.9 PROPERTIES WILL_FAIL TRUE)
 
+# The tree's own version, read from version.hpp, must pass; a pre-release's files must not pass
+# for the stable tag of the same numbers, so a beta can never be released as X.Y.Z by mistake.
+file(READ "${PROJECT_SOURCE_DIR}/include/nepdate/version.hpp" _version_header)
+string(REGEX MATCH "#define NEPDATE_VERSION_STRING \"([^\"]*)\"" _version_line "${_version_header}")
+set(_tree_version "${CMAKE_MATCH_1}")
+add_test(NAME release_check_accepts_tree_version
+    COMMAND "${CMAKE_COMMAND}" "-DVERSION=${_tree_version}"
+        -P "${PROJECT_SOURCE_DIR}/tools/release_check.cmake")
+if(_tree_version MATCHES "^([0-9]+\\.[0-9]+\\.[0-9]+)-")
+    add_test(NAME release_check_rejects_stable_of_prerelease
+        COMMAND "${CMAKE_COMMAND}" "-DVERSION=${CMAKE_MATCH_1}"
+            -P "${PROJECT_SOURCE_DIR}/tools/release_check.cmake")
+    set_tests_properties(release_check_rejects_stable_of_prerelease PROPERTIES WILL_FAIL TRUE)
+endif()
+
 # No patro table, name or string goes into any file under include/.
 add_test(NAME patro_data_isolation
     COMMAND "${CMAKE_COMMAND}" -DINCLUDE_DIR=${PROJECT_SOURCE_DIR}/include

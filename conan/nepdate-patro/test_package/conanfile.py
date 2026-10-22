@@ -13,7 +13,7 @@ class TestPackageConan(ConanFile):
         self.requires(self.tested_reference_str)
         # The patro's public headers include the core headers, and the test uses the core types
         # directly, so the core is a direct requirement here too.
-        self.requires("nepdate/0.1.0")
+        self.requires("nepdate/0.1.0-beta.1")
 
     def layout(self):
         cmake_layout(self)

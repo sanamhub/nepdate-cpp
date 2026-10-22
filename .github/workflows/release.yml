@@ -1,9 +1,11 @@
-# ADR-0005: one tag vX.Y.Z releases both libraries. On a tag push: preflight (the version agrees
-# with the tag and every version location, tools/release_check.cmake), the full CI workflow, then
-# the production environment (required reviewer) creates the GitHub Release with the changelog
-# section as notes and attaches the source archive with SHA-256 and SHA-512 and a provenance
-# attestation. A workflow_dispatch run with a `version` input does preflight and CI only; the
-# release job stays skipped, so a draft release can be dry-run before tagging.
+# ADR-0005: one tag vX.Y.Z (or vX.Y.Z-PRERELEASE) releases both libraries. On a tag push:
+# preflight (the version agrees with the tag and every version location, tools/release_check.cmake),
+# the full CI workflow, then the production environment (required reviewer) creates the GitHub
+# Release with the changelog section plus install and verification notes, attaches the source
+# archive with SHA256SUMS and SHA512SUMS and a provenance attestation, and calls
+# verify-published.yml. A tag with a pre-release part becomes a GitHub pre-release. A
+# workflow_dispatch run with a `version` input does preflight and CI only; the release job stays
+# skipped, so a version can be dry-run before tagging.
 
 name: release
 
@@ -13,7 +15,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: Version to preflight (X.Y.Z, no leading v)
+        description: Version to preflight (X.Y.Z or X.Y.Z-beta.1, no leading v)
         required: true
         type: string
 
@@ -33,7 +35,8 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
       # The input reaches the script through env, never through ${{ }} inside run:, so a crafted
-      # value can't inject shell; it is validated before anything else uses it.
+      # value can't inject shell. This only gates the characters; release_check.cmake applies the
+      # full semver rule and compares every version location.
       - name: Resolve and validate the version
         id: meta
         shell: bash
@@ -48,8 +51,8 @@ jobs:
             version="$INPUT_VERSION"
             tag="v$version"
           fi
-          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "::error::version must look like X.Y.Z, got '$version' (tag vX.Y.Z)"
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::version must look like X.Y.Z or X.Y.Z-PRERELEASE, got '$version' (tag vX.Y.Z)"
             exit 1
           fi
           if [[ "$tag" != "v$version" ]]; then
@@ -79,7 +82,7 @@ jobs:
 
   release:
     if: github.ref_type == 'tag'
-    needs: ci
+    needs: [preflight, ci]
     runs-on: ubuntu-24.04
     environment: production
     timeout-minutes: 15
@@ -87,45 +90,104 @@ jobs:
       contents: write
       id-token: write
       attestations: write
+    env:
+      VERSION: ${{ needs.preflight.outputs.version }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Archive name
-        id: archive
+      - name: Source archive and checksums (includes shared/)
         shell: bash
         run: |
-          version="${GITHUB_REF_NAME#v}"
-          echo "version=$version" >> "$GITHUB_OUTPUT"
-          echo "name=nepdate-cpp-$version.tar.gz" >> "$GITHUB_OUTPUT"
-      - name: Source archive (includes shared/)
-        run: |
-          git archive --format=tar.gz --prefix="nepdate-cpp-${{ steps.archive.outputs.version }}/" \
-            -o "${{ steps.archive.outputs.name }}" "$GITHUB_REF_NAME"
-      - name: Checksums
-        run: |
-          sha256sum "${{ steps.archive.outputs.name }}" > "${{ steps.archive.outputs.name }}.sha256"
-          sha512sum "${{ steps.archive.outputs.name }}" > "${{ steps.archive.outputs.name }}.sha512"
-      - name: Changelog notes
+          set -euo pipefail
+          mkdir dist
+          archive="nepdate-cpp-$VERSION.tar.gz"
+          git archive --format=tar.gz --prefix="nepdate-cpp-$VERSION/" -o "dist/$archive" "$GITHUB_REF_NAME"
+          cd dist
+          sha256sum "$archive" > SHA256SUMS
+          sha512sum "$archive" > SHA512SUMS
+      - name: Release notes
+        # Notes come from the CHANGELOG section, not the commit log, plus how to install this exact
+        # version and how to check the download.
         shell: bash
         run: |
-          version="${{ steps.archive.outputs.version }}"
-          awk -v want="## [$version] -" '
-            /^## \[/ { if (in_section) exit; if (index($0, want) == 1) in_section = 1 }
+          set -euo pipefail
+          awk -v want="## [$VERSION] -" '
+            /^## \[/ { if (in_section) exit; if (index($0, want) == 1) { in_section = 1; next } }
             in_section { print }
           ' CHANGELOG.md > release-notes.md
-          test -s release-notes.md
+          if [ ! -s release-notes.md ]; then
+            echo "::error::CHANGELOG.md has no section for $VERSION"
+            exit 1
+          fi
+          archive="nepdate-cpp-$VERSION.tar.gz"
+          url="https://github.com/$GITHUB_REPOSITORY/releases/download/$GITHUB_REF_NAME/$archive"
+          sha256="$(cut -d' ' -f1 dist/SHA256SUMS)"
+          {
+            echo
+            echo "### Install"
+            echo
+            echo "With CMake \`FetchContent\`, from the archive attached here:"
+            echo
+            echo '```cmake'
+            echo 'include(FetchContent)'
+            echo 'FetchContent_Declare(nepdate'
+            echo "    URL $url"
+            echo "    URL_HASH SHA256=$sha256)"
+            echo 'FetchContent_MakeAvailable(nepdate)'
+            echo 'target_link_libraries(your_app PRIVATE nepdate::nepdate nepdate::patro)'
+            echo '```'
+            echo
+            echo "Or extract the archive, \`cmake --install\` it, and use \`find_package(nepdate)\` and"
+            echo "\`find_package(nepdate-patro)\`. vcpkg and Conan Center listings follow upstream review."
+            echo
+            echo "### Verification"
+            echo
+            echo '```bash'
+            echo "gh release download $GITHUB_REF_NAME --repo $GITHUB_REPOSITORY"
+            echo 'sha256sum -c SHA256SUMS'
+            echo "gh attestation verify $archive --repo $GITHUB_REPOSITORY"
+            echo '```'
+            echo
+            echo "After this release, verify-published downloaded these files, checked both, and built a"
+            echo "consumer from the archive on Linux, macOS and Windows."
+          } >> release-notes.md
           cat release-notes.md
+      - name: The asset set is exactly the archive and its sums
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected="$(printf '%s\n' "nepdate-cpp-$VERSION.tar.gz" SHA256SUMS SHA512SUMS | sort)"
+          actual="$(ls dist | sort)"
+          if [ "$actual" != "$expected" ]; then
+            echo "::error::dist/ holds $(echo "$actual" | tr '\n' ' '), expected $(echo "$expected" | tr '\n' ' ')"
+            exit 1
+          fi
+          (cd dist && sha256sum -c SHA256SUMS && sha512sum -c SHA512SUMS)
       - name: Build provenance attestation
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
-          subject-path: "${{ steps.archive.outputs.name }}"
+          subject-path: "dist/nepdate-cpp-${{ env.VERSION }}.tar.gz"
       - name: GitHub Release
         uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:
-          name: "v${{ steps.archive.outputs.version }}"
+          name: "v${{ env.VERSION }}"
           body_path: release-notes.md
+          # A tag with a pre-release part lands as a pre-release, never as the latest version.
+          prerelease: ${{ contains(env.VERSION, '-') }}
+          fail_on_unmatched_files: true
           files: |
-            ${{ steps.archive.outputs.name }}
-            ${{ steps.archive.outputs.name }}.sha256
-            ${{ steps.archive.outputs.name }}.sha512
+            dist/nepdate-cpp-${{ env.VERSION }}.tar.gz
+            dist/SHA256SUMS
+            dist/SHA512SUMS
+
+  # Called, not triggered: a release created with GITHUB_TOKEN fires no release event.
+  verify-published:
+    if: github.ref_type == 'tag'
+    needs: [preflight, release]
+    permissions:
+      contents: read
+      attestations: read
+    uses: ./.github/workflows/verify-published.yml
+    with:
+      version: ${{ needs.preflight.outputs.version }}
