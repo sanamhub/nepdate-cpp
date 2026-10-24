@@ -358,8 +358,8 @@ jobs:
           set -euo pipefail
           pipx install conan==2.33.0  # pinned: the version the recipes were tested with
           conan profile detect --force
-          conan create conan/nepdate
-          conan create conan/nepdate-patro
+          conan create conan/nepdate -s compiler.cppstd=20
+          conan create conan/nepdate-patro -s compiler.cppstd=20
 
   shared-check:
     permissions:
