@@ -61,16 +61,17 @@ with `SHA256SUMS`, `SHA512SUMS` and a provenance attestation; its notes show the
 `FetchContent_Declare` with the archive URL and `URL_HASH`, and how to check the download with
 `gh attestation verify`.
 
-The vcpkg and Conan Center submissions are prepared but not merged upstream yet. Until they are,
-the overlay ports and recipes in this tree work:
+nepdate is not in the vcpkg or Conan Center registries yet. Until it is, the ports and recipes in
+a clone of this repository build the release archive, and the hashes are checked. Run vcpkg from a
+directory without a `vcpkg.json` (the clone has one, which would switch vcpkg to manifest mode):
 
 ```sh
-vcpkg install nepdate nepdate-patro --overlay-ports=ports
+vcpkg install nepdate nepdate-patro --overlay-ports=path/to/nepdate-cpp/ports
 ```
 
 ```sh
-conan create conan/nepdate
-conan create conan/nepdate-patro
+conan create conan/nepdate -s compiler.cppstd=20
+conan create conan/nepdate-patro -s compiler.cppstd=20
 ```
 
 Set `NEPDATE_BUILD_PATRO` to `OFF` before `FetchContent_MakeAvailable` if you need only the core.

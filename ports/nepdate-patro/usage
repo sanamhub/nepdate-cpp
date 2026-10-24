@@ -1,0 +1,4 @@
+nepdate-patro provides CMake targets:
+
+  find_package(nepdate-patro CONFIG REQUIRED)
+  target_link_libraries(main PRIVATE nepdate::patro)
