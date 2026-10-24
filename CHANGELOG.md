@@ -5,6 +5,18 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- The vcpkg ports and Conan recipes now build the release archive outside CI: the ports carry the
+  archive's SHA512 instead of `0`, and the recipes download it through a new `conandata.yml`. Before,
+  the README's overlay command failed without the CI-only `NEPDATE_CPP_SOURCE`.
+
+### Added
+
+- Both vcpkg ports install a `usage` file; both Conan recipes reject C++ standards before 20.
+- `NEPDATE_BUILD_COREONLY` (on when top level, as before) so the port and recipe skip the gate 9
+  program.
+
 ## [0.1.0-beta.1] - 2026-10-22
 
 First public pre-release. The API may still change before 0.1.0.

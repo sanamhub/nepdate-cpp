@@ -17,6 +17,7 @@ option(NEPDATE_BUILD_TESTS "Build the core tests (needs the vcpkg feature dev)" 
 # (vcpkg port nepdate) can turn it off (ADR-0001 section 4).
 option(NEPDATE_BUILD_PATRO "Build the nepdate::patro library" ON)
 option(NEPDATE_BUILD_TOOLS "Build tools/codegen (needs the vcpkg feature dev)" OFF)
+option(NEPDATE_BUILD_COREONLY "Build tools/coreonly, the core-only program of gate 9" ${PROJECT_IS_TOP_LEVEL})
 
 include(cmake/warnings.cmake)
 include(cmake/instrumentation.cmake)
@@ -85,8 +86,8 @@ if(NEPDATE_BUILD_PATRO)
 endif()
 
 # Gate 9: the core-only program the isolation gate builds in Release. Not built when this project
-# is pulled in with FetchContent or add_subdirectory.
-if(PROJECT_IS_TOP_LEVEL)
+# is pulled in with FetchContent or add_subdirectory, or by the vcpkg port and Conan recipe.
+if(NEPDATE_BUILD_COREONLY)
     add_subdirectory(tools/coreonly)
 endif()
 

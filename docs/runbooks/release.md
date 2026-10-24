@@ -59,18 +59,27 @@ a beta can't go out under the stable tag.
 
 1. `verify-published` is green. If it is not, the release stays up (the tag can't move) and the fix
    is a new version.
-2. **vcpkg** (first release: new ports; later: version bumps). In a fork of `microsoft/vcpkg`:
+2. **This repository's ports and recipes.** In a PR, set the `SHA512` in both
+   `ports/*/portfile.cmake` to the hash of GitHub's tag archive
+   (`https://github.com/sanamhub/nepdate-cpp/archive/vX.Y.Z.tar.gz`, not the attached archive), and
+   add the version, that URL and its SHA-256 to both `conan/*/conandata.yml`. Check both from a
+   directory outside the repository, with `NEPDATE_CPP_SOURCE` unset, so the archive is what gets
+   built: `vcpkg install nepdate nepdate-patro --overlay-ports=<repo>/ports`, then
+   `conan create <repo>/conan/nepdate -s compiler.cppstd=20` and the same for `nepdate-patro`.
+3. **vcpkg** (first release: new ports; later: version bumps). The curated registry asks for six
+   months of releases or public development (its maintainer guide), so the first submission waits
+   for that. In a fork of `microsoft/vcpkg`:
    copy `ports/nepdate` and `ports/nepdate-patro`, set `REF vX.Y.Z` and the `SHA512` of GitHub's tag
    archive, which `vcpkg_from_github` downloads (not the attached `nepdate-cpp-X.Y.Z.tar.gz`, so not
    the value in `SHA512SUMS`; `vcpkg install` with `SHA512 0` prints the real one), run
    `vcpkg install nepdate nepdate-patro` locally, then `vcpkg x-add-version --all`, and open the PR.
    Answer review comments; the merge can take days.
-3. **Conan Center.** In a fork of `conan-io/conan-center-index`: copy `conan/nepdate` and
+4. **Conan Center.** Its reviewers look for project age and outside users too. In a fork of `conan-io/conan-center-index`: copy `conan/nepdate` and
    `conan/nepdate-patro` to `recipes/<name>/all/`, add `conandata.yml` with the archive URL and
    SHA-256 and `recipes/<name>/config.yml` with the version, run `conan create` for both, open the
    PR. The first PR for a new recipe goes through the Conan team's access request.
-4. Add an empty `## [Unreleased]` to the changelog.
-5. Add the release to the hub `README.md` port table if it isn't listed.
+5. Add an empty `## [Unreleased]` to the changelog.
+6. Add the release to the hub `README.md` port table if it isn't listed.
 
 ## Rolling back
 

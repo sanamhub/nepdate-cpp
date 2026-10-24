@@ -2,7 +2,8 @@ import os
 
 from conan import ConanFile
 from conan.tools.cmake import CMake, CMakeDeps, CMakeToolchain, cmake_layout
-from conan.tools.files import copy
+from conan.tools.build import check_min_cppstd
+from conan.tools.files import copy, get
 
 
 class NepdatePatroConan(ConanFile):
@@ -27,12 +28,17 @@ class NepdatePatroConan(ConanFile):
     def layout(self):
         cmake_layout(self)
 
+    def validate(self):
+        check_min_cppstd(self, 20)
+
     def source(self):
-        # The CI packages job builds the recipe from the working tree. A Conan Center recipe
-        # downloads the release archive here, added by the maintainer after the tag exists (ADR-0005).
+        # The CI packages job builds the recipe from the working tree; anyone else gets the release
+        # archive named in conandata.yml.
         local = os.environ.get("NEPDATE_CPP_SOURCE")
         if local:
             copy(self, pattern="*", src=local, dst=self.source_folder)
+        else:
+            get(self, **self.conan_data["sources"][self.version], strip_root=True)
 
     def generate(self):
         tc = CMakeToolchain(self)
