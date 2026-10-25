@@ -46,24 +46,22 @@ MSVC (from a `vcvars64` environment):
 
 ```
 cmake -S bench -B <dir> -G Ninja -DCMAKE_BUILD_TYPE=Release
-      -DCMAKE_TOOLCHAIN_FILE=E:/tools/vcpkg/scripts/buildsystems/vcpkg.cmake
-      -DVCPKG_MANIFEST_DIR=E:/github/sanamhub/nepdate-cpp -DVCPKG_MANIFEST_FEATURES=dev
-      -DCMAKE_MAKE_PROGRAM=E:/tools/ninja/ninja.exe
+      -DCMAKE_TOOLCHAIN_FILE=%VCPKG_ROOT%/scripts/buildsystems/vcpkg.cmake
+      -DVCPKG_MANIFEST_DIR=%CD% -DVCPKG_MANIFEST_FEATURES=dev
 cmake --build <dir>
 start /affinity 4 /wait <dir>\nepdate_bench.exe --benchmark_repetitions=10
       --benchmark_out=<dir>\bench.json --benchmark_out_format=json --benchmark_time_unit=ns
 ```
 
-Clang (zig) adds the local zig toolchain and triplet:
+Clang (zig) adds a local zig toolchain file and triplet, both in `<zig-cmake>`:
 
 ```
 cmake -S bench -B <dir> -G Ninja -DCMAKE_BUILD_TYPE=Release
-      -DCMAKE_TOOLCHAIN_FILE=E:/tools/vcpkg/scripts/buildsystems/vcpkg.cmake
+      -DCMAKE_TOOLCHAIN_FILE=%VCPKG_ROOT%/scripts/buildsystems/vcpkg.cmake
       -DVCPKG_TARGET_TRIPLET=x64-zig -DVCPKG_HOST_TRIPLET=x64-zig
-      -DVCPKG_OVERLAY_TRIPLETS=E:/tools/zig-cmake/triplets
-      -DVCPKG_CHAINLOAD_TOOLCHAIN_FILE=E:/tools/zig-cmake/zig-toolchain.cmake
-      -DVCPKG_MANIFEST_DIR=E:/github/sanamhub/nepdate-cpp -DVCPKG_MANIFEST_FEATURES=dev
-      -DCMAKE_MAKE_PROGRAM=E:/tools/ninja/ninja.exe
+      -DVCPKG_OVERLAY_TRIPLETS=<zig-cmake>/triplets
+      -DVCPKG_CHAINLOAD_TOOLCHAIN_FILE=<zig-cmake>/zig-toolchain.cmake
+      -DVCPKG_MANIFEST_DIR=%CD% -DVCPKG_MANIFEST_FEATURES=dev
 cmake --build <dir>
 start /affinity 4 /wait <dir>\nepdate_bench.exe --benchmark_repetitions=10
       --benchmark_out=<dir>\bench.json --benchmark_out_format=json --benchmark_time_unit=ns

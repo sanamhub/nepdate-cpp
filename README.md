@@ -188,6 +188,7 @@ laptop that was not idle. B8 still misses its own 250 ns target. Details are in
 | Building, gates and pull requests | [CONTRIBUTING.md](https://github.com/sanamhub/nepdate-cpp/blob/main/CONTRIBUTING.md) |
 | Releasing and rolling back | [docs/runbooks/release.md](https://github.com/sanamhub/nepdate-cpp/blob/main/docs/runbooks/release.md) |
 | Reporting a vulnerability | [SECURITY.md](https://github.com/sanamhub/nepdate-cpp/blob/main/SECURITY.md) |
+| Guides and examples | [nepdate.com/docs/cpp](https://nepdate.com/docs/cpp/) |
 | A wrong date, holiday or tithi | the hub's [data error form](https://github.com/sanamhub/nepdate/issues/new/choose) |
 | The other languages | [sanamhub/nepdate](https://github.com/sanamhub/nepdate#packages) |
 
