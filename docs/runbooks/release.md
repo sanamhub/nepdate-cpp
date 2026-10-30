@@ -38,6 +38,12 @@ and builds `tests/consumer` on Linux, macOS and Windows twice: through FetchCont
 release URL, and through `find_package` after installing the archive. `verify-published.yml` can
 also be run by hand from the Actions tab for any released version.
 
+The same workflow runs on a schedule. Every Monday one Linux runner downloads the newest release
+and builds the consumer through FetchContent (`scripts/verify-published.sh`); every day a
+metadata-only check confirms the release still lists its three assets and their URLs answer,
+without downloading them. A failed scheduled run opens or updates one issue labelled
+`published-check`; create that label once. A green scheduled run is silent.
+
 ## Pre-releases
 
 A tag such as `vX.Y.Z-beta.1` goes through the same workflow and becomes a GitHub pre-release.

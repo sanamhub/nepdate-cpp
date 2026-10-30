@@ -158,7 +158,7 @@ jobs:
         run: |
           set -euo pipefail
           expected="$(printf '%s\n' "nepdate-cpp-$VERSION.tar.gz" SHA256SUMS SHA512SUMS | sort)"
-          actual="$(ls dist | sort)"
+          actual="$(find dist -maxdepth 1 -type f -exec basename {} \; | sort)"
           if [ "$actual" != "$expected" ]; then
             echo "::error::dist/ holds $(echo "$actual" | tr '\n' ' '), expected $(echo "$expected" | tr '\n' ' ')"
             exit 1
