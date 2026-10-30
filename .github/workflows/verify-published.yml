@@ -5,6 +5,13 @@
 # built and installed on its own. release.yml calls it after the release exists; it also runs by
 # hand for any released version. It needs no checkout: the consumer source comes from the
 # downloaded archive, so dispatching this file from main re-verifies any earlier tag.
+#
+# Scheduled runs keep the release honest after the release page goes quiet. Every Monday one Linux
+# runner downloads the newest release and builds the consumer through FetchContent
+# (scripts/verify-published.sh), and every day a metadata-only check confirms the release still
+# lists its three assets and their URLs answer, without downloading them. A failure opens or
+# updates one issue labelled published-check. The check jobs read the release and nothing else;
+# only the report job writes.
 
 name: verify-published
 
@@ -12,22 +19,58 @@ on:
   workflow_call:
     inputs:
       version:
-        description: Released version, no leading v (for example 0.1.0-beta.1)
-        required: true
+        description: Released version, no leading v, or latest for the newest release
+        required: false
+        default: latest
         type: string
   workflow_dispatch:
     inputs:
       version:
-        description: Released version, no leading v (for example 0.1.0-beta.1)
-        required: true
+        description: Released version, no leading v, or latest for the newest release
+        required: false
+        default: latest
         type: string
+  schedule:
+    # The weekly install check, Monday 10:37 UTC.
+    - cron: "37 10 * * 1"
+    # The daily metadata check, which downloads no asset.
+    - cron: "7 4 * * *"
 
 permissions:
   contents: read
   attestations: read
 
 jobs:
+  # One place resolves latest, so every job of a run checks the same version.
+  resolve:
+    name: resolve the version
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    outputs:
+      version: ${{ steps.resolve.outputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Resolve
+        id: resolve
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          version="${INPUT_VERSION:-latest}"
+          if [ "$version" = latest ]; then
+            version="$(bash scripts/verify-published.sh latest --resolve)"
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Resolved version: \`$version\`" >> "$GITHUB_STEP_SUMMARY"
+
+  # A release or a manual run: the full check, both build paths, on every runner OS.
   verify:
+    name: verify ${{ needs.resolve.outputs.version }}
+    if: github.event_name != 'schedule'
+    needs: resolve
     strategy:
       fail-fast: false
       matrix:
@@ -35,7 +78,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     env:
-      VERSION: ${{ inputs.version }}
+      VERSION: ${{ needs.resolve.outputs.version }}
       GH_TOKEN: ${{ github.token }}
     defaults:
       run:
@@ -115,3 +158,122 @@ jobs:
           out="$("$ROOT/consumer-bin/consumer$EXE")"
           echo "$out"
           test "$(echo "$out" | tr -d '\r')" = "consumer OK"
+      - name: Step summary
+        if: always()
+        env:
+          OUTCOME: ${{ job.status }}
+        run: |
+          {
+            echo "### verify-published"
+            echo
+            echo "- Version: \`$VERSION\`"
+            echo "- Result: **$OUTCOME**"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # The weekly check: Linux only, FetchContent from the newest release.
+  weekly:
+    name: weekly ${{ needs.resolve.outputs.version }}
+    if: github.event_name == 'schedule' && github.event.schedule == '37 10 * * 1'
+    needs: resolve
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Download, build and run
+        id: check
+        env:
+          VERSION: ${{ needs.resolve.outputs.version }}
+        run: |
+          set -o pipefail
+          bash scripts/verify-published.sh "$VERSION" 2>&1 | tee verify.log
+      - name: Step summary
+        if: always()
+        env:
+          VERSION: ${{ needs.resolve.outputs.version }}
+          OUTCOME: ${{ steps.check.outcome }}
+        run: |
+          {
+            echo "### verify-published (weekly)"
+            echo
+            echo "- Version: \`$VERSION\`"
+            echo "- Result: **$OUTCOME**"
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Keep the failing output
+        if: failure()
+        run: tail -n 40 verify.log > failure.txt || true
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: failure()
+        with:
+          name: failure-weekly
+          path: failure.txt
+          if-no-files-found: ignore
+          retention-days: 7
+
+  # The daily check: the release still lists its assets and their URLs answer, with no download.
+  metadata:
+    name: metadata ${{ needs.resolve.outputs.version }}
+    if: github.event_name == 'schedule' && github.event.schedule == '7 4 * * *'
+    needs: resolve
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Check the release listing
+        id: check
+        env:
+          VERSION: ${{ needs.resolve.outputs.version }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -o pipefail
+          bash scripts/verify-published.sh "$VERSION" --metadata 2>&1 | tee metadata.log
+      - name: Step summary
+        if: always()
+        env:
+          VERSION: ${{ needs.resolve.outputs.version }}
+          OUTCOME: ${{ steps.check.outcome }}
+        run: |
+          {
+            echo "### verify-published (metadata)"
+            echo
+            echo "- Version: \`$VERSION\`"
+            echo "- Result: **$OUTCOME**"
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Keep the failing output
+        if: failure()
+        run: tail -n 40 metadata.log > failure.txt || true
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: failure()
+        with:
+          name: failure-metadata
+          path: failure.txt
+          if-no-files-found: ignore
+          retention-days: 7
+
+  # The only job with write access. It reads the artifacts the check jobs kept and opens or updates
+  # one issue; it never downloads a release.
+  report:
+    name: report
+    if: failure() && github.event_name == 'schedule'
+    needs: [resolve, verify, weekly, metadata]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: failure-*
+          path: failures
+      - name: Open or update the issue
+        env:
+          VERSION: ${{ needs.resolve.outputs.version }}
+          GH_TOKEN: ${{ github.token }}
+        run: bash scripts/published-issue.sh nepdate-cpp "${VERSION:-latest}" failures

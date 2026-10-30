@@ -13,6 +13,9 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- `verify-published.yml` also runs weekly against the newest release and daily against the release
+  metadata, and reports a failure as one issue labelled `published-check`.
+  `scripts/verify-published.sh` is the weekly path; the release path still checks both build forms.
 - Both vcpkg ports install a `usage` file; both Conan recipes reject C++ standards before 20.
 - `NEPDATE_BUILD_COREONLY` (on when top level, as before) so the port and recipe skip the gate 9
   program.
