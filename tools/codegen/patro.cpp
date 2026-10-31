@@ -3,6 +3,7 @@
 #include <nlohmann/json.hpp>
 
 #include <algorithm>
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <map>
@@ -18,7 +19,6 @@ using json = nlohmann::json;
 
 constexpr int kMinYear = 1901;
 constexpr std::size_t kMonthsPerYear = 12;
-constexpr std::size_t kTithiNames = 32;
 constexpr std::uint32_t kNoTithi = 0xFFU;
 constexpr std::size_t kTithiPerLine = 32;
 constexpr std::size_t kEventPerLine = 16;
@@ -91,6 +91,44 @@ std::string date_of_serial(const std::vector<std::uint32_t>& month_start, std::u
     const int month = static_cast<int>(i % kMonthsPerYear) + 1;
     const int day = static_cast<int>(serial - month_start[i]) + 1;
     return date_text(year, month, day);
+}
+
+int year_of_serial(const std::vector<std::uint32_t>& month_start, std::uint32_t serial) {
+    std::size_t i = 0;
+    while (month_start[i + 1] <= serial) {
+        ++i;
+    }
+    return kMinYear + static_cast<int>(i / kMonthsPerYear);
+}
+
+// The flat summary has one object of integers and date strings; these three read one field and
+// name it when it is missing or has the wrong type.
+bool summary_integer(const json& doc, const char* key, std::int64_t& out, std::string& error) {
+    const json* value = member(doc, key);
+    if (value == nullptr) {
+        error = fail("summary field '" + std::string(key) + "' is missing");
+        return false;
+    }
+    if (!value->is_number_integer()) {
+        error = fail("summary field '" + std::string(key) + "' must be an integer");
+        return false;
+    }
+    out = value->get<std::int64_t>();
+    return true;
+}
+
+bool summary_text(const json& doc, const char* key, std::string& out, std::string& error) {
+    const json* value = member(doc, key);
+    if (value == nullptr) {
+        error = fail("summary field '" + std::string(key) + "' is missing");
+        return false;
+    }
+    if (!value->is_string()) {
+        error = fail("summary field '" + std::string(key) + "' must be a string");
+        return false;
+    }
+    out = value->get<std::string>();
+    return true;
 }
 
 std::string hex(std::uint64_t value, int digits) {
@@ -217,6 +255,67 @@ patro_input_result parse_patro(const std::vector<std::string>& year_jsons) {
     return result;
 }
 
+// NOLINTNEXTLINE(readability-function-cognitive-complexity): one check per summary field, build-time tool
+patro_summary_result parse_patro_summary(std::string_view text) {
+    patro_summary_result result;
+    const json doc = json::parse(text, nullptr, false);
+    if (doc.is_discarded() || !doc.is_object()) {
+        result.error = fail("the patro summary is not a JSON object");
+        return result;
+    }
+    const auto count = [&](const char* key, std::uint32_t& out) {
+        std::int64_t value = 0;
+        if (!summary_integer(doc, key, value, result.error)) {
+            return false;
+        }
+        if (value < 0 || value > 0xFFFFFFFFLL) {
+            result.error = fail("summary field '" + std::string(key) + "' is out of range");
+            return false;
+        }
+        out = static_cast<std::uint32_t>(value);
+        return true;
+    };
+    const auto year = [&](const char* key, int& out) {
+        std::int64_t value = 0;
+        if (!summary_integer(doc, key, value, result.error)) {
+            return false;
+        }
+        if (value < 1 || value > 9999) {
+            result.error = fail("summary field '" + std::string(key) + "' is out of range");
+            return false;
+        }
+        out = static_cast<int>(value);
+        return true;
+    };
+    const auto date = [&](const char* key, std::string& out) {
+        return summary_text(doc, key, out, result.error);
+    };
+
+    std::int64_t schema = 0;
+    if (!summary_integer(doc, "schema", schema, result.error)) {
+        return result;
+    }
+    if (schema != 1) {
+        result.error = fail("summary schema must be 1, got " + std::to_string(schema));
+        return result;
+    }
+    result.value.schema = static_cast<int>(schema);
+    patro_summary& s = result.value;
+    if (!year("first_year", s.first_year) || !year("last_year", s.last_year) ||
+        !date("first_day", s.first_day) || !date("last_day", s.last_day) ||
+        !count("first_serial", s.first_serial) || !count("last_serial", s.last_serial) ||
+        !count("days", s.days) || !date("tithi_first_day", s.tithi_first_day) ||
+        !date("tithi_last_day", s.tithi_last_day) ||
+        !count("tithi_first_serial", s.tithi_first_serial) || !count("tithi_days", s.tithi_days) ||
+        !count("tithi_names", s.tithi_names) || !count("holidays", s.holidays) ||
+        !count("event_days", s.event_days) || !count("events", s.events) ||
+        !count("event_names", s.event_names) || !count("names", s.names) ||
+        !count("name_bytes", s.name_bytes)) {
+        return result;
+    }
+    return result;
+}
+
 // NOLINTNEXTLINE(readability-function-cognitive-complexity): one pass per table, build-time tool
 patro_tables_result build_patro_tables(const patro_input& input,
                                        const std::vector<std::uint32_t>& month_start) {
@@ -266,8 +365,10 @@ patro_tables_result build_patro_tables(const patro_input& input,
         if (!d.has_tithi) {
             continue;
         }
-        if (intern(d.tithi) >= kTithiNames) {
-            result.error = fail("more than " + std::to_string(kTithiNames) + " tithi names");
+        intern(d.tithi);
+        // A day stores its tithi as one byte, so the tithi names must fit in 256 entries.
+        if (t.names.size() > 0x100U) {
+            result.error = fail("more than 256 tithi names");
             return result;
         }
         const std::uint32_t serial = serial_of(d);
@@ -279,12 +380,6 @@ patro_tables_result build_patro_tables(const patro_input& input,
     }
     if (!any_tithi) {
         result.error = fail("no tithi days");
-        return result;
-    }
-    const std::size_t tithi_name_count = name_index.size();
-    if (tithi_name_count != kTithiNames) {
-        result.error = fail(std::to_string(tithi_name_count) + " tithi names, spec says " +
-                            std::to_string(kTithiNames));
         return result;
     }
     for (const patro_day& d : input.days) {
@@ -303,12 +398,8 @@ patro_tables_result build_patro_tables(const patro_input& input,
         result.error = fail("coverage longer than uint16 offsets allow");
         return result;
     }
-    if (input.days.front().year != 2077 || input.days.front().month != 1 ||
-        input.days.front().day != 1 || input.days.back().year != 2084 ||
-        input.days.back().month != 8 || input.days.back().day != 20) {
-        result.error = fail("coverage must be exactly 2077-01-01..2084-08-20");
-        return result;
-    }
+    // The coverage bounds come from the data; validate_patro_tables checks them against the hub
+    // summary.
 
     // One dense walk over the covered days (ADR-0002 section 7).
     t.day_tithi.assign(t.days, static_cast<std::uint8_t>(kNoTithi));
@@ -360,6 +451,107 @@ patro_tables_result build_patro_tables(const patro_input& input,
     }
     t.name_offsets.push_back(static_cast<std::uint32_t>(t.name_blob.size()));
     return result;
+}
+
+// NOLINTNEXTLINE(readability-function-cognitive-complexity): one check per summary field, build-time tool
+std::string validate_patro_tables(const patro_tables& t, const patro_summary& summary,
+                                  const std::vector<std::uint32_t>& month_start) {
+    std::string error;
+    const auto add = [&error](const char* field, const std::string& actual,
+                              const std::string& expected) {
+        if (!error.empty()) {
+            error += "; ";
+        }
+        error += fail(std::string(field) + ": data has " + actual + ", summary says " + expected);
+    };
+    const auto check = [&add](const char* field, std::uint64_t actual, std::uint64_t expected) {
+        if (actual != expected) {
+            add(field, std::to_string(actual), std::to_string(expected));
+        }
+    };
+    const auto check_text = [&add](const char* field, const std::string& actual,
+                                   const std::string& expected) {
+        if (actual != expected) {
+            add(field, actual, expected);
+        }
+    };
+
+    if (t.days == 0) {
+        add("days", "0", std::to_string(summary.days));
+        return error;
+    }
+    const std::uint32_t last_serial = t.first + t.days - 1U;
+    check("first_serial", t.first, summary.first_serial);
+    check("last_serial", last_serial, summary.last_serial);
+    check("days", t.days, summary.days);
+    const std::string first_day = date_of_serial(month_start, t.first);
+    const std::string last_day = date_of_serial(month_start, last_serial);
+    check_text("first_day", first_day, summary.first_day);
+    check_text("last_day", last_day, summary.last_day);
+    check("first_year", static_cast<std::uint64_t>(year_of_serial(month_start, t.first)),
+          static_cast<std::uint64_t>(summary.first_year));
+    check("last_year", static_cast<std::uint64_t>(year_of_serial(month_start, last_serial)),
+          static_cast<std::uint64_t>(summary.last_year));
+
+    std::uint32_t tithi_days = 0;
+    std::uint32_t tithi_first_serial = 0;
+    std::uint32_t tithi_last_serial = 0;
+    std::uint32_t tithi_names = 0;
+    bool any_tithi = false;
+    std::array<bool, 0x100U> seen{};
+    for (std::size_t offset = 0; offset < t.day_tithi.size(); ++offset) {
+        const std::uint8_t index = t.day_tithi[offset];
+        if (index == kNoTithi) {
+            continue;
+        }
+        ++tithi_days;
+        if (!any_tithi) {
+            tithi_first_serial = t.first + static_cast<std::uint32_t>(offset);
+            any_tithi = true;
+        }
+        tithi_last_serial = t.first + static_cast<std::uint32_t>(offset);
+        if (!seen.at(index)) {
+            seen.at(index) = true;
+            ++tithi_names;
+        }
+    }
+    check("tithi_days", tithi_days, summary.tithi_days);
+    check("tithi_names", tithi_names, summary.tithi_names);
+    if (any_tithi) {
+        check("tithi_first_serial", tithi_first_serial, summary.tithi_first_serial);
+        // The summary states the tithi span as a first serial and a day count; the last serial
+        // follows from them, since the span must be contiguous.
+        check("tithi_last_serial", tithi_last_serial,
+              static_cast<std::uint64_t>(summary.tithi_first_serial) + summary.tithi_days - 1U);
+        check_text("tithi_first_day", date_of_serial(month_start, tithi_first_serial),
+                   summary.tithi_first_day);
+        check_text("tithi_last_day", date_of_serial(month_start, tithi_last_serial),
+                   summary.tithi_last_day);
+    } else {
+        check_text("tithi_first_day", "", summary.tithi_first_day);
+        check_text("tithi_last_day", "", summary.tithi_last_day);
+    }
+
+    std::uint32_t event_days = 0;
+    for (std::size_t i = 0; i + 1 < t.day_event_start.size(); ++i) {
+        event_days += t.day_event_start[i] < t.day_event_start[i + 1] ? 1U : 0U;
+    }
+    check("event_days", event_days, summary.event_days);
+    check("events", t.events.size(), summary.events);
+    check("holidays", t.holidays.size(), summary.holidays);
+    check("names", t.names.size(), summary.names);
+    check("name_bytes", t.name_blob.size(), summary.name_bytes);
+    // Distinct event names, whether or not an event shares a pair with a tithi name.
+    std::vector<std::uint8_t> event_name_seen(t.names.size(), 0);
+    std::uint32_t event_names = 0;
+    for (const std::uint16_t index : t.events) {
+        if (event_name_seen[index] == 0) {
+            event_name_seen[index] = 1;
+            ++event_names;
+        }
+    }
+    check("event_names", event_names, summary.event_names);
+    return error;
 }
 
 std::string render_patro_tables(const patro_tables& t,

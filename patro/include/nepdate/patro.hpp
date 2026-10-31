@@ -98,10 +98,10 @@ static_assert(std::is_trivially_copyable_v<day_info>);
 /// range check, three table reads and one bit test (ADR-0002 section 7).
 [[nodiscard]] PATRO_EXPORT day_info info(date d) noexcept;
 
-/// Returns the smallest BS range containing every day with metadata: 2077-01-01..2084-08-20.
+/// Returns the smallest BS range containing every day with metadata in the bundled data.
 [[nodiscard]] PATRO_EXPORT date_range coverage() noexcept;
 
-/// Returns the public holiday dates, ascending (294 today).
+/// Returns the bundled data's public holiday dates, ascending.
 [[nodiscard]] PATRO_EXPORT std::span<const date> public_holidays() noexcept;
 
 } // namespace nepdate::patro
