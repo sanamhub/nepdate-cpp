@@ -4,12 +4,15 @@
 #include <nepdate/format.hpp>
 #include <nepdate/patro.hpp>
 
+#include "patro_summary.hpp"
+
 #include <catch2/catch_message.hpp>
 #include <catch2/catch_test_macros.hpp>
 
 #include <cstddef>
 #include <optional>
 #include <span>
+#include <string>
 #include <string_view>
 #include <type_traits>
 #include <vector>
@@ -23,6 +26,15 @@ using nepdate::make_date;
 namespace patro = nepdate::patro;
 
 namespace {
+
+// The hub summary every port vendors; the generated tables and the public queries must agree
+// with it.
+nepdate::test::patro_summary summary() {
+    const auto parsed = nepdate::test::read_patro_summary(std::string(NEPDATE_SHARED_DIR) +
+                                                          "/spec/vectors/patro-summary.json");
+    REQUIRE(parsed.has_value());
+    return *parsed;
+}
 
 date d(int y, int m, int day) {
     return make_date(y, m, day).value();
@@ -104,16 +116,18 @@ TEST_CASE("dates without data give an empty day_info", "[patro]") {
     }
 }
 
-TEST_CASE("coverage is 2077-01-01..2084-08-20", "[patro]") {
+TEST_CASE("coverage matches the hub summary", "[patro]") {
+    const nepdate::test::patro_summary expected = summary();
     const nepdate::date_range range = patro::coverage();
-    CHECK(range.first() == d(2077, 1, 1));
-    CHECK(range.last() == d(2084, 8, 20));
-    CHECK(range.size() == 2793);
+    CHECK(nepdate::to_iso_string(range.first()) == expected.first_day);
+    CHECK(nepdate::to_iso_string(range.last()) == expected.last_day);
+    CHECK(range.size() == expected.days);
 }
 
-TEST_CASE("public_holidays has 294 ascending dates, each a holiday", "[patro]") {
+TEST_CASE("public_holidays matches the hub summary, ascending, each a holiday", "[patro]") {
+    const nepdate::test::patro_summary expected = summary();
     const std::span<const date> holidays = patro::public_holidays();
-    REQUIRE(holidays.size() == 294);
+    REQUIRE(holidays.size() == expected.holidays);
     for (std::size_t i = 0; i < holidays.size(); ++i) {
         CAPTURE(i);
         if (i != 0) {

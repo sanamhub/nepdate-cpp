@@ -494,7 +494,7 @@ inline constexpr std::array<nepdate::patro::event, 3032> kEvents = {{
     {nepdate::patro::detail::tag{}, 466}, {nepdate::patro::detail::tag{}, 342}, {nepdate::patro::detail::tag{}, 338}, {nepdate::patro::detail::tag{}, 341}, {nepdate::patro::detail::tag{}, 464}, {nepdate::patro::detail::tag{}, 467}, {nepdate::patro::detail::tag{}, 343}, {nepdate::patro::detail::tag{}, 594}, {nepdate::patro::detail::tag{}, 344}, {nepdate::patro::detail::tag{}, 536}, {nepdate::patro::detail::tag{}, 345}, {nepdate::patro::detail::tag{}, 468}, {nepdate::patro::detail::tag{}, 477}, {nepdate::patro::detail::tag{}, 709}, {nepdate::patro::detail::tag{}, 349}, {nepdate::patro::detail::tag{}, 350},
     {nepdate::patro::detail::tag{}, 664}, {nepdate::patro::detail::tag{}, 469}, {nepdate::patro::detail::tag{}, 351}, {nepdate::patro::detail::tag{}, 352}, {nepdate::patro::detail::tag{}, 594}, {nepdate::patro::detail::tag{}, 375}, {nepdate::patro::detail::tag{}, 355}, {nepdate::patro::detail::tag{}, 514}, {nepdate::patro::detail::tag{}, 539}, {nepdate::patro::detail::tag{}, 540}, {nepdate::patro::detail::tag{}, 470}, {nepdate::patro::detail::tag{}, 668}, {nepdate::patro::detail::tag{}, 471}, {nepdate::patro::detail::tag{}, 353}, {nepdate::patro::detail::tag{}, 359}, {nepdate::patro::detail::tag{}, 360},
     {nepdate::patro::detail::tag{}, 541}, {nepdate::patro::detail::tag{}, 354}, {nepdate::patro::detail::tag{}, 542}, {nepdate::patro::detail::tag{}, 375}, {nepdate::patro::detail::tag{}, 594}, {nepdate::patro::detail::tag{}, 362}, {nepdate::patro::detail::tag{}, 365}, {nepdate::patro::detail::tag{}, 546}, {nepdate::patro::detail::tag{}, 477}, {nepdate::patro::detail::tag{}, 751}, {nepdate::patro::detail::tag{}, 369}, {nepdate::patro::detail::tag{}, 675}, {nepdate::patro::detail::tag{}, 551}, {nepdate::patro::detail::tag{}, 373}, {nepdate::patro::detail::tag{}, 372}, {nepdate::patro::detail::tag{}, 752},
-    {nepdate::patro::detail::tag{}, 677}, {nepdate::patro::detail::tag{}, 721}, {nepdate::patro::detail::tag{}, 195}, {nepdate::patro::detail::tag{}, 477}, {nepdate::patro::detail::tag{}, 443}, {nepdate::patro::detail::tag{}, 477}, {nepdate::patro::detail::tag{}, 706}, {nepdate::patro::detail::tag{}, 477},
+    {nepdate::patro::detail::tag{}, 677}, {nepdate::patro::detail::tag{}, 753}, {nepdate::patro::detail::tag{}, 195}, {nepdate::patro::detail::tag{}, 477}, {nepdate::patro::detail::tag{}, 443}, {nepdate::patro::detail::tag{}, 477}, {nepdate::patro::detail::tag{}, 706}, {nepdate::patro::detail::tag{}, 477},
 }};
 
 // The holiday dates, ascending, as packed dates (year << 16 | month << 8 | day).
@@ -797,7 +797,7 @@ inline constexpr std::array<nepdate::date, 294> kHolidays = {{
 
 // Every distinct name, np then en per pair, concatenated. The 32 tithi names come
 // first (PATRO section 3). The readable Nepali sits beside each pair.
-inline constexpr std::array<char, 59800> kNameBlob = {
+inline constexpr std::array<char, 59851> kNameBlob = {
     // तृतिया (Tritiya)
     '\340','\244','\244','\340','\245','\203','\340','\244','\244','\340','\244','\277','\340','\244','\257','\340',
     '\244','\276',
@@ -5972,10 +5972,15 @@ inline constexpr std::array<char, 59800> kNameBlob = {
     '\244','\277','\340','\244','\265','\340','\244','\270',
     'W','o','r','l','d',' ','A','s','t','r','o','l','o','g','y',' ',
     'D','a','y',
+    // नयाँ वर्ष २०८४ (New Year 2084)
+    '\340','\244','\250','\340','\244','\257','\340','\244','\276','\340','\244','\201',' ','\340','\244','\265',
+    '\340','\244','\260','\340','\245','\215','\340','\244','\267',' ','\340','\245','\250','\340','\245','\246',
+    '\340','\245','\256','\340','\245','\252',
+    'N','e','w',' ','Y','e','a','r',' ','2','0','8','4',
 };
 
 // Name k in language l (0 = np, 1 = en) is blob[off[2k + l] .. off[2k + l + 1]).
-inline constexpr std::array<std::uint32_t, 1507> kNameOffsets = {
+inline constexpr std::array<std::uint32_t, 1509> kNameOffsets = {
     0, 18, // 0: Tritiya / तृतिया
     25, 46, // 1: Chaturthi / चतुर्थी
     55, 73, // 2: Panchami / पञ्चमी
@@ -6729,7 +6734,8 @@ inline constexpr std::array<std::uint32_t, 1507> kNameOffsets = {
     59531, 59565, // 750: Saraswati Puja / सरस्वती पूजा
     59579, 59671, // 751: Ghode Jatra (Kathmandu Valley Holiday) / घोडेजात्रा (काठमाडौं उपत्यका बिदा)
     59709, 59781, // 752: World Astrology Day / विश्व ज्योतिष स्थापना दिवस
-    59800,
+    59800, 59838, // 753: New Year 2084 / नयाँ वर्ष २०८४
+    59851,
 };
 
 } // namespace nepdate::patro::detail

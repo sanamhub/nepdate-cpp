@@ -261,8 +261,8 @@ public:
 };
 
 day_info info(date d) noexcept;                           // never fails; empty outside coverage
-date_range coverage() noexcept;                           // 2077-01-01..2084-08-20 today
-std::span<const date> public_holidays() noexcept;         // ascending, 294 dates today
+date_range coverage() noexcept;                           // the range the bundled data covers
+std::span<const date> public_holidays() noexcept;         // ascending public holidays of that data
 
 } // namespace nepdate::patro
 ```

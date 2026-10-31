@@ -6,6 +6,8 @@
 
 #include "../src/patro_tables.hpp"
 
+#include "patro_summary.hpp"
+
 #include <nepdate/detail/calendar_tables.hpp>
 #include <nepdate/patro.hpp>
 
@@ -13,6 +15,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <string>
 #include <string_view>
 
 // NOLINTBEGIN(bugprone-unchecked-optional-access): every std::optional is dereferenced
@@ -25,6 +28,15 @@ namespace patro = nepdate::patro;
 namespace detail = nepdate::patro::detail;
 
 namespace {
+
+// The hub summary every port vendors; the generated tables and the public queries must agree
+// with it.
+nepdate::test::patro_summary summary() {
+    const auto parsed = nepdate::test::read_patro_summary(std::string(NEPDATE_SHARED_DIR) +
+                                                          "/spec/vectors/patro-summary.json");
+    REQUIRE(parsed.has_value());
+    return *parsed;
+}
 
 date d(int y, int m, int day) {
     return make_date(y, m, day).value();
@@ -94,28 +106,31 @@ TEST_CASE("CalendarDataTests.TithiData_DayOffsets_IsStrictlySorted", "[cs]") {
 }
 
 TEST_CASE("CalendarDataTests.TithiData_AllPoolIds_AreInRange", "[cs]") {
+    const nepdate::test::patro_summary expected = summary();
     std::size_t violations = 0;
     for (const std::uint8_t index : detail::kDayTithi) {
-        violations += index != 0xFFU && index >= 32U ? 1U : 0U;
+        violations += index != 0xFFU && index >= expected.tithi_names ? 1U : 0U;
     }
     CHECK(violations == 0);
 }
 
 TEST_CASE("CalendarDataTests.TithiData_EntryCount_Matches2190", "[cs]") {
+    const nepdate::test::patro_summary expected = summary();
     std::size_t tithi_days = 0;
     for (const std::uint8_t index : detail::kDayTithi) {
         tithi_days += index != 0xFFU ? 1U : 0U;
     }
-    CHECK(tithi_days == 2190);
+    CHECK(tithi_days == expected.tithi_days);
 }
 
 TEST_CASE("CalendarDataTests.EventData_DayOffsets_IsStrictlySorted", "[cs]") {
     // Dense layout: the days with events come in strictly ascending order.
+    const nepdate::test::patro_summary expected = summary();
     std::size_t event_days = 0;
     for (std::uint32_t i = 0; i < detail::kDays; ++i) {
         event_days += detail::kDayEventStart[i] < detail::kDayEventStart[i + 1] ? 1U : 0U;
     }
-    CHECK(event_days == 1671);
+    CHECK(event_days == expected.event_days);
 }
 
 TEST_CASE("CalendarDataTests.EventData_SliceStart_IsNonDecreasing", "[cs]") {
@@ -141,11 +156,12 @@ TEST_CASE("CalendarDataTests.EventData_AllEntries_AreInRange", "[cs]") {
 }
 
 TEST_CASE("CalendarDataTests.EventData_DayCount_Matches1671", "[cs]") {
+    const nepdate::test::patro_summary expected = summary();
     std::size_t event_days = 0;
     for (std::uint32_t i = 0; i < detail::kDays; ++i) {
         event_days += detail::kDayEventStart[i] < detail::kDayEventStart[i + 1] ? 1U : 0U;
     }
-    CHECK(event_days == 1671);
+    CHECK(event_days == expected.event_days);
 }
 
 TEST_CASE("CalendarDataTests.HolidayData_DayOffsets_IsStrictlySorted", "[cs]") {
@@ -157,7 +173,8 @@ TEST_CASE("CalendarDataTests.HolidayData_DayOffsets_IsStrictlySorted", "[cs]") {
 }
 
 TEST_CASE("CalendarDataTests.HolidayData_Count_Matches294", "[cs]") {
-    CHECK(detail::kHolidays.size() == 294);
+    const nepdate::test::patro_summary expected = summary();
+    CHECK(detail::kHolidays.size() == expected.holidays);
 }
 
 TEST_CASE("CalendarDataTests.CalendarOffsets_GetOffset_BaseYear_Month1_Day1_ReturnsZero", "[cs]") {
@@ -246,10 +263,11 @@ TEST_CASE("CalendarDataTests.GetCalendarInfo_TithiMatchesFlatProperties", "[cs]"
 TEST_CASE("CalendarDataTests.AllDaysInScrapedRange_OffsetsAreInBounds", "[cs]") {
     // Every covered day resolves its tithi, holiday bit and event slice without leaving the
     // tables: the indices stay in range because the generator checked them.
+    const nepdate::test::patro_summary expected = summary();
     std::size_t failures = 0;
     for (std::uint32_t i = 0; i < detail::kDays; ++i) {
         const std::uint8_t tithi_index = detail::kDayTithi[i];
-        failures += tithi_index != 0xFFU && tithi_index >= 32U ? 1U : 0U;
+        failures += tithi_index != 0xFFU && tithi_index >= expected.tithi_names ? 1U : 0U;
         const std::uint16_t first = detail::kDayEventStart[i];
         failures += detail::kDayEventStart[i + 1] < first ? 1U : 0U;
     }
@@ -270,8 +288,9 @@ TEST_CASE("CalendarDataTests.AllDaysInScrapedRange_NoExceptionOnPropertyAccess",
 }
 
 TEST_CASE("CalendarDataTests.AllTithiEntries_ResolveToNonEmptyStrings", "[cs]") {
+    const nepdate::test::patro_summary expected = summary();
     std::size_t failures = 0;
-    for (std::size_t k = 0; k < 32; ++k) {
+    for (std::size_t k = 0; k < expected.tithi_names; ++k) {
         failures += name_of(k, lang::ne).empty() || name_of(k, lang::en).empty() ? 1U : 0U;
     }
     CHECK(failures == 0);
@@ -295,7 +314,8 @@ TEST_CASE("CalendarDataTests.AllEventOffsets_AreInBounds", "[cs]") {
 }
 
 TEST_CASE("CalendarDataTests.HolidayCount_ViaApi_Matches294", "[cs]") {
-    CHECK(patro::public_holidays().size() == 294);
+    const nepdate::test::patro_summary expected = summary();
+    CHECK(patro::public_holidays().size() == expected.holidays);
 }
 
 TEST_CASE("CalendarDataTests.CalendarInfo_EventArrays_AreNeverNull", "[cs]") {

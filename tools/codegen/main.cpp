@@ -1,5 +1,5 @@
-// tools/codegen: writes the generated headers from shared/data and from the name lists in
-// names.hpp (ADR-0001 §5).
+// tools/codegen: writes the generated headers from shared/data, checks the patro counts against
+// shared/spec/vectors/patro-summary.json and renders the name lists in names.hpp (ADR-0001 §5).
 //
 //   nepdate_codegen --shared <shared dir> --out <repository root> [--check]
 //
@@ -103,6 +103,22 @@ int main(int argc, char** argv) {
         return 2;
     }
 
+    // The hub's generated patro counts. A missing file means shared/ is older than this tool, so
+    // say how to fix that instead of writing tables no port can check.
+    const fs::path summary_path = opts->shared / "spec" / "vectors" / "patro-summary.json";
+    const auto summary_json = read_file(summary_path);
+    if (!summary_json) {
+        std::cerr << "cannot read " << summary_path.generic_string()
+                  << "; resync shared/ from the hub with tools/shared_sync.py so the patro counts "
+                     "are available\n";
+        return 2;
+    }
+    const auto summary = nepdate::codegen::parse_patro_summary(*summary_json);
+    if (!summary.error.empty()) {
+        std::cerr << summary.error << '\n';
+        return 2;
+    }
+
     // The patro year files, sorted by year (ADR-0001 section 5).
     const fs::path patro_dir = opts->shared / "data" / "patro";
     std::vector<fs::path> patro_paths;
@@ -135,6 +151,12 @@ int main(int argc, char** argv) {
         nepdate::codegen::build_patro_tables(patro_parsed.value, built.value.month_start);
     if (!patro.error.empty()) {
         std::cerr << patro.error << '\n';
+        return 2;
+    }
+    const std::string summary_error = nepdate::codegen::validate_patro_tables(
+        patro.value, summary.value, built.value.month_start);
+    if (!summary_error.empty()) {
+        std::cerr << summary_error << '\n';
         return 2;
     }
 
