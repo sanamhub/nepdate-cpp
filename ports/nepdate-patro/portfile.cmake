@@ -10,7 +10,7 @@ else()
         OUT_SOURCE_PATH SOURCE_PATH
         REPO sanamhub/nepdate-cpp
         REF "v${VERSION}"
-        SHA512 fc7b791006236d86be7c5517f78b83d05bfa62df160aee63fe56e818a204c3f8717016bdd34cac56a80e4d88bb3fb4de0a83d5c307d3a0b5b21e9c4725c6b150
+        SHA512 8dd754a51dc5f0dd2db842f05209f82f439d592142eb753aae288427959f5a1dc412555aaa7ee9cf23ea8304a182599c790172e8f64bebfb908ff6b7a7c73261
         HEAD_REF main
     )
 endif()
