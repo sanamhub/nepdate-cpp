@@ -1,0 +1,11 @@
+load before: 2, 2, 2
+2026-11-02T19:45:39+05:45
+Running build\bench\nepdate_bench.exe
+Run on (16 X 3110 MHz CPU s)
+CPU Caches:
+  L1 Data 48 KiB (x8)
+  L1 Instruction 32 KiB (x8)
+  L2 Unified 1280 KiB (x8)
+  L3 Unified 18432 KiB (x1)
+load after: 0, 6, 
+exit: 0

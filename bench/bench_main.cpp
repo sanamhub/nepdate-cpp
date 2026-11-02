@@ -1,11 +1,7 @@
-// B1 to B8 of BENCHMARK section 3 for this library, the ADR-0002 section 8 variant of B1,
-// and B1/B2 for each competitor of docs/competitors.md, all over the 64 dates of BENCHMARK
-// section 2 (the patro inputs of section 3 for B7/B8). Each operation consumes every part of its
-// result, and the counting operator new (alloc_counter.cpp) feeds a benchmark::MemoryManager so
-// the report carries bytes per operation.
-//
-// The "agrees" check prints, before timing, how many of the 64 dates each competitor converts to
-// the same date as this library.
+// B1 to B8 of BENCHMARK section 3 for this library and the ADR-0002 section 8 variant of B1,
+// all over the 64 dates of BENCHMARK section 2 (the patro inputs of section 3 for B7/B8). Each
+// operation consumes every part of its result, and the counting operator new
+// (alloc_counter.cpp) feeds a benchmark::MemoryManager so the report carries bytes per operation.
 
 #include <nepdate/nepdate.hpp>
 #include <nepdate/patro.hpp>
@@ -17,7 +13,6 @@
 #include <benchmark/benchmark.h>
 
 #include "alloc_counter.hpp"
-#include "competitors.hpp"
 
 #include <array>
 #include <chrono>
@@ -321,79 +316,6 @@ void b1_variant_stored_ad_start(benchmark::State& state) {
 }
 BENCHMARK(b1_variant_stored_ad_start);
 
-// ---- Competitors: B1 and B2 only (docs/competitors.md); the other columns are n/a. ----
-
-void rival_to_ad(benchmark::State& state, const nepdate_bench::rival* r) {
-    const auto inputs = bs_fields();
-    for (auto _ : state) {
-        for (const ymd& in : inputs) {
-            int gy = 0;
-            int gm = 0;
-            int gd = 0;
-            bool ok = r->to_ad(in.year, in.month, in.day, gy, gm, gd);
-            consume(gy, static_cast<unsigned>(gm), static_cast<unsigned>(gd));
-            benchmark::DoNotOptimize(ok);
-        }
-    }
-    state.SetItemsProcessed(state.iterations() * static_cast<std::int64_t>(kInputs));
-}
-
-void rival_to_bs(benchmark::State& state, const nepdate_bench::rival* r) {
-    const auto inputs = ad_fields();
-    for (auto _ : state) {
-        for (const ymd& in : inputs) {
-            int by = 0;
-            int bm = 0;
-            int bd = 0;
-            bool ok = r->to_bs(in.year, in.month, in.day, by, bm, bd);
-            consume(by, static_cast<unsigned>(bm), static_cast<unsigned>(bd));
-            benchmark::DoNotOptimize(ok);
-        }
-    }
-    state.SetItemsProcessed(state.iterations() * static_cast<std::int64_t>(kInputs));
-}
-
-BENCHMARK_CAPTURE(rival_to_ad, nepdate_cli, &nepdate_bench::rivals()[0]);
-BENCHMARK_CAPTURE(rival_to_ad, aatishnn, &nepdate_bench::rivals()[1]);
-BENCHMARK_CAPTURE(rival_to_ad, nepalical, &nepdate_bench::rivals()[2]);
-BENCHMARK_CAPTURE(rival_to_bs, nepdate_cli, &nepdate_bench::rivals()[0]);
-BENCHMARK_CAPTURE(rival_to_bs, aatishnn, &nepdate_bench::rivals()[1]);
-BENCHMARK_CAPTURE(rival_to_bs, nepalical, &nepdate_bench::rivals()[2]);
-
-// ---- "agrees" check (BENCHMARK section 4): printed before timing. ----
-
-void print_agrees() {
-    const auto bs = bs_fields();
-    const auto ad = ad_fields();
-    for (int i = 0; i < nepdate_bench::rival_count(); ++i) {
-        const nepdate_bench::rival* r = &nepdate_bench::rivals()[i];
-        int agree_b1 = 0;
-        int no_b1 = 0;
-        int agree_b2 = 0;
-        int no_b2 = 0;
-        for (std::size_t j = 0; j < kInputs; ++j) {
-            int gy = 0;
-            int gm = 0;
-            int gd = 0;
-            if (!r->to_ad(bs.at(j).year, bs.at(j).month, bs.at(j).day, gy, gm, gd)) {
-                ++no_b1;
-            } else if (gy == ad.at(j).year && gm == ad.at(j).month && gd == ad.at(j).day) {
-                ++agree_b1;
-            }
-            int by = 0;
-            int bm = 0;
-            int bd = 0;
-            if (!r->to_bs(ad.at(j).year, ad.at(j).month, ad.at(j).day, by, bm, bd)) {
-                ++no_b2;
-            } else if (by == bs.at(j).year && bm == bs.at(j).month && bd == bs.at(j).day) {
-                ++agree_b2;
-            }
-        }
-        std::printf("%s: B1 agrees %d/64 (no answer %d), B2 agrees %d/64 (no answer %d)\n", r->name,
-                    agree_b1, no_b1, agree_b2, no_b2);
-    }
-}
-
 // Reports allocations per run from the counting operator new (BENCHMARK section 4).
 class CountingMemoryManager : public benchmark::MemoryManager {
   public:
@@ -419,7 +341,6 @@ int main(int argc, char** argv) {
     CountingMemoryManager manager;
     benchmark::RegisterMemoryManager(&manager);
     benchmark::Initialize(&argc, argv);
-    print_agrees();
     benchmark::RunSpecifiedBenchmarks();
     benchmark::Shutdown();
     return 0;
