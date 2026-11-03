@@ -2,10 +2,13 @@
 // the test named below then reports itself as skipped.
 
 #include <nepdate/date.hpp>
-#include <nepdate/format.hpp> // IWYU pragma: keep: provides the std::formatter<nepdate::date> specialization used implicitly by std::format
+#include <nepdate/date_range.hpp>
+#include <nepdate/format.hpp> // IWYU pragma: keep: provides the std::formatter specializations used implicitly by std::format
+#include <nepdate/ostream.hpp>
 
 #include <catch2/catch_test_macros.hpp>
 
+#include <sstream>
 #include <string>
 #include <version> // IWYU pragma: keep: __cpp_lib_format comes from here
 
@@ -13,6 +16,7 @@
 #include <format>
 
 using nepdate::date;
+using nepdate::date_range;
 using nepdate::make_date;
 
 TEST_CASE("std::format prints a date", "[format]") {
@@ -24,6 +28,24 @@ TEST_CASE("std::format prints a date", "[format]") {
     CHECK(std::format("{:s}", d) == "2081-04-15");
     CHECK(std::format("{:D}", d) == "Shrawan 15, 2081");
     CHECK(std::format("[{}] [{:dd}]", d, d) == "[2081/04/15] [15]");
+}
+
+TEST_CASE("std::format prints a range", "[format]") {
+    const date_range r =
+        // NOLINTNEXTLINE(bugprone-unchecked-optional-access): make returns a checked optional
+        date_range::make(make_date(2081, 4, 10).value(), make_date(2081, 4, 20).value()).value();
+    CHECK(std::format("{}", r) == "2081/04/10 - 2081/04/20");
+    CHECK(std::format("{:yyyy-MM-dd}", r) == "2081-04-10 - 2081-04-20");
+}
+
+TEST_CASE("operator<< prints a date and a range", "[format]") {
+    const date d = make_date(2081, 4, 15).value();
+    const date_range r =
+        // NOLINTNEXTLINE(bugprone-unchecked-optional-access): make returns a checked optional
+        date_range::make(make_date(2081, 4, 10).value(), make_date(2081, 4, 20).value()).value();
+    std::ostringstream out;
+    out << d << ' ' << r;
+    CHECK(out.str() == "2081/04/15 2081/04/10 - 2081/04/20");
 }
 
 TEST_CASE("std::format writes a result longer than its buffer in pieces", "[format]") {

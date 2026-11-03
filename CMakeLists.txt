@@ -38,11 +38,13 @@ target_sources(nepdate
             include/nepdate/detail/names_tables.hpp
             include/nepdate/detail/result.hpp
             include/nepdate/detail/serial.hpp
+            include/nepdate/convert.hpp
             include/nepdate/date.hpp
             include/nepdate/date_range.hpp
             include/nepdate/fiscal_year.hpp
             include/nepdate/format.hpp
             include/nepdate/nepdate.hpp
+            include/nepdate/ostream.hpp
             include/nepdate/parse.hpp
             include/nepdate/version.hpp
 )

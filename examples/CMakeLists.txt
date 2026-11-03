@@ -1,14 +1,29 @@
-# The three README examples, built and run by CTest. Built only with NEPDATE_BUILD_TESTS,
+# The README examples, built and run by CTest. Built only with NEPDATE_BUILD_TESTS,
 # like the tests, so a library consumer never builds them. The patro example needs the patro
 # target, which a core-only build doesn't have.
 
 add_executable(example_quick_start quick_start.cpp)
 target_link_libraries(example_quick_start PRIVATE nepdate::nepdate)
 
+add_executable(example_arithmetic arithmetic.cpp)
+target_link_libraries(example_arithmetic PRIVATE nepdate::nepdate)
+
+add_executable(example_formatting formatting.cpp)
+target_link_libraries(example_formatting PRIVATE nepdate::nepdate)
+
 add_executable(example_parse parse.cpp)
 target_link_libraries(example_parse PRIVATE nepdate::nepdate)
 
-set(examples quick_start parse)
+add_executable(example_ranges ranges.cpp)
+target_link_libraries(example_ranges PRIVATE nepdate::nepdate)
+
+add_executable(example_fiscal fiscal.cpp)
+target_link_libraries(example_fiscal PRIVATE nepdate::nepdate)
+
+add_executable(example_errors errors.cpp)
+target_link_libraries(example_errors PRIVATE nepdate::nepdate)
+
+set(examples quick_start arithmetic formatting parse ranges fiscal errors)
 if(TARGET nepdate::patro)
     add_executable(example_patro patro.cpp)
     target_link_libraries(example_patro PRIVATE nepdate::patro)
@@ -24,12 +39,17 @@ foreach(name IN LISTS examples)
             -P "${PROJECT_SOURCE_DIR}/tools/check_example_output.cmake")
 endforeach()
 
-# The README quick start shows exactly these example files, character for character, in this
-# order. Escaped semicolons keep -DEXAMPLES one argument (tests/CMakeLists.txt does the same).
+# The README shows exactly these example files, character for character, in this order. Escaped
+# semicolons keep -DEXAMPLES one argument (tests/CMakeLists.txt does the same).
 set(_readme_examples
     ${CMAKE_CURRENT_SOURCE_DIR}/quick_start.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/patro.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/parse.cpp)
+    ${CMAKE_CURRENT_SOURCE_DIR}/arithmetic.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/formatting.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/parse.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/ranges.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/fiscal.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/errors.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/patro.cpp)
 string(REPLACE ";" "\\;" _readme_examples "${_readme_examples}")
 add_test(NAME readme_examples
     COMMAND "${CMAKE_COMMAND}"

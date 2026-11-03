@@ -2,8 +2,9 @@
 
 #include <iostream>
 
+// NOLINTNEXTLINE(bugprone-exception-escape): an example program lets an exception terminate
 int main() {
-    const nepdate::date d = nepdate::make_date(2081, 4, 15).value();
+    const nepdate::date d = *nepdate::make_date(2081, 4, 15);
     const nepdate::patro::day_info day = nepdate::patro::info(d);
     if (const auto t = day.tithi()) {
         std::cout << t->name(nepdate::lang::en) << '\n';

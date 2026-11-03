@@ -10,11 +10,14 @@ if(NOT DEFINED PROGRAM OR NOT DEFINED EXPECTED)
     message(FATAL_ERROR "check_example_output: pass -DPROGRAM=<exe> -DEXPECTED=<file>")
 endif()
 
+# UTF-8 keeps non-ASCII output, such as a Nepali format, as the bytes in the expected file. Without
+# it CMake decodes the child's stdout with the console code page on Windows and the comparison fails.
 execute_process(
     COMMAND "${PROGRAM}"
     RESULT_VARIABLE rc
     OUTPUT_VARIABLE got
     ERROR_VARIABLE err
+    ENCODING UTF-8
 )
 if(NOT rc EQUAL 0)
     message(FATAL_ERROR "check_example_output: ${PROGRAM} exited ${rc}\n${err}")

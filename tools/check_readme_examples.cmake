@@ -45,6 +45,10 @@ while(TRUE)
     file(READ "${expected_file}" expected)
     string(REPLACE "${cr}${nl}" "${nl}" expected "${expected}")
     string(REPLACE "${cr}" "${nl}" expected "${expected}")
+    # Lint suppressions are not documentation: a block may leave out a NOLINT line that the
+    # example source needs. Drop those lines from both sides before comparing.
+    string(REGEX REPLACE "[^${nl}]*NOLINT[^${nl}]*${nl}" "" block "${block}")
+    string(REGEX REPLACE "[^${nl}]*NOLINT[^${nl}]*${nl}" "" expected "${expected}")
     if(NOT block STREQUAL expected)
         message(FATAL_ERROR
             "check_readme_examples: ```cpp block ${block_index} differs from ${expected_file}\n--- block ---\n${block}\n--- file ---\n${expected}")

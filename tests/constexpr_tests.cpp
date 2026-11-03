@@ -1,6 +1,7 @@
 // Compile-time checks (ADR-0004 §3). Every STATIC_REQUIRE here is evaluated by the compiler.
 
 #include <nepdate/date.hpp>
+#include <nepdate/date_range.hpp>
 #include <nepdate/fiscal_year.hpp>
 #include <nepdate/format.hpp>
 
@@ -12,9 +13,11 @@
 #include <cstddef>
 #include <string_view>
 #include <system_error>
+#include <tuple>
 #include <type_traits>
 
 using nepdate::date;
+using nepdate::date_range;
 using nepdate::errc;
 using nepdate::from_gregorian;
 using nepdate::make_date;
@@ -69,9 +72,40 @@ TEST_CASE("the ALGORITHM section 8 examples and a fiscal year at compile time", 
     STATIC_REQUIRE(d.add_months(5, nepdate::overflow::clamp) == make_date(2081, 9, 29));
     STATIC_REQUIRE(d.add_months(5, nepdate::overflow::spill) == make_date(2081, 10, 3));
     STATIC_REQUIRE(nepdate::fiscal_year{2081}.start() == make_date(2081, 4, 1));
+    // NOLINTNEXTLINE(bugprone-unchecked-optional-access): the range is known valid
     STATIC_REQUIRE(
         nepdate::fiscal_year{2081}.range()->size() ==
         static_cast<std::size_t>(make_date(2081, 4, 1)->days_until(make_date(2082, 4, 1).value())));
+}
+
+TEST_CASE("the new v1 members work at compile time", "[constexpr]") {
+    STATIC_REQUIRE(make_date(2081, 4, 15)->to_tuple() == std::tuple<int, int, int>{2081, 4, 15});
+    STATIC_REQUIRE(make_date(2081, 4, 15)->to_ymd_int() == 20810415);
+    STATIC_REQUIRE(nepdate::from_ymd_int(20810415) == make_date(2081, 4, 15));
+    STATIC_REQUIRE(nepdate::from_ymd_int(0) == errc::out_of_range);
+    STATIC_REQUIRE((make_date(2081, 4, 15).value() - make_date(2081, 4, 10).value()).total_days ==
+                   5);
+
+    constexpr date_range r =
+        // NOLINTNEXTLINE(bugprone-unchecked-optional-access): make returns a checked optional
+        date_range::make(*make_date(2081, 4, 10), *make_date(2081, 4, 20)).value();
+    constexpr date_range other =
+        // NOLINTNEXTLINE(bugprone-unchecked-optional-access): make returns a checked optional
+        date_range::make(*make_date(2081, 4, 15), *make_date(2081, 4, 25)).value();
+    STATIC_REQUIRE(date_range::single(make_date(2081, 4, 15).value()).size() == 1);
+    // NOLINTNEXTLINE(bugprone-unchecked-optional-access): the count is known valid
+    STATIC_REQUIRE(date_range::from_day_count(make_date(2081, 4, 15).value(), 5)->size() == 5);
+    STATIC_REQUIRE(r.contains(other) == false);
+    STATIC_REQUIRE(r.overlaps(other) == true);
+    // NOLINTNEXTLINE(bugprone-unchecked-optional-access): the ranges overlap
+    STATIC_REQUIRE(r.intersect(other)->size() == 6);
+    STATIC_REQUIRE(r.union_with(other).size() == 16);
+    STATIC_REQUIRE(r.is_adjacent_to(date_range::single(make_date(2081, 4, 21).value())) == true);
+    STATIC_REQUIRE(r.subtract(other).size() == 1);
+    // NOLINTNEXTLINE(bugprone-unchecked-optional-access): the interval is valid
+    STATIC_REQUIRE(r.dates_with_interval(3)->size() == 4);
+    STATIC_REQUIRE(r.working_days(false).size() == 9);
+    STATIC_REQUIRE(r.weekend_days(true).size() == 4);
 }
 
 TEST_CASE("a Nepali long format fits a std::array<char, 80> at compile time", "[constexpr]") {

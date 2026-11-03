@@ -7,6 +7,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 #include <string_view>
 
 namespace nepdate {
@@ -364,6 +365,24 @@ constexpr void classify_word(std::string_view token, lenient_state& st) noexcept
     return detail::assemble(st);
 }
 
+/// Returns the strict parse of s, or std::nullopt when it fails.
+[[nodiscard]] constexpr std::optional<date> try_parse(std::string_view s) noexcept {
+    const result<date> parsed = parse(s);
+    if (!parsed) {
+        return std::nullopt;
+    }
+    return *parsed;
+}
+
+/// Returns the lenient parse of s, or std::nullopt when it fails.
+[[nodiscard]] constexpr std::optional<date> try_parse_lenient(std::string_view s) noexcept {
+    const result<date> parsed = parse_lenient(s);
+    if (!parsed) {
+        return std::nullopt;
+    }
+    return *parsed;
+}
+
 /// Same as parse(std::string_view) on the same bytes, for u8"" literals.
 [[nodiscard]] inline result<date> parse(std::u8string_view s) noexcept {
     // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast): char8_t view as char
@@ -376,6 +395,20 @@ constexpr void classify_word(std::string_view token, lenient_state& st) noexcept
     // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast): char8_t view as char
     const auto* bytes = reinterpret_cast<const char*>(s.data());
     return parse_lenient(std::string_view(bytes, s.size()));
+}
+
+/// Same as try_parse(std::string_view) on the same bytes, for u8"" literals.
+[[nodiscard]] inline std::optional<date> try_parse(std::u8string_view s) noexcept {
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast): char8_t view as char
+    const auto* bytes = reinterpret_cast<const char*>(s.data());
+    return try_parse(std::string_view(bytes, s.size()));
+}
+
+/// Same as try_parse_lenient(std::string_view) on the same bytes, for u8"" literals.
+[[nodiscard]] inline std::optional<date> try_parse_lenient(std::u8string_view s) noexcept {
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast): char8_t view as char
+    const auto* bytes = reinterpret_cast<const char*>(s.data());
+    return try_parse_lenient(std::string_view(bytes, s.size()));
 }
 
 } // namespace nepdate

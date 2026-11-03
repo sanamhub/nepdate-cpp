@@ -1,6 +1,7 @@
 // from_sys_time, today and the <chrono> interop (PORT-PLAN phase 4).
 
 #include <nepdate/date.hpp>
+#include <nepdate/date_range.hpp>
 #include <nepdate/detail/calendar_tables.hpp>
 
 #include <catch2/catch_test_macros.hpp>
@@ -18,6 +19,13 @@ namespace {
 constexpr chr::sys_seconds at(chr::year_month_day ymd, int h, int m, int s) {
     return chr::sys_days{ymd} + chr::hours{h} + chr::minutes{m} + chr::seconds{s};
 }
+
+// An injected clock for the deterministic tests: 2024-07-30 18:30 UTC, fixed.
+struct fixed_clock {
+    [[nodiscard]] static constexpr chr::sys_seconds now() noexcept {
+        return at(chr::year{2024} / 7 / 30, 18, 30, 0);
+    }
+};
 
 } // namespace
 
@@ -91,4 +99,44 @@ TEST_CASE("from_sys_time works at compile time", "[time][constexpr]") {
                                           chr::minutes{0}) == make_date(2081, 4, 15));
     STATIC_REQUIRE(nepdate::from_sys_time(at(chr::year{2024} / 7 / 30, 18, 30, 0),
                                           nepdate::nepal_utc_offset) == make_date(2081, 4, 16));
+}
+
+TEST_CASE("today and the relative predicates take an injected clock", "[time]") {
+    const auto utc = nepdate::today(chr::minutes{0}, fixed_clock{});
+    REQUIRE(utc.has_value());
+    CHECK(*utc == make_date(2081, 4, 15));
+    const auto nepal = nepdate::today(nepdate::nepal_utc_offset, fixed_clock{});
+    REQUIRE(nepal.has_value());
+    CHECK(*nepal == make_date(2081, 4, 16));
+
+    CHECK(make_date(2081, 4, 15)->is_today(chr::minutes{0}, fixed_clock{}));
+    CHECK(make_date(2081, 4, 14)->is_yesterday(chr::minutes{0}, fixed_clock{}));
+    CHECK(make_date(2081, 4, 16)->is_tomorrow(chr::minutes{0}, fixed_clock{}));
+    CHECK(!make_date(2081, 4, 16)->is_today(chr::minutes{0}, fixed_clock{}));
+    CHECK(!make_date(2081, 4, 15)->is_yesterday(chr::minutes{0}, fixed_clock{}));
+    CHECK(!make_date(2081, 4, 15)->is_tomorrow(chr::minutes{0}, fixed_clock{}));
+    // At the data ends the relative predicates are false, not an error.
+    CHECK(!date::min().is_yesterday(chr::minutes{0}, fixed_clock{}));
+    CHECK(!date::max().is_tomorrow(chr::minutes{0}, fixed_clock{}));
+}
+
+TEST_CASE("the current range factories take an injected clock", "[time][range]") {
+    const auto month = nepdate::current_month(chr::minutes{0}, fixed_clock{});
+    REQUIRE(month.has_value());
+    CHECK(month->first() == make_date(2081, 4, 1));
+    CHECK(month->last() == make_date(2081, 4, 32));
+
+    const auto fiscal = nepdate::current_fiscal_year(chr::minutes{0}, fixed_clock{});
+    REQUIRE(fiscal.has_value());
+    CHECK(fiscal->first() == make_date(2081, 4, 1));
+    CHECK(fiscal->last() == make_date(2082, 3, 32));
+
+    const auto calendar = nepdate::current_calendar_year(chr::minutes{0}, fixed_clock{});
+    REQUIRE(calendar.has_value());
+    CHECK(calendar->first() == make_date(2081, 1, 1));
+    CHECK(calendar->last() == make_date(2081, 12, 31));
+
+    // The system-clock forms return a valid range too.
+    CHECK(nepdate::current_month().has_value());
+    CHECK(nepdate::current_calendar_year().has_value());
 }
