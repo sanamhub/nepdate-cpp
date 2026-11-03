@@ -4,6 +4,7 @@
 #include <nepdate/date_range.hpp>
 #include <nepdate/fiscal_year.hpp>
 #include <nepdate/format.hpp>
+#include <nepdate/parse.hpp>
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -11,6 +12,7 @@
 #include <charconv>
 #include <chrono>
 #include <cstddef>
+#include <optional>
 #include <string_view>
 #include <system_error>
 #include <tuple>
@@ -106,6 +108,21 @@ TEST_CASE("the new v1 members work at compile time", "[constexpr]") {
     STATIC_REQUIRE(r.dates_with_interval(3)->size() == 4);
     STATIC_REQUIRE(r.working_days(false).size() == 9);
     STATIC_REQUIRE(r.weekend_days(true).size() == 4);
+
+    STATIC_REQUIRE(nepdate::try_parse("2081/04/15") == make_date(2081, 4, 15).value());
+    STATIC_REQUIRE(nepdate::try_parse_lenient("2081 Shrawan 15") == make_date(2081, 4, 15).value());
+    STATIC_REQUIRE(nepdate::try_parse("2081/04/33") == std::nullopt);
+
+    STATIC_REQUIRE([] {
+        constexpr date_range range =
+            *date_range::make(*make_date(2081, 4, 10), *make_date(2081, 4, 20));
+        std::array<char, 32> buf{};
+        const std::to_chars_result result = nepdate::to_chars_range(
+            buf.data(), buf.data() + buf.size(), range, {}, nepdate::lang::en);
+        return result.ec == std::errc{} &&
+               std::string_view(buf.data(), static_cast<std::size_t>(result.ptr - buf.data())) ==
+                   "2081/04/10 - 2081/04/20";
+    }());
 }
 
 TEST_CASE("a Nepali long format fits a std::array<char, 80> at compile time", "[constexpr]") {
