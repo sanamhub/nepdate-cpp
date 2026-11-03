@@ -1,8 +1,8 @@
 #ifndef NEPDATE_CONVERT_HPP
 #define NEPDATE_CONVERT_HPP
 
-// Ordered batch conversion between BS and Gregorian dates (NC04 to NC08, D-11). The output is in
-// input order and one error fails the whole call.
+// Ordered batch conversion between BS and Gregorian dates, the C# BulkConvert methods (D-11). The
+// output is in input order and one error fails the whole call.
 
 #include <nepdate/date.hpp>
 #include <nepdate/parse.hpp>
