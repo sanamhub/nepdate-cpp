@@ -5,6 +5,8 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.2.0-rc.1] - 2026-11-03
+
 ### Added
 
 - The full NepDate API. Dates gain `to_tuple`, `to_ymd_int`, `is_today`, `is_yesterday` and
