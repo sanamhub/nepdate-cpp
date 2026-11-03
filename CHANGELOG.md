@@ -5,6 +5,38 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- The full NepDate API. Dates gain `to_tuple`, `to_ymd_int`, `is_today`, `is_yesterday` and
+  `is_tomorrow` with an explicit zone and an injectable clock. Conversion gains
+  `from_ymd_int`, the ordered `to_nepali_dates` and `to_english_dates` batch functions, and
+  `to_iso_string` with `parse`.
+- Ranges gain `single`, `from_day_count`, `current_month`, `current_fiscal_year`,
+  `current_calendar_year`, containment of a range, overlap, adjacency, intersection, union,
+  `subtract`, the month and fiscal-quarter splits, `dates_with_interval`, `working_days`,
+  `weekend_days`, `range_set`, `date_interval_view`, `day_filter_view`, `to_string`, the
+  `to_chars_range` and `format_range` pair, and `std::hash<date_range>`.
+- `std::formatter<date_range>`, `operator<<` for `date` and `date_range`, and a `std::error_code`
+  and `std::error_condition` mapping for `errc`.
+- `std::optional<date>` forms `try_parse` and `try_parse_lenient`, and `u8` overloads for them.
+
+### Changed
+
+- `result<T>` also works for a value that is not small and trivially copyable, such as
+  `std::vector<date>`, while `result<date>` stays 4 bytes.
+- A trailing backslash in a custom format pattern now writes a literal backslash instead of
+  writing nothing.
+- `result<T>::value()` now throws on an error instead of calling `std::abort()`. A build without
+  exceptions still aborts, and a constant expression that reaches the error path still fails to
+  compile.
+
+### Breaking changes
+
+- A format pattern that ends in a backslash now writes a backslash. Migration: remove the trailing
+  `\` when the old output without it was intended.
+- `result<T>::value()` on an error throws `nepdate::bad_result_access`. Migration: check
+  `has_value()` or catch `nepdate::bad_result_access` before calling `value()`.
+
 ## [0.1.0-rc.1] - 2026-11-03
 
 ### Fixed
