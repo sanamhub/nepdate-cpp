@@ -8,7 +8,7 @@ from conan.tools.files import copy, get
 
 class NepdateConan(ConanFile):
     name = "nepdate"
-    version = "0.1.0-rc.1"
+    version = "0.2.0-rc.1"
     license = "MIT"
     description = "Bikram Sambat (Nepali calendar) for C++20: BS to AD and back, arithmetic, fiscal year, ranges, formatting and parsing. Header-only, no dependencies."
     homepage = "https://github.com/sanamhub/nepdate-cpp"
