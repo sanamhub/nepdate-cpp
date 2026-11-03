@@ -8,6 +8,7 @@ if(_nepdate_links)
 endif()
 
 add_executable(nepdate_tests
+    api_v1_test.cpp
     arith_test.cpp
     civil_test.cpp
     constexpr_tests.cpp
@@ -26,6 +27,7 @@ add_executable(nepdate_tests
     parse_test.cpp
     parse_lenient_equiv_test.cpp
     pattern_test.cpp
+    range_api_test.cpp
     result_test.cpp
     serial_test.cpp
     tables_test.cpp

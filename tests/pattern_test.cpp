@@ -47,7 +47,7 @@ bool has_mmm_run(std::string_view pattern) {
 
 TEST_CASE("csharp-golden/format-pattern.tsv", "[format][vectors]") {
     const auto t = read_vectors("csharp-golden/format-pattern.tsv", '\t');
-    REQUIRE(t.rows.size() == 451);
+    REQUIRE(t.rows.size() == 452);
     const std::size_t bs = t.column("bs");
     const std::size_t pattern = t.column("pattern");
     const std::size_t result = t.column("result");
@@ -75,7 +75,7 @@ TEST_CASE("csharp-golden/format-pattern.tsv", "[format][vectors]") {
     CHECK(with_mmm == 82);
     CHECK(skipped <= with_mmm);
     CHECK(skipped == 7);
-    CHECK(checked == 444);
+    CHECK(checked == 445);
 }
 
 // format_pattern sizes its string with count_sink when the output outruns the stack buffer, so the
@@ -83,7 +83,7 @@ TEST_CASE("csharp-golden/format-pattern.tsv", "[format][vectors]") {
 // patterns reach that path through the public API, so this drives the two sinks directly.
 TEST_CASE("count_sink measures exactly what span_sink writes", "[format][vectors]") {
     const auto t = read_vectors("csharp-golden/format-pattern.tsv", '\t');
-    REQUIRE(t.rows.size() == 451);
+    REQUIRE(t.rows.size() == 452);
     const std::size_t bs = t.column("bs");
     const std::size_t pattern = t.column("pattern");
     std::array<char, 512> buf{};
@@ -102,7 +102,7 @@ TEST_CASE("count_sink measures exactly what span_sink writes", "[format][vectors
             ++checked;
         }
     }
-    CHECK(checked == 902);
+    CHECK(checked == 904);
 }
 
 TEST_CASE("FORMATTING section 5 examples", "[format]") {
@@ -133,8 +133,8 @@ TEST_CASE("token edge cases", "[format]") {
     const date d = ymd(2081, 4, 5);
     CHECK(format_pattern(d, "yyyy'BS", lang::en) == "2081BS");
     CHECK(format_pattern(d, "'", lang::en).empty());
-    CHECK(format_pattern(d, "yyyy\\", lang::en) == "2081");
-    CHECK(format_pattern(d, "\\", lang::en).empty());
+    CHECK(format_pattern(d, "yyyy\\", lang::en) == "2081\\");
+    CHECK(format_pattern(d, "\\", lang::en) == "\\");
     CHECK(format_pattern(d, "ddd", lang::en) == "5");
     CHECK(format_pattern(d, "dddd", lang::en) == "5");
     CHECK(format_pattern(d, "y", lang::en) == "81");

@@ -13,10 +13,10 @@
 
 Bikram Sambat dates for C++20. `nepdate` converts between the Bikram Sambat (Nepali) and
 Gregorian calendars for BS 1901-01-01 to 2199-12-30 (AD 1844-04-11 to 2143-04-15), with
-arithmetic, formatting and parsing. The core is header-only with no dependencies, the
-`to_chars` and parse paths allocate nothing (0 bytes, checked by the allocation tests), and
-conversion is `constexpr`, so it also runs at compile time. BS to AD takes 7.09 ns on MSVC and
-5.58 ns on Clang, against 13.29 ns for C# NepDate ([`docs/benchmarks.md`](https://github.com/sanamhub/nepdate-cpp/blob/main/docs/benchmarks.md)).
+arithmetic, ranges, fiscal years, formatting and parsing. The core is header-only with no
+dependencies, the `to_chars` and parse paths allocate nothing (0 bytes, checked by the allocation
+tests), and conversion is `constexpr`, so it also runs at compile time. BS to AD takes 7.09 ns on
+MSVC and 5.58 ns on Clang, against 13.29 ns for C# NepDate ([`docs/benchmarks.md`](https://github.com/sanamhub/nepdate-cpp/blob/main/docs/benchmarks.md)).
 
 ```cpp
 #include <nepdate/nepdate.hpp>
@@ -25,13 +25,15 @@ conversion is `constexpr`, so it also runs at compile time. BS to AD takes 7.09 
 #include <iostream>
 
 int main() {
-    const nepdate::date d = nepdate::make_date(2081, 4, 15).value();
+    const nepdate::date d = *nepdate::make_date(2081, 4, 15);
     const auto ad = d.to_year_month_day();
     std::cout << nepdate::to_string(d) << '\n';
     std::cout << static_cast<int>(ad.year()) << '-' << std::setfill('0') << std::setw(2)
               << static_cast<unsigned>(ad.month()) << '-' << std::setw(2)
               << static_cast<unsigned>(ad.day()) << '\n';
-    std::cout << nepdate::to_string(nepdate::from_gregorian(ad).value()) << '\n';
+    std::cout << nepdate::to_string(*nepdate::from_gregorian(ad)) << '\n';
+    std::cout << nepdate::to_iso_string(d) << '\n';
+    std::cout << d.to_ymd_int() << '\n';
 }
 ```
 
@@ -88,40 +90,56 @@ target_link_libraries(your_app PRIVATE nepdate::nepdate nepdate::patro)
 
 ## Usage
 
-**Conversion.** Build a date, read its fields, convert to and from Gregorian. The example above is
-`examples/quick_start.cpp`, run by the test suite.
+The full reference, with every signature, is [`docs/API.md`](https://github.com/sanamhub/nepdate-cpp/blob/main/docs/API.md).
 
-**Arithmetic and fiscal year.** `add_days`, `add_months` and `add_years` return `result<date>`
-with `overflow::clamp` or `overflow::spill`. `diff` returns whole years, months and days.
-`fiscal_year` gives the start, end, range and the `2082/83` label.
+**Dates, conversion and serialization.** The quick start above builds a date, reads its fields and
+converts to and from Gregorian. `to_iso_string` and `parse` are the canonical `YYYY-MM-DD` text
+form, `to_ymd_int` and `from_ymd_int` the `YYYYMMDD` integer form, and `to_nepali_dates` and
+`to_english_dates` convert a whole span in input order.
 
-**Formatting.** `to_chars`, `to_chars_iso`, `to_chars_short`, `to_chars_long` and
-`to_chars_pattern` write into the caller's buffer and allocate nothing. The `to_string` twins
-return `std::string`. `std::formatter<nepdate::date>` prints `{}` as `YYYY/MM/DD` and
-`{:<pattern>}` through the shared pattern language, where the standard library has `<format>`.
-
-**Patro.** `nepdate::patro::info(d)` returns the tithi, public-holiday flag and events for one day:
+**Arithmetic.** `add_days`, `add_months` and `add_years` return `result<date>` with
+`overflow::clamp` or `overflow::spill`. `days_until` returns `other - this`; `operator-` returns a
+`date_diff` whose `total_days` is `this - other`.
 
 ```cpp
-#include <nepdate/patro.hpp>
+#include <nepdate/nepdate.hpp>
 
 #include <iostream>
 
 int main() {
-    const nepdate::date d = nepdate::make_date(2081, 4, 15).value();
-    const nepdate::patro::day_info day = nepdate::patro::info(d);
-    if (const auto t = day.tithi()) {
-        std::cout << t->name(nepdate::lang::en) << '\n';
-    }
-    std::cout << "holiday: " << (day.is_public_holiday() ? 1 : 0) << '\n';
-    for (const nepdate::patro::event e : day.events()) {
-        std::cout << e.name(nepdate::lang::en) << '\n';
-    }
+    const nepdate::date d = *nepdate::make_date(2081, 4, 32);
+    std::cout << nepdate::to_string(*d.add_months(2, nepdate::overflow::clamp)) << '\n';
+    std::cout << nepdate::to_string(*d.add_months(2, nepdate::overflow::spill)) << '\n';
+    std::cout << d.days_until(*nepdate::make_date(2081, 5, 1)) << '\n';
+    std::cout << (d - *nepdate::make_date(2081, 5, 1)).total_days << '\n';
+}
+```
+
+**Formatting.** `to_chars`, `to_chars_iso`, `to_chars_short`, `to_chars_long` and
+`to_chars_pattern` write into the caller's buffer and allocate nothing. The `to_string` twins return
+`std::string`. `std::formatter<nepdate::date>` prints `{}` as `YYYY/MM/DD` and `{:<pattern>}`
+through the shared pattern language, where the standard library has `<format>`.
+
+```cpp
+#include <nepdate/nepdate.hpp>
+
+#include <iostream>
+
+int main() {
+    const nepdate::date d = *nepdate::make_date(2081, 4, 15);
+    std::cout << nepdate::to_string(d) << '\n';
+    std::cout << nepdate::format_short(d,
+                                       {nepdate::date_order::dmy, nepdate::separator::dash, true},
+                                       nepdate::lang::ne)
+              << '\n';
+    std::cout << nepdate::format_long(d, {.weekday = true}, nepdate::lang::en) << '\n';
+    std::cout << nepdate::format_pattern(d, "yyyy-MM-dd", nepdate::lang::en) << '\n';
 }
 ```
 
 **Parsing.** `parse` reads strict `year month day` text; `parse_lenient` accepts human input such
-as `2081 Shrawan 15`. Both are `constexpr` over `std::string_view` and reject rather than guess:
+as `2081 Shrawan 15`. Both are `constexpr` over `std::string_view` and reject rather than guess.
+`try_parse` and `try_parse_lenient` return `std::optional<date>`.
 
 ```cpp
 #include <nepdate/nepdate.hpp>
@@ -131,8 +149,99 @@ as `2081 Shrawan 15`. Both are `constexpr` over `std::string_view` and reject ra
 int main() {
     const nepdate::result<nepdate::date> strict = nepdate::parse("2081/04/15");
     const nepdate::result<nepdate::date> lenient = nepdate::parse_lenient("2081 Shrawan 15");
-    std::cout << nepdate::to_string(strict.value()) << '\n';
-    std::cout << nepdate::to_string(lenient.value()) << '\n';
+    std::cout << nepdate::to_string(*strict) << '\n';
+    std::cout << nepdate::to_string(*lenient) << '\n';
+}
+```
+
+**Ranges.** `date_range` is an inclusive, non-empty view. It has the factories, containment,
+overlap, adjacency, intersection, union, difference, the month and fiscal-quarter splits, the
+interval and working-day views, and both string forms.
+
+```cpp
+#include <nepdate/nepdate.hpp>
+
+#include <cstddef>
+#include <iostream>
+
+int main() {
+    const nepdate::date_range week = *nepdate::date_range::make(*nepdate::make_date(2081, 4, 10),
+                                                                *nepdate::make_date(2081, 4, 16));
+    std::cout << nepdate::to_string(week) << '\n';
+
+    std::size_t working = 0;
+    for (const nepdate::date d : week.working_days(true)) {
+        (void)d;
+        ++working;
+    }
+    std::cout << working << '\n';
+
+    const auto overlap =
+        week.intersect(*nepdate::date_range::of_month(2081, nepdate::month::shrawan));
+    std::cout << nepdate::to_string(*overlap) << '\n';
+
+    const auto rest = week.subtract(nepdate::date_range::single(*nepdate::make_date(2081, 4, 12)));
+    std::cout << rest.size() << '\n';
+}
+```
+
+**Fiscal year.** `fiscal_year::of(date)` finds the fiscal year; `start`, `end`, `range` and
+`quarter_range` give the dates, and `label` writes `2081/82`.
+
+```cpp
+#include <nepdate/nepdate.hpp>
+
+#include <iostream>
+
+int main() {
+    const nepdate::fiscal_year fy = nepdate::fiscal_year::of(*nepdate::make_date(2081, 4, 15));
+    std::cout << fy.label(nepdate::lang::en) << '\n';
+    std::cout << nepdate::to_string(*fy.start()) << '\n';
+    std::cout << nepdate::to_string(*fy.end()) << '\n';
+    std::cout << nepdate::to_string(*fy.quarter_range(nepdate::quarter::q1)) << '\n';
+}
+```
+
+**Errors.** Every fallible function returns `result<T>`, which holds a value or a `nepdate::errc`.
+`try_parse` returns `std::optional` when there is no error kind to report. `errc` converts to
+`std::error_code`, and `value()` on an error throws `nepdate::bad_result_access`.
+
+```cpp
+#include <nepdate/nepdate.hpp>
+
+#include <iostream>
+#include <optional>
+#include <system_error>
+
+int main() {
+    const nepdate::result<nepdate::date> parsed = nepdate::parse("2081/04/33");
+    if (!parsed) {
+        std::cout << nepdate::to_string(parsed.error()) << '\n';
+        const std::error_code code = parsed.error();
+        std::cout << code.message() << '\n';
+    }
+    const std::optional<nepdate::date> good = nepdate::try_parse("2081-04-15");
+    std::cout << (good.has_value() ? nepdate::to_string(*good) : "none") << '\n';
+}
+```
+
+**Patro.** `nepdate::patro::info(d)` returns the tithi, public-holiday flag and events for one day:
+
+```cpp
+#include <nepdate/patro.hpp>
+
+#include <iostream>
+
+int main() {
+    const nepdate::date d = *nepdate::make_date(2081, 4, 15);
+    const nepdate::patro::day_info day = nepdate::patro::info(d);
+    if (const auto t = day.tithi()) {
+        std::cout << t->name(nepdate::lang::en) << '\n';
+    }
+    std::cout << "holiday: " << (day.is_public_holiday() ? 1 : 0) << '\n';
+    for (const nepdate::patro::event e : day.events()) {
+        std::cout << e.name(nepdate::lang::en) << '\n';
+    }
 }
 ```
 
@@ -170,7 +279,7 @@ laptop that was not idle. B8 still misses its own 250 ns target. Details are in
 [`docs/benchmarks.md`](https://github.com/sanamhub/nepdate-cpp/blob/main/docs/benchmarks.md).
 
 | Operation | MSVC ns/op | Clang ns/op | C# ns/op |
-|---|---:|---:|---:|
+|---|---|---:|---:|
 | B1 BS to AD | 7.09 | 5.58 | 13.29 |
 | B2 AD to BS | 8.94 | 6.23 | 18.64 |
 | B6 strict parse | 12.13 | 10.13 | 21.55 |

@@ -10,7 +10,9 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <limits>
 #include <optional>
+#include <tuple>
 
 namespace nepdate {
 
@@ -112,6 +114,16 @@ class date {
     /// Returns the day of the month, 1..32.
     [[nodiscard]] constexpr int day() const noexcept { return static_cast<int>(v_ & 0xFFU); }
 
+    /// Returns the year, month number and day, so `auto [y, m, d] = date.to_tuple();` works.
+    [[nodiscard]] constexpr std::tuple<int, int, int> to_tuple() const noexcept {
+        return {year(), static_cast<int>(month()), day()};
+    }
+
+    /// Returns the packed YYYYMMDD integer, for example 20810415 (D-11).
+    [[nodiscard]] constexpr int to_ymd_int() const noexcept {
+        return year() * 10'000 + static_cast<int>(month()) * 100 + day();
+    }
+
     /// Returns the weekday (ALGORITHM section 7).
     [[nodiscard]] constexpr std::chrono::weekday weekday() const noexcept {
         return std::chrono::weekday{(detail::to_serial(*this) + 4U) % 7U};
@@ -187,6 +199,27 @@ class date {
     /// Returns the previous day, or std::nullopt at min().
     [[nodiscard]] constexpr std::optional<date> prev() const noexcept;
 
+    /// Returns true when today in the zone with utc_offset is this date.
+    [[nodiscard]] bool is_today(std::chrono::minutes utc_offset) const noexcept;
+
+    /// Returns true when yesterday in the zone with utc_offset is this date.
+    [[nodiscard]] bool is_yesterday(std::chrono::minutes utc_offset) const noexcept;
+
+    /// Returns true when tomorrow in the zone with utc_offset is this date.
+    [[nodiscard]] bool is_tomorrow(std::chrono::minutes utc_offset) const noexcept;
+
+    /// Same as is_today(minutes), reading the injected clock instead of the system clock.
+    template <class Clock>
+    [[nodiscard]] bool is_today(std::chrono::minutes utc_offset, Clock clock) const noexcept;
+
+    /// Same as is_yesterday(minutes), reading the injected clock instead of the system clock.
+    template <class Clock>
+    [[nodiscard]] bool is_yesterday(std::chrono::minutes utc_offset, Clock clock) const noexcept;
+
+    /// Same as is_tomorrow(minutes), reading the injected clock instead of the system clock.
+    template <class Clock>
+    [[nodiscard]] bool is_tomorrow(std::chrono::minutes utc_offset, Clock clock) const noexcept;
+
     friend constexpr bool operator==(date, date) noexcept = default;
     friend constexpr std::strong_ordering operator<=>(date, date) noexcept = default;
 
@@ -205,6 +238,12 @@ class date {
 
 static_assert(sizeof(date) == 4);
 static_assert(std::is_trivially_copyable_v<date>);
+
+/// Returns the difference from b to a, in the C# operator direction: positive when a is later
+/// (D-07). The named date::days_until has the opposite direction.
+[[nodiscard]] constexpr date_diff operator-(date a, date b) noexcept {
+    return b.diff(a);
+}
 
 constexpr date detail::date_access::make(std::uint32_t packed) noexcept {
     return date{packed};
@@ -232,20 +271,21 @@ template <> class [[nodiscard]] result<date> {
     }
     [[nodiscard]] constexpr explicit operator bool() const noexcept { return has_value(); }
 
-    /// Returns the date. On an error: std::abort() at run time, a compile error in a constant
-    /// expression.
+    /// Returns the date. On an error: std::abort() at run time without exceptions, a compile error
+    /// in a constant expression.
     [[nodiscard]] constexpr const date& value() const& {
         if (!has_value()) {
-            detail::bad_result_access();
+            detail::throw_bad_result_access();
         }
         return d_;
     }
 
     /// Returns the date by copy, so a range-for over a temporary's value is safe in C++20
-    /// (ADR-0006). On an error: std::abort() at run time, a compile error in a constant expression.
+    /// (ADR-0006). On an error: std::abort() at run time without exceptions, a compile error in a
+    /// constant expression.
     [[nodiscard]] constexpr date value() && {
         if (!has_value()) {
-            detail::bad_result_access();
+            detail::throw_bad_result_access();
         }
         return d_;
     }
@@ -253,7 +293,7 @@ template <> class [[nodiscard]] result<date> {
     /// Same as value() && for a const rvalue.
     [[nodiscard]] constexpr date value() const&& {
         if (!has_value()) {
-            detail::bad_result_access();
+            detail::throw_bad_result_access();
         }
         return d_;
     }
@@ -420,6 +460,20 @@ constexpr std::optional<date> date::prev() const noexcept {
     return make_date(year, static_cast<int>(m), day);
 }
 
+/// Returns the date of a packed YYYYMMDD integer, for example 20810415, or the same validation
+/// error as make_date (D-11). The value is decoded in 64 bits before any narrowing, so it can never
+/// wrap into a valid date; pass std::int64_t so a value beyond int is not truncated at the call.
+[[nodiscard]] constexpr result<date> from_ymd_int(std::int64_t value) noexcept {
+    // C# integer division truncates toward zero, which these two operators also do.
+    const std::int64_t year = value / 10'000;
+    if (year < std::numeric_limits<int>::min() || year > std::numeric_limits<int>::max()) {
+        return errc::out_of_range;
+    }
+    const std::int64_t month = value % 10'000 / 100;
+    const std::int64_t day = value % 100;
+    return make_date(static_cast<int>(year), static_cast<int>(month), static_cast<int>(day));
+}
+
 namespace detail {
 
 // Returns the BS date of a Unix day, or out_of_range outside AD 1844-04-11..2143-04-15.
@@ -511,6 +565,46 @@ inline constexpr std::chrono::minutes nepal_utc_offset{345};
 today(std::chrono::minutes utc_offset = nepal_utc_offset) noexcept {
     return from_sys_time(std::chrono::floor<std::chrono::seconds>(std::chrono::system_clock::now()),
                          utc_offset);
+}
+
+/// Same as today(std::chrono::minutes) with an injected clock: clock.now() must return a Unix-epoch
+/// time point with at least second resolution. A test can pass a fixed clock and get one date.
+template <class Clock>
+[[nodiscard]] result<date> today(std::chrono::minutes utc_offset, Clock clock) noexcept {
+    return from_sys_time(std::chrono::floor<std::chrono::seconds>(clock.now()), utc_offset);
+}
+
+inline bool date::is_today(std::chrono::minutes utc_offset) const noexcept {
+    const result<date> t = today(utc_offset);
+    return t.has_value() && *t == *this;
+}
+
+inline bool date::is_yesterday(std::chrono::minutes utc_offset) const noexcept {
+    const result<date> t = today(utc_offset);
+    return t.has_value() && t->add_days(-1) == result<date>{*this};
+}
+
+inline bool date::is_tomorrow(std::chrono::minutes utc_offset) const noexcept {
+    const result<date> t = today(utc_offset);
+    return t.has_value() && t->add_days(1) == result<date>{*this};
+}
+
+template <class Clock>
+bool date::is_today(std::chrono::minutes utc_offset, Clock clock) const noexcept {
+    const result<date> t = today(utc_offset, clock);
+    return t.has_value() && *t == *this;
+}
+
+template <class Clock>
+bool date::is_yesterday(std::chrono::minutes utc_offset, Clock clock) const noexcept {
+    const result<date> t = today(utc_offset, clock);
+    return t.has_value() && t->add_days(-1) == result<date>{*this};
+}
+
+template <class Clock>
+bool date::is_tomorrow(std::chrono::minutes utc_offset, Clock clock) const noexcept {
+    const result<date> t = today(utc_offset, clock);
+    return t.has_value() && t->add_days(1) == result<date>{*this};
 }
 
 } // namespace nepdate

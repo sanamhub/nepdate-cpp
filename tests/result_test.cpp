@@ -5,6 +5,8 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include <string>
+#include <system_error>
 #include <type_traits>
 #include <utility>
 
@@ -89,3 +91,36 @@ TEST_CASE("is_parse_error is true for exactly the five parse kinds", "[result]")
     }
     CHECK(count == 5);
 }
+
+TEST_CASE("errc integrates with std::error_code and std::error_condition", "[result][error]") {
+    STATIC_REQUIRE(std::is_error_code_enum_v<errc>);
+    STATIC_REQUIRE(!std::is_error_condition_enum_v<errc>);
+
+    const std::error_code code = errc::invalid_day;
+    CHECK(code.value() == static_cast<int>(errc::invalid_day));
+    CHECK(code.category() == nepdate::errc_category());
+    CHECK(code.message() == "invalid_day");
+    CHECK(code == errc::invalid_day);
+    CHECK(code != errc::invalid_month);
+
+    const std::error_condition condition = nepdate::make_error_condition(errc::ambiguous);
+    CHECK(condition.value() == static_cast<int>(errc::ambiguous));
+    CHECK(condition.category() == nepdate::errc_category());
+    CHECK(condition == nepdate::make_error_condition(errc::ambiguous));
+    CHECK(code != condition);
+
+    CHECK(nepdate::errc_category().name() == std::string("nepdate"));
+}
+
+#if !defined(CATCH_CONFIG_DISABLE_EXCEPTIONS)
+TEST_CASE("result::value throws bad_result_access on an error", "[result][error]") {
+    CHECK_THROWS_AS(nepdate::make_date(2081, 4, 33).value(), nepdate::bad_result_access);
+    CHECK_THROWS_AS(result<int>{errc::out_of_range}.value(), nepdate::bad_result_access);
+    try {
+        static_cast<void>(nepdate::make_date(2081, 4, 33).value());
+        FAIL("value() did not throw");
+    } catch (const nepdate::bad_result_access& e) {
+        CHECK(std::string(e.what()) == "nepdate: result holds an error");
+    }
+}
+#endif

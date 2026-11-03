@@ -1,292 +1,361 @@
-# `nepdate` (C++): public API contract (v0.1)
+# `nepdate` (C++): public API reference (v0.1)
 
-The complete public surface for v0.1. Implement exactly this; adding a public name needs this file
-changed in the same PR, approved by the maintainer. Behaviour: `shared/spec/` (`ALGORITHM.md`,
-`FORMATTING.md`, `PARSING.md`, `PATRO.md`, `PARITY.md`). Decisions: ADR-0002 (representation),
-ADR-0003 (conventions and errors).
+The complete public surface. Behaviour is defined by the shared specification in `shared/spec/`
+(`ALGORITHM.md`, `FORMATTING.md`, `PARSING.md`, `PATRO.md`, `PARITY.md`). Design decisions are in
+ADR-0002 (representation), ADR-0003 (conventions and errors) and ADR-0006 (rvalue accessors).
 
 Rules that apply to every declaration below:
 
-- Every function is `noexcept` except the ones returning `std::string` (they can only fail by
-  running out of memory) and `result<T>::value()`.
-- Every function marked `constexpr` must also work in a constant expression; tests prove it with
-  `static_assert` (ADR-0004).
-- Anything in `namespace nepdate::detail` or `nepdate::patro::detail` is not API, even when it is
-  visible in a header.
-- `[[nodiscard]]` on every function that returns a value.
+- `[[nodiscard]]` is on every function that returns a value.
+- Everything is `constexpr` unless it reads the clock, returns `std::string` or `std::vector`, or
+  uses `std::ostream`. The `constexpr` members are proved by `static_assert` in the tests.
+- `noexcept` is on everything except `result<T>::value()`, the value-returning accessors of a
+  non-trivial result, and the functions that allocate or format through the standard library.
+- Anything in `nepdate::detail` or `nepdate::patro::detail` is not API, even when a header makes it
+  visible.
+- The core is header-only and adds no dependency. `<nepdate/nepdate.hpp>` includes all of the core.
+  The pieces are `<nepdate/date.hpp>`, `<nepdate/date_range.hpp>`, `<nepdate/convert.hpp>`,
+  `<nepdate/fiscal_year.hpp>`, `<nepdate/format.hpp>`, `<nepdate/ostream.hpp>`,
+  `<nepdate/parse.hpp>` and `<nepdate/version.hpp>`.
 
-## Core: target `nepdate::nepdate`, header-only
+## Dates, identity and comparison
 
-Headers: `<nepdate/nepdate.hpp>` includes all of the core. The pieces are `<nepdate/date.hpp>`,
-`<nepdate/format.hpp>`, `<nepdate/parse.hpp>`, `<nepdate/fiscal_year.hpp>`,
-`<nepdate/date_range.hpp>` and `<nepdate/version.hpp>`.
+| C# member | C++ member | Notes |
+|---|---|---|
+| `NepaliDate(int yearBs, int monthBs, int dayBs)` | `make_date(int, int, int)`, `make_date(int, month, int)` | Returns `result<date>`. |
+| `NepaliDate(string rawNepaliDate)` | `parse(std::string_view)` | Returns `result<date>`. |
+| `NepaliDate(DateTime engDate)` | `from_gregorian(...)`, `from_sys_days(...)` | Returns `result<date>`. |
+| `bool IsDefault { get; }` | not ported | A valid `date` always exists, so there is no zero value. |
+| `int Year { get; }` | `date::year()` | 1901 to 2199. |
+| `int Month { get; }` | `date::month()` | Returns the `month` enumerator. |
+| `int Day { get; }` | `date::day()` | 1 to the month length. |
+| `DateTime EnglishDate { get; }` | `date::to_year_month_day()`, `date::to_sys_days()` | The AD date. |
+| `DayOfWeek DayOfWeek { get; }` | `date::weekday()` | `std::chrono::weekday`, Sunday is 0. |
+| `int DayOfYear { get; }` | `date::day_of_year()` | 1-based in the BS year. |
+| `int MonthEndDay { get; }` | `date::month_length()` | 29 to 32. |
+| `NepaliMonths MonthName { get; }` | `date::month()` | The `month` enumerator. |
+| `static NepaliDate Today { get; }` | `today(std::chrono::minutes = nepal_utc_offset)` | Reads the system clock. |
+| `static NepaliDate Now { get; }` | `today(...)` | Same date as `Today`. |
+| `static readonly NepaliDate MinValue` | `date::min()` | BS 1901-01-01. |
+| `static readonly NepaliDate MaxValue` | `date::max()` | BS 2199-12-30. |
+| `NepaliDate MonthEndDate()` | `date::last_of_month()` | The same year and month, last day. |
+| `void Deconstruct(out int, out int, out int)` | `date::to_tuple()` | Works with `auto [y, m, d]`. |
+| `bool IsLeapYear()` | `date::year_length()` | The BS year length, 364 to 367. |
+| `bool IsToday()` | `date::is_today(minutes)` | Takes the zone explicitly. |
+| `bool IsYesterday()` | `date::is_yesterday(minutes)` | Takes the zone explicitly. |
+| `bool IsTomorrow()` | `date::is_tomorrow(minutes)` | Takes the zone explicitly. |
+| `int CompareTo(NepaliDate)` | `operator<=>` | Standard ordering. |
+| `bool Equals(NepaliDate)` | `operator==` | Standard equality. |
+| `override int GetHashCode()` | `std::hash<date>` | Hashes the packed value. |
 
-```cpp
-// ---------- <nepdate/version.hpp> ----------
-#define NEPDATE_VERSION_MAJOR 0
-#define NEPDATE_VERSION_MINOR 1
-#define NEPDATE_VERSION_PATCH 0
-#define NEPDATE_VERSION_PRERELEASE "rc.1"  // "" for a stable version
-#define NEPDATE_VERSION_STRING "0.1.0-rc.1"
-
-namespace nepdate {
-
-// ---------- errors and result: <nepdate/date.hpp> ----------
-enum class errc : std::uint8_t {
-    out_of_range = 1,      // outside BS 1901-01-01..2199-12-30 or AD 1844-04-11..2143-04-15
-    invalid_month,         // month not 1..12
-    invalid_day,           // day not 1..month length
-    invalid_gregorian,     // not a real proleptic Gregorian date
-    invalid_character,     // PARSING §4, the five parse kinds
-    wrong_group_count,
-    number_too_long,
-    ambiguous,
-    unrecognized,
-};
-constexpr std::string_view to_string(errc e) noexcept;   // "out_of_range", ...; "" for other values
-constexpr bool is_parse_error(errc e) noexcept;          // true for the five parse kinds
-
-// Holds a T or an errc, never both (ADR-0003). T is trivially copyable.
-// Names follow std::expected so code moves to it easily later.
-template <class T>
-class [[nodiscard]] result {
-public:
-    constexpr result(T value) noexcept;                   // implicit, so `return d;` works
-    constexpr result(errc error) noexcept;                // implicit, so `return errc::x;` works
-    constexpr bool has_value() const noexcept;
-    constexpr explicit operator bool() const noexcept;
-    constexpr const T& value() const&;                    // on an error: std::abort() at run time,
-                                                          // a compile error in a constant expression
-    constexpr T value() &&;                               // by copy, so a range-for over a
-    constexpr T value() const&&;                          // temporary's value is safe (ADR-0006)
-    constexpr const T& operator*() const& noexcept;       // precondition: has_value()
-    constexpr T operator*() && noexcept;                  // by copy (ADR-0006)
-    constexpr const T* operator->() const noexcept;       // precondition: has_value()
-    constexpr T value_or(T fallback) const noexcept;
-    constexpr errc error() const noexcept;                // precondition: !has_value()
-    friend constexpr bool operator==(const result&, const result&) noexcept = default;
-};
-// result<date> is 4 bytes (ADR-0002 §2); other result<T> are T plus one byte. T is at most 16
-// bytes (ADR-0006).
-
-// ---------- names ----------
-enum class lang : std::uint8_t { en, ne };
-enum class month : std::uint8_t {
-    baishakh = 1, jestha, ashad, shrawan, bhadra, ashoj,
-    kartik, mangsir, poush, magh, falgun, chaitra,
-};
-
-// ---------- the date ----------
-// A valid Bikram Sambat date. 4 bytes, trivially copyable, no default constructor (D-01).
-// Ordered chronologically by <=>.
-class date {
-public:
-    date() = delete;
-    static constexpr date min() noexcept;                 // 1901-01-01
-    static constexpr date max() noexcept;                 // 2199-12-30
-
-    constexpr int year() const noexcept;                  // 1901..2199
-    constexpr nepdate::month month() const noexcept;
-    constexpr int day() const noexcept;                   // 1..32
-    constexpr std::chrono::weekday weekday() const noexcept;   // ALGORITHM §7
-    constexpr int day_of_year() const noexcept;           // 1..367
-    constexpr int month_length() const noexcept;          // 29..32
-    constexpr int year_length() const noexcept;           // 364..367 (D-12)
-    constexpr date first_of_month() const noexcept;
-    constexpr date last_of_month() const noexcept;
-
-    constexpr std::chrono::year_month_day to_year_month_day() const noexcept;  // AD
-    constexpr std::chrono::sys_days to_sys_days() const noexcept;               // AD, midnight UTC
-
-    constexpr result<date> add_days(int n) const noexcept;                       // out_of_range
-    constexpr result<date> add_months(int n, overflow o = overflow::clamp) const noexcept;
-    constexpr result<date> add_years(int n, overflow o = overflow::clamp) const noexcept;
-    constexpr int days_until(date other) const noexcept;  // other - *this, signed (D-07)
-    constexpr date_diff diff(date other) const noexcept;  // ALGORITHM §8a
-    constexpr std::optional<date> next() const noexcept;  // nullopt at max()
-    constexpr std::optional<date> prev() const noexcept;  // nullopt at min()
-
-    friend constexpr bool operator==(date, date) noexcept = default;
-    friend constexpr std::strong_ordering operator<=>(date, date) noexcept = default;
-};
-
-enum class overflow : std::uint8_t { clamp, spill };      // ALGORITHM §8: clamp = C# default,
-                                                          // spill = C# awayFromMonthEnd: true
-struct date_diff {                                        // ALGORITHM §8a
-    bool negative;                                        // other is before *this
-    int years, months, days;                              // magnitudes
-    int total_days;                                       // signed, equals days_until(other)
-    friend constexpr bool operator==(const date_diff&, const date_diff&) noexcept = default;
-};
-
-// ---------- construction ----------
-constexpr result<date> make_date(int year, int month, int day) noexcept;
-constexpr result<date> make_date(int year, nepdate::month m, int day) noexcept;
-    // out_of_range, invalid_month, invalid_day, in that order (ALGORITHM §3)
-constexpr result<date> from_gregorian(int year, int month, int day) noexcept;
-    // invalid_gregorian, then out_of_range (ALGORITHM §3)
-constexpr result<date> from_gregorian(std::chrono::year_month_day ymd) noexcept;
-constexpr result<date> from_sys_days(std::chrono::sys_days d) noexcept;      // out_of_range
-constexpr result<date> from_local_days(std::chrono::local_days d) noexcept;  // out_of_range
-
-// Today's BS date for a clock reading and a UTC offset; the default is Asia/Kathmandu, whose
-// fixed offset is +05:45 (see the note at the end of this file).
-inline constexpr std::chrono::minutes nepal_utc_offset{345};                 // +05:45
-constexpr result<date> from_sys_time(std::chrono::sys_seconds t,
-                                     std::chrono::minutes utc_offset) noexcept;
-result<date> today(std::chrono::minutes utc_offset = nepal_utc_offset) noexcept;
-    // from_sys_time(floor<seconds>(system_clock::now()), utc_offset); out_of_range when the clock
-    // is outside AD 1844-04-11..2143-04-15
-
-// ---------- fiscal year: <nepdate/fiscal_year.hpp> ----------
-enum class quarter : std::uint8_t { q1 = 1, q2, q3, q4 };  // Q1 = Shrawan..Ashoj, Q4 = Baishakh..Ashad
-constexpr quarter quarter_of(date d) noexcept;
-constexpr std::array<month, 3> months_of(quarter q) noexcept;
-
-class fiscal_year {                                       // ALGORITHM §8b, D-08
-public:
-    constexpr explicit fiscal_year(int start_year) noexcept;  // FY 2082/83 is fiscal_year{2082}
-    static constexpr fiscal_year of(date d) noexcept;
-    constexpr int start_year() const noexcept;
-    constexpr result<date> start() const noexcept;        // out_of_range
-    constexpr result<date> end() const noexcept;          // out_of_range
-    constexpr result<date_range> range() const noexcept;
-    constexpr result<date_range> quarter_range(quarter q) const noexcept;
-    constexpr std::to_chars_result to_chars_label(char* first, char* last, lang l) const noexcept;
-        // "2082/83" or "२०८२/८३"
-    std::string label(lang l) const;
-    friend constexpr bool operator==(fiscal_year, fiscal_year) noexcept = default;
-    friend constexpr std::strong_ordering operator<=>(fiscal_year, fiscal_year) noexcept = default;
-};
-
-// ---------- range: <nepdate/date_range.hpp> ----------
-// Inclusive range first..last, first <= last. A random-access view of date (D-09: no set operations).
-class date_range : public std::ranges::view_interface<date_range> {
-public:
-    class iterator;                                       // random access, value_type date,
-                                                          // holds a serial, default constructible
-    static constexpr std::optional<date_range> make(date first, date last) noexcept;  // nullopt if first > last
-    static constexpr result<date_range> of_month(int year, month m) noexcept;         // out_of_range, invalid_month
-    static constexpr result<date_range> of_year(int year) noexcept;                   // out_of_range
-    constexpr date first() const noexcept;
-    constexpr date last() const noexcept;
-    constexpr std::size_t size() const noexcept;          // number of days, >= 1
-    constexpr bool contains(date d) const noexcept;
-    constexpr iterator begin() const noexcept;
-    constexpr iterator end() const noexcept;
-    friend constexpr bool operator==(date_range, date_range) noexcept = default;
-};
-
-// ---------- formatting: <nepdate/format.hpp> ----------
-// Every to_chars_* writes into [first, last) without allocating and returns std::to_chars_result
-// (<charconv>): {end of output, errc{}} on success, {last, std::errc::value_too_large} when the
-// buffer is too small (buffer contents then unspecified). Nothing is null-terminated.
-enum class date_order : std::uint8_t { ymd, ydm, myd, mdy, dym, dmy };
-enum class separator : std::uint8_t { slash, backslash, dot, underscore, dash, space };
-struct short_format { date_order order = date_order::ymd; separator sep = separator::slash; bool pad = true; };
-struct long_format  { bool weekday = false; bool year = true; bool pad = true; };   // defaults = C#
-
-inline constexpr std::size_t max_short_size = 30;         // bytes, any short_format, lang::ne
-inline constexpr std::size_t max_long_size  = 80;         // bytes, any long_format, lang::ne
-
-constexpr std::to_chars_result to_chars(char* first, char* last, date d) noexcept;          // "2081/04/15"
-constexpr std::to_chars_result to_chars_iso(char* first, char* last, date d) noexcept;      // "2081-04-15" (D-11)
-constexpr std::to_chars_result to_chars_short(char* first, char* last, date d,
-                                              short_format f, lang l) noexcept;             // FORMATTING §3
-constexpr std::to_chars_result to_chars_long(char* first, char* last, date d,
-                                             long_format f, lang l) noexcept;               // FORMATTING §4
-constexpr std::to_chars_result to_chars_pattern(char* first, char* last, date d,
-                                                std::string_view pattern, lang l) noexcept; // FORMATTING §5
-constexpr std::to_chars_result to_chars_number(char* first, char* last, unsigned value,
-                                               int min_width, lang l) noexcept;             // ASCII or Devanagari digits
-
-// The same, allocating exactly the returned string.
-std::string to_string(date d);                            // "2081/04/15"
-std::string to_iso_string(date d);                       // "2081-04-15"
-std::string format_short(date d, short_format f, lang l);
-std::string format_long(date d, long_format f, lang l);
-std::string format_pattern(date d, std::string_view pattern, lang l);
-
-constexpr std::string_view month_name(month m, lang l) noexcept;        // FORMATTING §1; "" outside 1..12
-constexpr std::string_view month_short_name(month m, lang l) noexcept;  // D-04: "Asa", "Aso"
-constexpr std::string_view weekday_name(std::chrono::weekday w, lang l) noexcept;
-constexpr std::string_view weekday_short_name(std::chrono::weekday w, lang l) noexcept;
-    // weekday names: "" when !w.ok()
-
-// ---------- parsing: <nepdate/parse.hpp> ----------
-constexpr result<date> parse(std::string_view s) noexcept;              // strict, PARSING §1
-constexpr result<date> parse_lenient(std::string_view s) noexcept;      // PARSING §2
-result<date> parse(std::u8string_view s) noexcept;                      // same bytes, for u8"" literals
-result<date> parse_lenient(std::u8string_view s) noexcept;
-
-} // namespace nepdate
-
-// ---------- standard library hooks ----------
-template <> struct std::hash<nepdate::date>;              // hashes the 4-byte value
-
-#if defined(__cpp_lib_format) && __cpp_lib_format >= 201907L
-// {} prints "YYYY/MM/DD". {:<pattern>} uses FORMATTING §5 with lang::en; the pattern can't
-// contain '{' or '}'. Nepali output goes through the to_chars_* functions.
-template <> struct std::formatter<nepdate::date, char>;
-#endif
-```
-
-## Patro: target `nepdate::patro`, compiled library
-
-Header `<nepdate/patro.hpp>`. It includes the core; the core never includes it.
+`date` is 4 bytes, trivially copyable, ordered chronologically, and has no default constructor.
+`to_tuple` returns `std::tuple<int, int, int>`, which keeps the month as a number like the C#
+deconstruction. Every clock member also has an injected-clock form:
 
 ```cpp
-namespace nepdate::patro {
-
-// A tithi (lunar day) name; 1 byte, an index into a static table.
-class tithi {
-public:
-    std::string_view name(lang l) const noexcept;         // PATRO §2
-    friend bool operator==(tithi, tithi) noexcept = default;
+struct fixed_clock {
+    static constexpr std::chrono::sys_seconds now() noexcept { return std::chrono::sys_seconds{}; }
 };
 
-// One event name; 2 bytes, an index into a static table.
-class event {
-public:
-    std::string_view name(lang l) const noexcept;
-    friend bool operator==(event, event) noexcept = default;
-};
-
-// What the patro says about one day. Trivially copyable; views static data, never owns.
-class day_info {
-public:
-    std::optional<patro::tithi> tithi() const noexcept;
-    bool is_public_holiday() const noexcept;
-    std::span<const patro::event> events() const noexcept;   // file order; empty when none
-};
-
-day_info info(date d) noexcept;                           // never fails; empty outside coverage
-date_range coverage() noexcept;                           // the range the bundled data covers
-std::span<const date> public_holidays() noexcept;         // ascending public holidays of that data
-
-} // namespace nepdate::patro
+const nepdate::date d = nepdate::make_date(2081, 4, 15).value();
+const int year = d.year();
+const std::chrono::weekday weekday = d.weekday();
+const bool today = d.is_today(nepdate::nepal_utc_offset, fixed_clock{});
+auto [y, m, day] = d.to_tuple();
 ```
 
-`tithi` and `event` have a constructor taking a `nepdate::patro::detail` tag, used only by the
-generated tables. It is not API.
+## Conversion and serialization
+
+| C# member | C++ member | Notes |
+|---|---|---|
+| `DateTimeExtensions.ToNepaliDate(this DateTime)` | `from_gregorian(int, int, int)`, `from_gregorian(std::chrono::year_month_day)` | Returns `result<date>`. |
+| `DateTimeExtensions.ToNepaliDate(this DateTime)` | `from_sys_days(std::chrono::sys_days)` | Days since 1970-01-01. |
+| `DateTimeExtensions.ToNepaliDate(this DateTime)` | `from_local_days(std::chrono::local_days)` | A local calendar day. |
+| `NepaliDate.BulkConvert.ToNepaliDates(IEnumerable<DateTime>)` | `to_nepali_dates(std::span<const std::chrono::sys_days>)` | Ordered; returns `result<std::vector<date>>`. |
+| `BulkConvert.ToEnglishDates(IEnumerable<string>)` | `to_english_dates(std::span<const std::string>)` | Ordered; returns `result<std::vector<std::chrono::sys_days>>`. |
+| `BulkConvert.ToEnglishDates(IEnumerable<NepaliDate>)` | `to_english_dates(std::span<const date>)` | Ordered; returns `std::vector<std::chrono::sys_days>`. |
+| `NepaliDateTypeConverter` integer form | `from_ymd_int(std::int64_t)` | Reads `YYYYMMDD`. |
+| `NepaliDateTypeConverter` integer form | `date::to_ymd_int()` | Writes `YYYYMMDD`. |
+| `NepaliDateJsonConverter` | `to_iso_string(date)`, `parse(...)` | The canonical `YYYY-MM-DD` text. |
+| `NepaliDateJsonConverter` | `operator<<`, `std::formatter<date>` | The native stream and format hooks. |
+
+Batch conversion keeps input order. `from_ymd_int` takes a `std::int64_t` and decodes in 64 bits
+before narrowing, so a value beyond `int` cannot wrap into a valid date. The `YYYYMMDD` integer is
+20810415 for BS 2081-04-15.
+
+```cpp
+#include <nepdate/nepdate.hpp>
+
+#include <chrono>
+#include <vector>
+
+const std::vector<std::chrono::sys_days> gregorian{
+    std::chrono::sys_days{std::chrono::year{2024} / 7 / 30}};
+const auto bs = nepdate::to_nepali_dates(gregorian);
+const auto ad = nepdate::to_english_dates(*bs);
+const std::string iso = nepdate::to_iso_string((*bs)[0]); // "2081-04-15"
+const int ymd = (*bs)[0].to_ymd_int();                    // 20810415
+const auto back = nepdate::from_ymd_int(ymd);
+```
+
+## Arithmetic
+
+| C# member | C++ member | Notes |
+|---|---|---|
+| `NepaliDate AddMonths(double months, bool awayFromMonthEnd = false)` | `date::add_months(int, overflow)` | Optional `overflow::clamp` or `overflow::spill`. |
+| `NepaliDate AddDays(double days)` | `date::add_days(int)` | Returns `result<date>`. |
+| `NepaliDate AddYears(int years, bool awayFromMonthEnd = false)` | `date::add_years(int, overflow)` | `add_months(12 * years)`. |
+| `TimeSpan Subtract(NepaliDate nepDateTo)` | `date::days_until(date)` | Returns `other - this` (D-07). |
+| `TimeSpan Subtract(NepaliDate nepDateTo)` | `date::diff(date)` | Years, months and days as a `date_diff`. |
+| `static TimeSpan operator -(NepaliDate d1, NepaliDate d2)` | `operator-(date, date)` | Returns a `date_diff`; its `total_days` is `d1 - d2`. |
+
+`days_until` and `operator-` answer opposite questions and are not interchangeable. The operator
+keeps the C# direction, positive when the left date is later. `diff` keeps the named direction,
+with `total_days` equal to `days_until`.
+
+```cpp
+const nepdate::date d = nepdate::make_date(2081, 4, 32).value();
+const auto clamped = d.add_months(2, nepdate::overflow::clamp); // 2081-06-30
+const auto spilled = d.add_months(2, nepdate::overflow::spill); // 2081-07-02
+const int days = d.days_until(nepdate::make_date(2081, 5, 1).value());
+const int signed_days = (d - nepdate::make_date(2081, 5, 1).value()).total_days;
+```
+
+## Formatting
+
+| C# member | C++ member | Notes |
+|---|---|---|
+| `override string ToString()` | `to_string(date)`, `to_chars(char*, char*, date)` | `YYYY/MM/DD`. |
+| `string ToString(DateFormats, Separators, bool leadingZeros)` | `to_chars_short(...)`, `format_short(...)` | `short_format` carries order, separator and padding. |
+| `string ToLongDateString(...)` | `to_chars_long(...)`, `format_long(...)` | `long_format` carries weekday, year and padding. |
+| `string ToUnicodeString(...)` | `to_chars_short(..., lang::ne)` | Devanagari digits. |
+| `string ToLongDateUnicodeString(...)` | `to_chars_long(..., lang::ne)` | Devanagari names and digits. |
+| `string ToString(string format, IFormatProvider)` | `to_chars_pattern(...)`, `format_pattern(...)` | Standard and custom patterns. |
+| `ISpanFormattable.TryFormat(...)` | `to_chars_*` | Returns `std::to_chars_result`. |
+| `enum DateFormats` | `date_order` | `ymd`, `ydm`, `myd`, `mdy`, `dym`, `dmy`. |
+| `enum Separators` | `separator` | Slash, backslash, dot, underscore, dash, space. |
+| `enum NepaliMonths` | `month` | 1 to 12. |
+
+Every `to_chars_*` writes into `[first, last)` without allocating and returns
+`{end of output, errc{}}`, or `{last, std::errc::value_too_large}` when the buffer is too small.
+`max_short_size` and `max_long_size` are bounds for the fixed forms. The `std::string` twins
+allocate only the returned string.
+
+The custom pattern language is the shared one: `yyyy` and longer runs write the four-digit year,
+`y`, `yy` and `yyy` the last two digits, `MMMM` the full month name, `MMM` the short name (`Asa` and
+`Aso` for Ashad and Ashoj), `MM` and `M` the month, `dd` and `d` the day, a backslash escapes the
+next character and a trailing backslash writes a literal `\`, and single quotes hold literal text.
+
+```cpp
+#include <nepdate/nepdate.hpp>
+
+#include <array>
+#include <string>
+
+const nepdate::date d = nepdate::make_date(2081, 4, 15).value();
+const std::string plain = nepdate::to_string(d);                       // "2081/04/15"
+const std::string nepali = nepdate::format_short(d, {}, nepdate::lang::ne);
+const std::string long_form = nepdate::format_long(d, {.weekday = true}, nepdate::lang::en);
+const std::string pattern = nepdate::format_pattern(d, "yyyy-MM-dd", nepdate::lang::en);
+std::array<char, 16> buffer{};
+const auto written = nepdate::to_chars_short(
+    buffer.data(), buffer.data() + buffer.size(), d,
+    {nepdate::date_order::dmy, nepdate::separator::dash, false}, nepdate::lang::en);
+```
+
+## Parsing
+
+| C# member | C++ member | Notes |
+|---|---|---|
+| `NepaliDate.Parse(string)` | `parse(std::string_view)` | Returns `result<date>`. |
+| `NepaliDate.TryParse(string, out NepaliDate)` | `try_parse(std::string_view)` | Returns `std::optional<date>`. |
+| `SmartDateParser.Parse(string)` | `parse_lenient(std::string_view)` | Returns `result<date>`. |
+| `SmartDateParser.TryParse(string, out NepaliDate)` | `try_parse_lenient(std::string_view)` | Returns `std::optional<date>`. |
+| `InvalidNepaliDateFormatException` | `errc` and `result<T>` | Error kinds are the `errc` enumerators. |
+
+Strict parsing accepts year, month and day in that order, with 1 to 4 ASCII or Devanagari digits
+per group, mixed if needed. The separators are `-`, `/`, `.`, `_`, backslash, space, `|` and the
+danda U+0964. Leading, trailing and repeated separators are ignored. The lenient parser follows the
+closed rules in `PARSING.md`: a month name with two numbers, or three numbers in year-month-day or
+day-month-year order. A successful parse still validates the date.
+
+The `u8` overloads accept `u8""` literals. `try_parse` and `try_parse_lenient` never fail.
+
+```cpp
+#include <nepdate/nepdate.hpp>
+
+#include <optional>
+
+const nepdate::result<nepdate::date> strict = nepdate::parse("2081/04/15");
+const std::optional<nepdate::date> lenient = nepdate::try_parse_lenient("2081 Shrawan 15");
+if (lenient.has_value()) {
+    const nepdate::date d = *lenient;
+}
+```
+
+## Ranges
+
+| C# member | C++ member | Notes |
+|---|---|---|
+| `readonly struct NepaliDateRange` | `date_range` | Inclusive, non-empty, a random-access view. |
+| `NepaliDateRange(NepaliDate, NepaliDate)` | `date_range::make(date, date)` | `std::nullopt` when `start > end`. |
+| `NepaliDate Start { get; }` | `date_range::first()` | First day. |
+| `NepaliDate End { get; }` | `date_range::last()` | Last day, inclusive. |
+| `bool IsEmpty { get; }` | not exposed | A range is always non-empty. |
+| `int Length { get; }` | `date_range::size()` | Number of days. |
+| `static NepaliDateRange SingleDay(NepaliDate)` | `date_range::single(date)` | One day. |
+| `static NepaliDateRange FromDayCount(NepaliDate, int)` | `date_range::from_day_count(date, int)` | Returns `result<date_range>`. |
+| `static NepaliDateRange ForMonth(int, int)` | `date_range::of_month(int, month)` | Returns `result<date_range>`. |
+| `static NepaliDateRange ForFiscalYear(int)` | `fiscal_year{year}.range()` | Returns `result<date_range>`. |
+| `static NepaliDateRange ForCalendarYear(int)` | `date_range::of_year(int)` | Returns `result<date_range>`. |
+| `static NepaliDateRange CurrentMonth()` | `current_month(minutes)` | Takes the zone; injected-clock form too. |
+| `static NepaliDateRange CurrentFiscalYear()` | `current_fiscal_year(minutes)` | Takes the zone; injected-clock form too. |
+| `static NepaliDateRange CurrentCalendarYear()` | `current_calendar_year(minutes)` | Takes the zone; injected-clock form too. |
+| `bool Contains(NepaliDate)` | `date_range::contains(date)` | Inclusive. |
+| `bool Contains(NepaliDateRange)` | `date_range::contains(date_range)` | Inclusive. |
+| `bool Overlaps(NepaliDateRange)` | `date_range::overlaps(date_range)` | A shared day. |
+| `bool IsAdjacentTo(NepaliDateRange)` | `date_range::is_adjacent_to(date_range)` | False at the data ends. |
+| `NepaliDateRange Intersect(NepaliDateRange)` | `date_range::intersect(date_range)` | `std::nullopt` when disjoint. |
+| `NepaliDateRange Union(NepaliDateRange)` | `date_range::union_with(date_range)` | Smallest covering range. |
+| `NepaliDateRange[] Except(NepaliDateRange)` | `date_range::subtract(date_range)` | Returns a `range_set` of zero to two ranges. |
+| `NepaliDateRange[] SplitByMonth()` | `date_range::split_by_month()` | One piece per month. |
+| `NepaliDateRange[] SplitByFiscalQuarter()` | `date_range::split_by_fiscal_quarter()` | One piece per fiscal quarter. |
+| `IEnumerable<NepaliDate> DatesWithInterval(int)` | `date_range::dates_with_interval(int)` | Returns `result<date_interval_view>`. |
+| `IEnumerable<NepaliDate> WorkingDays(bool)` | `date_range::working_days(bool)` | Returns a `day_filter_view`. |
+| `IEnumerable<NepaliDate> WeekendDays(bool)` | `date_range::weekend_days(bool)` | Returns a `day_filter_view`. |
+| `IEnumerator<NepaliDate> GetEnumerator()` | `date_range::begin()`, `date_range::end()` | Random-access iteration. |
+| `override string ToString()` | `to_string(date_range)` | `"start - end"`. |
+| `string ToString(DateFormats, Separators)` | `to_chars_range(...)`, `format_range(...)` | Both ends with the same options. |
+| `Equals`, `GetHashCode`, `==`, `!=` | `operator==`, `std::hash<date_range>` | Value equality of the bounds. |
+
+`range_set` is a small fixed container that never allocates. `date_interval_view` is a
+random-access view over every `interval`-th day; the walk stops before the step that would pass the
+end. `day_filter_view` is a bidirectional view. Both views are `std::ranges` views and borrowed
+ranges. The two splits return `std::vector<date_range>`, and the string functions allocate their
+result. The other range operations allocate nothing. A range that reaches 2199-12-30 never throws.
+
+```cpp
+#include <nepdate/nepdate.hpp>
+
+const nepdate::date_range month =
+    nepdate::date_range::of_month(2081, nepdate::month::shrawan).value();
+const nepdate::date_range week =
+    nepdate::date_range::make(nepdate::make_date(2081, 4, 10).value(),
+                              nepdate::make_date(2081, 4, 16).value())
+        .value();
+
+for (const nepdate::date d : week) {
+    // every day, in order
+}
+for (const nepdate::date d : week.working_days(true)) {
+    // the working days
+}
+const auto overlap = month.intersect(week);
+const auto pieces = week.split_by_month();
+const auto rest = week.subtract(nepdate::date_range::single(nepdate::make_date(2081, 4, 12).value()));
+const auto every_other = week.dates_with_interval(2);
+```
+
+## Fiscal year
+
+| C# member | C++ member | Notes |
+|---|---|---|
+| `enum FiscalYearQuarters` | `quarter` | `q1` to `q4`; Q1 starts in Shrawan. |
+| `NepaliDate FiscalYearStartDate(int)` | `fiscal_year::of(date).start()` | Returns `result<date>`. |
+| `NepaliDate FiscalYearEndDate(int)` | `fiscal_year::of(date).end()` | Returns `result<date>`. |
+| `(NepaliDate, NepaliDate) FiscalYearStartAndEndDate(int)` | `fiscal_year::of(date).range()` | Returns `result<date_range>`. |
+| `NepaliDate FiscalYearQuarterStartDate(...)` | `fiscal_year::quarter_range(quarter)` | The range of the quarter. |
+| `NepaliDate FiscalYearQuarterEndDate(...)` | `fiscal_year::quarter_range(quarter)` | Its `last()`. |
+| `(NepaliDate, NepaliDate) FiscalYearQuarterStartAndEndDate(...)` | `fiscal_year::quarter_range(quarter)` | The same range. |
+| `static NepaliDate GetFiscalYearStartDate(int)` | `fiscal_year{year}.start()` | Returns `result<date>`. |
+| `static NepaliDate GetFiscalYearEndDate(int)` | `fiscal_year{year}.end()` | Returns `result<date>`. |
+| `static (NepaliDate, NepaliDate) GetFiscalYearStartAndEndDate(int)` | `fiscal_year{year}.range()` | Returns `result<date_range>`. |
+| `static NepaliDate GetFiscalYearQuarterStartDate(int, int)` | not ported | Use the fiscal-year value and a `quarter`. |
+| `static NepaliDate GetFiscalYearQuarterEndDate(int, int)` | not ported | Use the fiscal-year value and a `quarter`. |
+| `static (NepaliDate, NepaliDate) GetFiscalYearQuarterStartAndEndDate(int, int)` | not ported | Use the fiscal-year value and a `quarter`. |
+
+`fiscal_year{2082}` is FY 2082/83. `of(date)` finds the containing fiscal year. `quarter_of(date)`
+and `months_of(quarter)` are free functions. `label(lang)` writes `2082/83` or `२०८२/८३`.
+
+```cpp
+#include <nepdate/nepdate.hpp>
+
+const nepdate::date d = nepdate::make_date(2081, 4, 15).value();
+const nepdate::fiscal_year fy = nepdate::fiscal_year::of(d);
+const std::string label = fy.label(nepdate::lang::en); // "2081/82"
+const nepdate::result<nepdate::date_range> quarter = fy.quarter_range(nepdate::quarter::q1);
+```
+
+## Errors and result
+
+| C# member | C++ member | Notes |
+|---|---|---|
+| `InvalidNepaliDateFormatException` | `errc` | Validation and parse kinds. |
+| (exception value) | `result<T>` | Holds a value or an `errc`. |
+| (exception value) | `bad_result_access` | Thrown by `value()` on an error. |
+| (standard error machinery) | `std::error_code`, `std::error_condition` | `errc` converts to `std::error_code`; `make_error_condition` makes a condition. |
+
+`errc` names the four validation kinds (`out_of_range`, `invalid_month`, `invalid_day`,
+`invalid_gregorian`) and the five parse kinds (`invalid_character`, `wrong_group_count`,
+`number_too_long`, `ambiguous`, `unrecognized`). `to_string(errc)` returns the name, and
+`is_parse_error(errc)` tells the two families apart.
+
+`result<T>` follows `std::expected`: `has_value`, `value`, `error`, `operator*`, `operator->`,
+`value_or` and `explicit operator bool`. A small trivially copyable `T` uses a compact union and
+`result<date>` is 4 bytes. A larger or non-trivial `T`, such as `std::vector<date>`, uses optional
+storage. `value()` on an error throws `bad_result_access`; a build without exceptions aborts
+instead, and a constant expression that reaches it fails to compile.
+
+```cpp
+#include <nepdate/nepdate.hpp>
+
+#include <system_error>
+
+const nepdate::result<nepdate::date> parsed = nepdate::parse("2081/04/15");
+if (!parsed) {
+    const nepdate::errc error = parsed.error();
+    const std::error_code code = error;
+} else {
+    const nepdate::date d = parsed.value();
+}
+```
+
+## Patro
+
+The patro is a separate library, `nepdate::patro`, in `<nepdate/patro.hpp>`. It depends on the core;
+the core never includes it. The bundled data covers BS 2077-01-01 to 2084-08-20.
+
+| C# member | C++ member | Notes |
+|---|---|---|
+| `readonly struct CalendarInfo` | `patro::day_info` | Five members in one lookup. |
+| `string TithiNp { get; }` | `patro::day_info::tithi()->name(lang::ne)` | Optional. |
+| `string TithiEn { get; }` | `patro::day_info::tithi()->name(lang::en)` | Optional. |
+| `bool IsPublicHoliday { get; }` | `patro::day_info::is_public_holiday()` | The gazetted flag. |
+| `string[] EventsNp { get; }` | `patro::day_info::events()` plus `name(lang::ne)` | File order. |
+| `string[] EventsEn { get; }` | `patro::day_info::events()` plus `name(lang::en)` | File order. |
+| `CalendarInfo GetCalendarInfo()` | `patro::info(date)` | Never fails; empty outside coverage. |
+
+```cpp
+#include <nepdate/patro.hpp>
+
+const nepdate::date d = nepdate::make_date(2081, 4, 15).value();
+const nepdate::patro::day_info info = nepdate::patro::info(d);
+const bool holiday = info.is_public_holiday();
+for (const nepdate::patro::event e : info.events()) {
+    const std::string_view name = e.name(nepdate::lang::en);
+}
+```
 
 ## Notes
 
-- The listing groups names by topic. In the real headers, `overflow`, `date_diff` and a forward
-  declaration of `date_range` come before `date`, because `date`'s members use them.
-- `max_short_size` and `max_long_size` are upper bounds with margin: outputs are at most 26 bytes
-  (padded Nepali short) and 68 bytes (Nepali long with weekday: a 24-byte weekday, a 21-byte month,
-  6 bytes of day, 12 of year, 5 of punctuation). A test formats every
-  date of 2081 with every option and checks the bound.
-- `spill` is the neutral name for the spec's "Overflow" mode; `overflow` is the type, so the
-  enumerator can't share the name (same as the Go port).
-- `weekday()` reuses `std::chrono::weekday`, which counts from Sunday = 0 in `c_encoding()`, like the
-  spec. AD values are `std::chrono::year_month_day` and `sys_days`, so `<chrono>` arithmetic and
-  formatting work on them directly.
-- `from_sys_days` treats the day count as a calendar date. `from_sys_time(t, offset)` adds the offset
-  first, so 2024-07-30 18:30 UTC is BS 2081-04-15 with offset 0 and 2081-04-16 with
-  `nepal_utc_offset`. Nepal has used +05:45 since 1986-01-01; for older instants or other zones, pass
-  the offset (for example from `std::chrono::time_zone::get_info(t).offset` where the standard
-  library has the time-zone database). The doc comment on `today` must say this.
-- No `operator<<` and no `std::error_code` in v0.1 (ADR-0003). Both can be added later without
-  breaking anything.
+- The core's fixed-size paths allocate nothing: `to_chars_*`, `to_string(date)` (small-string
+  buffer), parsing, arithmetic, conversion and every range set operation except the two splits.
+  `to_nepali_dates` and `to_english_dates` return a vector and allocate that vector. The patro data
+  is static and view-only.
+- `operator<<` lives in `<nepdate/ostream.hpp>` so a translation unit that only formats into a
+  buffer does not include `<ostream>`. `<nepdate/nepdate.hpp>` includes it.
+- `std::formatter<date>` and `std::formatter<date_range>` are available where the standard library
+  has `<format>`. `{}` prints the default form and `{:<pattern>}` the pattern form, with
+  `lang::en`.
+- The clock members take a fixed UTC offset, with `nepal_utc_offset` (+05:45) as the default. They
+  also take an injected clock with a `now()` member, so a test can fix the instant.

@@ -2,6 +2,7 @@
 #define NEPDATE_FORMAT_HPP
 
 #include <nepdate/date.hpp>
+#include <nepdate/date_range.hpp>
 #include <nepdate/detail/names.hpp>
 
 #include <algorithm>
@@ -256,10 +257,8 @@ constexpr void write_pattern(Sink& out, date d, std::string_view p, lang l) noex
     while (i < n) {
         const char c = p[i];
         if (c == '\\') {
-            // A '\' at the very end writes nothing.
-            if (i + 1 < n) {
-                out.put(p[i + 1]);
-            }
+            // A '\' at the very end writes a literal '\' (FORMATTING section 5).
+            out.put(i + 1 < n ? p[i + 1] : '\\');
             i += 2;
         } else if (c == '\'') {
             // An unterminated quote runs to the end of the pattern.
@@ -354,6 +353,16 @@ to_chars_pattern(char* first, char* last, date d, std::string_view pattern, lang
     return out.result();
 }
 
+/// Writes both ends of r with the same short format, separated by " - " (D-15).
+[[nodiscard]] constexpr std::to_chars_result to_chars_range(char* first, char* last, date_range r,
+                                                            short_format f, lang l) noexcept {
+    detail::span_sink out{first, last};
+    detail::write_short(out, r.first(), f, l);
+    out.write(" - ");
+    detail::write_short(out, r.last(), f, l);
+    return out.result();
+}
+
 /// Returns "2081/04/15". Fits the small-string buffer of every standard library, so it doesn't
 /// allocate.
 [[nodiscard]] inline std::string to_string(date d) {
@@ -398,6 +407,19 @@ to_chars_pattern(char* first, char* last, date d, std::string_view pattern, lang
     detail::span_sink sink{out.data(), out.data() + out.size()};
     detail::write_pattern(sink, d, pattern, l);
     return out;
+}
+
+/// Returns what to_chars_range writes. Allocates only the returned string.
+[[nodiscard]] inline std::string format_range(date_range r, short_format f, lang l) {
+    std::array<char, max_long_size> buf{};
+    const std::to_chars_result result =
+        to_chars_range(buf.data(), buf.data() + buf.size(), r, f, l);
+    return {buf.data(), result.ptr};
+}
+
+/// Returns "2081/04/10 - 2081/04/20". Allocates only the returned string.
+[[nodiscard]] inline std::string to_string(date_range r) {
+    return format_range(r, short_format{}, lang::en);
 }
 
 } // namespace nepdate
@@ -472,6 +494,43 @@ template <> struct std::formatter<nepdate::date, char> {
     typename FormatContext::iterator format(nepdate::date d, FormatContext& ctx) const {
         nepdate::detail::iterator_sink<typename FormatContext::iterator> sink{ctx.out()};
         nepdate::detail::write_pattern(sink, d, pattern, nepdate::lang::en);
+        sink.flush();
+        return sink.out;
+    }
+};
+
+/// {} prints "2081/04/10 - 2081/04/20"; {:<pattern>} formats both ends with to_chars_pattern and
+/// lang::en, separated by " - ". The pattern can't contain '{' or '}'.
+template <> struct std::formatter<nepdate::date_range, char> {
+    std::string_view pattern;
+
+    /// Takes everything up to the closing '}' as the pattern; an empty one means the default form.
+    constexpr std::format_parse_context::iterator parse(std::format_parse_context& ctx) {
+        // NOLINTBEGIN(readability-qualified-auto): the iterator is a class on MSVC and libc++ but a const char* on libstdc++
+        auto it = ctx.begin();
+        const auto start = it;
+        // NOLINTEND(readability-qualified-auto)
+        while (it != ctx.end() && *it != '}') {
+            ++it;
+        }
+        pattern = std::string_view(start, it);
+        return it;
+    }
+
+    template <class FormatContext>
+    typename FormatContext::iterator format(nepdate::date_range r, FormatContext& ctx) const {
+        nepdate::detail::iterator_sink<typename FormatContext::iterator> sink{ctx.out()};
+        if (pattern.empty()) {
+            nepdate::detail::write_short(sink, r.first(), nepdate::short_format{},
+                                         nepdate::lang::en);
+            sink.write(" - ");
+            nepdate::detail::write_short(sink, r.last(), nepdate::short_format{},
+                                         nepdate::lang::en);
+        } else {
+            nepdate::detail::write_pattern(sink, r.first(), pattern, nepdate::lang::en);
+            sink.write(" - ");
+            nepdate::detail::write_pattern(sink, r.last(), pattern, nepdate::lang::en);
+        }
         sink.flush();
         return sink.out;
     }

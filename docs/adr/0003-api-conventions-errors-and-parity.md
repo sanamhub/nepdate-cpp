@@ -17,23 +17,29 @@ codebases), must not allocate (ADR-0002), and is header-only C++20 (ADR-0001), s
 - Standard-library style names: `snake_case` everywhere, scoped enums (`nepdate::month::shrawan`),
   free functions for construction (`make_date`, `from_gregorian`, `parse`), members for queries.
 - Every function that can fail returns `result<T>`; nothing else in the API fails. Every function is
-  `noexcept` except those returning `std::string`.
+  `noexcept` except `result<T>::value()`, the functions that return `std::string` or
+  `std::vector`, and the stream operators.
 - Reuse standard types where the meaning is identical: `std::chrono::weekday`,
   `std::chrono::year_month_day`, `sys_days`, `local_days`, `sys_seconds`, `std::to_chars_result`,
   `std::span`, `std::string_view`, `std::optional`, `std::ranges::view_interface`.
-- Allocation is visible in the signature: only functions returning `std::string` allocate. Each has a
-  `to_chars_*` twin that writes into a caller buffer.
-- `constexpr` on everything in the core except `today()` (reads the clock), the `std::string`
-  functions (C++20 `constexpr std::string` support is uneven across standard libraries) and the
-  `std::u8string_view` parse overloads (they need a `reinterpret_cast`).
+- Allocation is visible in the signature. The fixed-size paths return no owning container: every
+  `to_chars_*` writes into a caller buffer, and `to_string` returns one small string. The batch
+  conversions and the two range splits return a `std::vector`, and the range set operations return
+  a value, `std::optional` or the fixed `range_set`.
+- `constexpr` on everything in the core except `today()` (reads the clock), the `std::string` and
+  `std::vector` functions (C++20 `constexpr` container support is uneven across standard libraries)
+  and the `std::u8string_view` parse overloads (they need a `reinterpret_cast`).
 - No default constructor for `date` (D-01). Containers that need a placeholder use
   `std::optional<date>`.
 - `today()` takes a UTC offset defaulting to Nepal's +05:45, because a server in UTC is 5 h 45 min
   behind Nepal and C++20's time-zone database (`std::chrono::locate_zone`) isn't available in libc++
-  or Apple's toolchain. Callers with a database pass the offset from it (`docs/API.md` notes).
-- No `operator<<` (it would pull `<ostream>` into every user's translation unit) and no
-  `std::error_code` integration in v0.1; `std::formatter<date>` covers printing. Both can be added
-  later without breaking anything.
+  or Apple's toolchain. Callers with a database pass the offset from it (`docs/API.md` notes). Each
+  clock function also takes an injected clock with a `now()` member, so a test can fix the instant.
+- `operator<<` for `date` and `date_range` lives in `<nepdate/ostream.hpp>`, separate from
+  `format.hpp`, so a translation unit that only formats into a buffer does not include `<ostream>`.
+  `std::formatter<date>` and `std::formatter<date_range>` cover the formatting library. `errc` maps
+  to `std::error_code` through `make_error_code`, and to `std::error_condition` through
+  `make_error_condition`.
 
 ### 2. Errors: `nepdate::errc` and `nepdate::result<T>`
 
@@ -47,13 +53,13 @@ syntactically but fails validation returns the same `out_of_range`, `invalid_mon
 - Member names follow `std::expected` (`has_value`, `value`, `error`, `operator*`, `operator->`,
   `value_or`, `explicit operator bool`), so moving to `std::expected<T, errc>` later is mostly a type
   alias. No monadic members (`and_then`, `transform`) in v0.1 (YAGNI).
-- `T` must be trivially copyable (`static_assert`); every `T` in the API is. Storage is a union of
-  `T` and `errc` plus a flag, except `result<date>`, which is 4 bytes (ADR-0002 §1).
-- `value()` on an error calls a non-`constexpr` function that calls `std::abort()`. In a constant
-  expression that call is ill-formed, so `constexpr auto d = make_date(2081, 4, 33).value();` fails to
-  compile; at run time it aborts. It never throws: throwing would need exceptions, and a `value()`
-  that throws in some translation units and aborts in others (depending on `-fno-exceptions`) would
-  break the one-definition rule.
+- A small trivially copyable `T` uses a union of `T` and `errc` plus a flag. `result<date>` is a
+  4-byte specialization (ADR-0002 §1). A larger or non-trivial `T`, such as
+  `std::vector<date>`, uses `std::optional<T>` and a separate error.
+- `value()` on an error throws `bad_result_access`. A build without exceptions calls
+  `std::abort()` instead, so the core still works with `-fno-exceptions`. In a constant expression
+  the error path is ill-formed, so `constexpr auto d = make_date(2081, 4, 33).value();` fails to
+  compile. The `noexcept` specification does not depend on the exception setting, so the ODR holds.
 - `operator*`, `operator->` and `error()` have preconditions, checked with `assert` in debug builds.
 
 Why not the alternatives:
@@ -61,10 +67,10 @@ Why not the alternatives:
 | Option | Rejected because |
 |---|---|
 | `std::expected<T, errc>` | C++23 only; MSVC has no stable C++23 mode (ADR-0001 §1) |
-| exceptions | must work with `-fno-exceptions`; throwing costs far more than a conversion |
+| exceptions instead of `result<T>` | must work with `-fno-exceptions`; throwing costs far more than a conversion |
 | `bool f(args, T& out)` or `errc f(args, T& out)` | needs a default-constructible `T` (D-01 forbids one for `date`), can't be `constexpr`-initialised in one expression |
 | a `std::expected` alias when available, our type otherwise | different types in C++20 and C++23 translation units of one program: an ODR violation |
-| `std::error_code` | needs a non-`constexpr` category singleton and `std::string` messages |
+| returning `std::error_code` instead of `result<T>` | the category singleton and `std::string` messages are not `constexpr`, and a value and an error would need an out parameter for `date` (D-01); `errc` now converts to `std::error_code` for callers that want it |
 
 ### 3. Parity mapping (`shared/spec/PARITY.md`, applied unchanged)
 
