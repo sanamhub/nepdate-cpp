@@ -6,8 +6,8 @@
 
 TEST_CASE("version macros agree with each other", "[version]") {
     constexpr std::string_view expected = "1.0.0-rc.1";
-    STATIC_REQUIRE(NEPDATE_VERSION_MAJOR == 0);
-    STATIC_REQUIRE(NEPDATE_VERSION_MINOR == 2);
+    STATIC_REQUIRE(NEPDATE_VERSION_MAJOR == 1);
+    STATIC_REQUIRE(NEPDATE_VERSION_MINOR == 0);
     STATIC_REQUIRE(NEPDATE_VERSION_PATCH == 0);
     STATIC_REQUIRE(std::string_view{NEPDATE_VERSION_PRERELEASE} == "rc.1");
     STATIC_REQUIRE(std::string_view{NEPDATE_VERSION_STRING} == expected);
