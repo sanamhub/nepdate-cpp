@@ -5,7 +5,7 @@
 #include <string_view>
 
 TEST_CASE("version macros agree with each other", "[version]") {
-    constexpr std::string_view expected = "0.2.0-rc.1";
+    constexpr std::string_view expected = "1.0.0-rc.1";
     STATIC_REQUIRE(NEPDATE_VERSION_MAJOR == 0);
     STATIC_REQUIRE(NEPDATE_VERSION_MINOR == 2);
     STATIC_REQUIRE(NEPDATE_VERSION_PATCH == 0);

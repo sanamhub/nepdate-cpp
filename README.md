@@ -37,9 +37,10 @@ int main() {
 }
 ```
 
-> **Status:** 0.2.0-rc.1, a release candidate. The shared vector suites pass on every
-> supported compiler and the public API is listed in [`docs/API.md`](https://github.com/sanamhub/nepdate-cpp/blob/main/docs/API.md), but it may
-> still change before 0.2.0. Patro data (tithi, holidays, events) is informational, not an official
+> **Status:** 1.0.0-rc.1, the release candidate on the 1.0 line. The shared vector suites pass on
+> every supported compiler, the public API is listed in
+> [`docs/API.md`](https://github.com/sanamhub/nepdate-cpp/blob/main/docs/API.md), and it is stable
+> from 1.0 (hub ADR-0009). Patro data (tithi, holidays, events) is informational, not an official
 > calendar.
 
 ## Install
@@ -53,7 +54,7 @@ With CMake `FetchContent`, pinned to the release tag:
 include(FetchContent)
 FetchContent_Declare(nepdate
     GIT_REPOSITORY https://github.com/sanamhub/nepdate-cpp.git
-    GIT_TAG v0.2.0-rc.1)
+    GIT_TAG v1.0.0-rc.1)
 FetchContent_MakeAvailable(nepdate)
 target_link_libraries(your_app PRIVATE nepdate::nepdate nepdate::patro)
 ```
