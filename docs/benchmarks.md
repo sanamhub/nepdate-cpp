@@ -5,7 +5,7 @@ Time and allocation of the C++ library on operations B1 to B8 of
 through [`bench/`](../bench/). C++ has no mature competitor that passes
 [`docs/competitors.md`](competitors.md), so this run reports this port only. The C# column is copied
 from the hub's [`docs/benchmarks/dotnet.md`](https://github.com/sanamhub/nepdate/blob/main/docs/benchmarks/dotnet.md)
-(.NET 10 column, NepDate 2.0.7, run 2026-11-02).
+(.NET 10 column, NepDate 2.0.7, run 2026-11-16).
 
 ## Machine
 
@@ -16,18 +16,19 @@ from the hub's [`docs/benchmarks/dotnet.md`](https://github.com/sanamhub/nepdate
 | OS | Windows 11 Home 10.0.26300 |
 | Power plan | Ultimate Performance |
 | Affinity | logical CPU 2 (mask `0x4`), set with `start /affinity 4` |
-| CPU load before | 2, 2 and 2 percent, sampled 2 s apart |
-| CPU load after | 0 and 6 percent; one of the three samples returned no value |
+| Idle gate before the run | 6.2 percent average, 11.3 peak (30 one-second samples) |
+| Load during the run | 16.3 percent average, 22.0 peak over 70 one-second samples; 10.8 and 17.0 on the CPUs other than CPU 2 |
 
-The machine had the owner's normal desktop applications open. No other build, test suite or
-benchmark ran during the run.
+The machine was idle: no other build, test suite or benchmark ran during the run. The load during
+the run includes the benchmark's own pinned core and the sampler. The samples are in
+[`raw/2026-11-16/cpu-samples.txt`](raw/2026-11-16/cpu-samples.txt).
 
 ## Toolchains and versions
 
 | Item | Value |
 |---|---|
 | nepdate-cpp | `main` at the benchmark commit |
-| MSVC | 19.51.36260 (Visual Studio 2026 Community 18), x64, Release `/O2 /DNDEBUG` |
+| MSVC | 19.52.37029 (Visual Studio 2026 Community 18, toolset 14.52.37025), x64, Release `/O2 /DNDEBUG` |
 | Google Benchmark | 1.9.5 (vcpkg, feature `dev`) |
 | vcpkg baseline | `0699a19d0c6386247ce50d4dedbb8217d484d536` |
 | Competitors | none; no C++ library passes the bar |
@@ -45,13 +46,13 @@ cmake -S bench -B build\bench -G Ninja -DCMAKE_BUILD_TYPE=Release
 cmake --build build\bench
 start /affinity 4 /wait build\bench\nepdate_bench.exe --benchmark_repetitions=10
       --benchmark_report_aggregates_only=true
-      --benchmark_out=docs\raw\2026-11-02\bench-msvc.json
+      --benchmark_out=docs\raw\2026-11-16\bench-msvc.json
       --benchmark_out_format=json --benchmark_time_unit=ns
 ```
 
-The raw files are [`raw/2026-11-02/bench-msvc.txt`](raw/2026-11-02/bench-msvc.txt),
-[`raw/2026-11-02/bench-msvc.json`](raw/2026-11-02/bench-msvc.json) and the load log
-[`raw/2026-11-02/bench-msvc.log`](raw/2026-11-02/bench-msvc.log).
+The raw files are [`raw/2026-11-16/bench-msvc.txt`](raw/2026-11-16/bench-msvc.txt),
+[`raw/2026-11-16/bench-msvc.json`](raw/2026-11-16/bench-msvc.json) and the load log
+[`raw/2026-11-16/bench-msvc.log`](raw/2026-11-16/bench-msvc.log).
 
 ## Results
 
@@ -62,19 +63,24 @@ operation.
 
 | ID | Operation | nepdate ns/op | std ns | bytes/op | C# .NET 10 ns/op | C# bytes/op | ADR-0004 target ns/op |
 |---|---|---:|---:|---:|---:|---:|---:|
-| B1 | BS to AD | 6.46 | 0.05 | 0 | 13.50 | 0 | ≤ 8 |
-| B2 | AD to BS | 7.65 | 0.04 | 0 | 20.10 | 0 | ≤ 8 |
-| B3 | add 1000 days | 6.68 | 0.04 | 0 | 19.05 | 0 | ≤ 8 |
-| B4 | add 13 months, Clamp | 4.91 | 0.02 | 0 | 20.19 | 0 | ≤ 8 |
-| B5 | long Nepali date with weekday | 21.70 | 0.06 | 0 | 150.41 | 435 | ≤ 40 |
-| B6 | strict parse `YYYY/MM/DD` | 11.84 | 0.10 | 0 | 22.42 | 0 | ≤ 20 |
-| B7 | patro info of a day | 11.25 | 0.06 | 0 | 48.21 | 51 | ≤ 10 |
-| B8 | patro month grid | 423.53 | 2.93 | 0 | 3,112.76 | 1,429 | ≤ 250 |
+| B1 | BS to AD | 6.58 | 0.05 | 0 | 13.27 | 0 | ≤ 8 |
+| B2 | AD to BS | 7.84 | 0.08 | 0 | 18.70 | 0 | ≤ 8 |
+| B3 | add 1000 days | 6.81 | 0.08 | 0 | 20.06 | 0 | ≤ 8 |
+| B4 | add 13 months, Clamp | 4.77 | 0.07 | 0 | 19.30 | 0 | ≤ 8 |
+| B5 | long Nepali date with weekday | 22.41 | 0.24 | 0 | 139.04 | 435 | ≤ 40 |
+| B6 | strict parse `YYYY/MM/DD` | 10.01 | 0.16 | 0 | 21.13 | 0 | ≤ 20 |
+| B7 | patro info of a day | 11.64 | 0.11 | 0 | 48.63 | 51 | ≤ 10 |
+| B8 | patro month grid | 503.55 | 5.40 | 0 | 3,274.50 | 1,429 | ≤ 250 |
 
 Every B-row beats the C# column and allocates 0 bytes. B7 misses its ADR-0004 target of 10 ns
-(11.25 ns) and B8 misses 250 ns (423.53 ns); both are reported, not hidden.
+(11.64 ns) and B8 misses 250 ns (503.55 ns); both are reported, not hidden.
 
 ## Notes
+
+- B8 is 19 percent slower than the 2026-11-02 run (423.53 ns) and B6 is 15 percent faster (11.84 ns).
+  The source did not change; the MSVC compiler did (19.51.36260 then, 19.52.37029 now). A second
+  run of B6 to B8 on the same binary, after the main run, gave B6 9.61 ns, B7 11.03 ns and B8
+  487.19 ns, so the shift is not noise.
 
 - The benchmark also has an experimental B1 variant and a lenient parse row. They are not part of
   B1 to B8 and are not in the table.

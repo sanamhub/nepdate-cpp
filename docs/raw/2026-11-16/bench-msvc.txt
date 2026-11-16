@@ -1,0 +1,43 @@
+--------------------------------------------------------------------------------------------
+Benchmark                                  Time             CPU   Iterations UserCounters...
+--------------------------------------------------------------------------------------------
+b1_bs_to_ad_mean                         421 ns          421 ns           10 items_per_second=152.063M/s
+b1_bs_to_ad_median                       421 ns          420 ns           10 items_per_second=152.409M/s
+b1_bs_to_ad_stddev                      1.54 ns         3.09 ns           10 items_per_second=1.09536M/s
+b1_bs_to_ad_cv                          0.36 %          0.73 %            10 items_per_second=0.72%
+b2_ad_to_bs_mean                         501 ns          502 ns           10 items_per_second=127.612M/s
+b2_ad_to_bs_median                       501 ns          500 ns           10 items_per_second=128M/s
+b2_ad_to_bs_stddev                     0.603 ns         4.94 ns           10 items_per_second=1.22658M/s
+b2_ad_to_bs_cv                          0.12 %          0.99 %            10 items_per_second=0.96%
+b3_add_1000_days_mean                    435 ns          436 ns           10 items_per_second=146.96M/s
+b3_add_1000_days_median                  435 ns          439 ns           10 items_per_second=145.636M/s
+b3_add_1000_days_stddev                 1.35 ns         5.04 ns           10 items_per_second=1.70922M/s
+b3_add_1000_days_cv                     0.31 %          1.16 %            10 items_per_second=1.16%
+b4_add_13_months_mean                    306 ns          306 ns           10 items_per_second=209.515M/s
+b4_add_13_months_median                  305 ns          307 ns           10 items_per_second=208.524M/s
+b4_add_13_months_stddev                 3.81 ns         4.41 ns           10 items_per_second=3.02201M/s
+b4_add_13_months_cv                     1.24 %          1.44 %            10 items_per_second=1.44%
+b5_long_nepali_weekday_mean             1436 ns         1434 ns           10 items_per_second=44.6194M/s
+b5_long_nepali_weekday_median           1435 ns         1444 ns           10 items_per_second=44.3239M/s
+b5_long_nepali_weekday_stddev           2.32 ns         15.2 ns           10 items_per_second=475.788k/s
+b5_long_nepali_weekday_cv               0.16 %          1.06 %            10 items_per_second=1.07%
+b6_strict_parse_mean                     641 ns          640 ns           10 items_per_second=99.9692M/s
+b6_strict_parse_median                   639 ns          642 ns           10 items_per_second=99.7287M/s
+b6_strict_parse_stddev                  5.29 ns         10.3 ns           10 items_per_second=1.6042M/s
+b6_strict_parse_cv                      0.83 %          1.61 %            10 items_per_second=1.60%
+b_lenient_parse_mean                   13277 ns        13225 ns           10 items_per_second=4.84011M/s
+b_lenient_parse_median                 13323 ns        13253 ns           10 items_per_second=4.8295M/s
+b_lenient_parse_stddev                   175 ns          195 ns           10 items_per_second=72.0812k/s
+b_lenient_parse_cv                      1.32 %          1.48 %            10 items_per_second=1.49%
+b7_patro_info_mean                       744 ns          745 ns           10 items_per_second=85.9158M/s
+b7_patro_info_median                     744 ns          739 ns           10 items_per_second=86.557M/s
+b7_patro_info_stddev                    1.73 ns         7.20 ns           10 items_per_second=827.738k/s
+b7_patro_info_cv                        0.23 %          0.97 %            10 items_per_second=0.96%
+b8_patro_month_grid_mean               32268 ns        32227 ns           10 items_per_second=1.98611M/s
+b8_patro_month_grid_median             32274 ns        32227 ns           10 items_per_second=1.98591M/s
+b8_patro_month_grid_stddev               189 ns          345 ns           10 items_per_second=21.2919k/s
+b8_patro_month_grid_cv                  0.59 %          1.07 %            10 items_per_second=1.07%
+b1_variant_stored_ad_start_mean          521 ns          520 ns           10 items_per_second=123.008M/s
+b1_variant_stored_ad_start_median        520 ns          516 ns           10 items_per_second=123.987M/s
+b1_variant_stored_ad_start_stddev       5.84 ns         6.74 ns           10 items_per_second=1.57609M/s
+b1_variant_stored_ad_start_cv           1.12 %          1.30 %            10 items_per_second=1.28%

@@ -1,0 +1,4 @@
+idle gate (30 one-second samples): avg=6.2 max=11.3
+during the run (one-second samples, total and all CPUs except CPU 2):
+n=70 total avg=16.3 peak=22.0 | other-cpus avg=10.8 peak=17.0
+exit: 0
