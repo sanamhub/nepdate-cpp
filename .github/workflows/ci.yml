@@ -74,8 +74,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        version: [12, 14]
-    runs-on: ubuntu-24.04
+        include:
+          # Floor: GCC 12 on the oldest runner image.
+          - version: 12
+            runner: ubuntu-24.04
+          - version: 14
+            runner: ubuntu-24.04
+          - version: 15
+            runner: ubuntu-26.04
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 60
     env:
       CC: gcc-${{ matrix.version }}
@@ -104,10 +111,16 @@ jobs:
           - version: 16
             stdlib: libstdc++
             flags: ""
+            runner: ubuntu-24.04
           - version: 18
             stdlib: libc++
             flags: -stdlib=libc++
-    runs-on: ubuntu-24.04
+            runner: ubuntu-24.04
+          - version: 22
+            stdlib: libc++
+            flags: -stdlib=libc++
+            runner: ubuntu-26.04
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 60
     env:
       CC: clang-${{ matrix.version }}
@@ -185,20 +198,20 @@ jobs:
         run: cmake -DONLY=format,ascii,codegen,tidy,docs -DSTRICT=ON -P tools/ci.cmake
 
   sanitizers:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 60
     env:
-      CC: clang-18
-      CXX: clang++-18
+      CC: clang-22
+      CXX: clang++-22
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Install Clang 18
+      - name: Install Clang 22
         run: |
           sudo apt-get update
-          sudo apt-get install -y ninja-build clang-18
-          # Ubuntu 24.04 kernels use 32 random mmap bits, which ASan and TSan in Clang 18 can't map.
+          sudo apt-get install -y ninja-build clang-22
+          # Hosted runner kernels may use 32 random mmap bits, which ASan and TSan can't map.
           sudo sysctl vm.mmap_rnd_bits=28
       - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
@@ -216,21 +229,21 @@ jobs:
           ctest --preset tsan
 
   coverage:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 60
     env:
-      CC: gcc-14
-      CXX: g++-14
-      GCOV: gcov-14
+      CC: gcc-15
+      CXX: g++-15
+      GCOV: gcov-15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Install GCC 14 and gcovr
+      - name: Install GCC 15 and gcovr
         run: |
           sudo apt-get update
-          sudo apt-get install -y ninja-build g++-14
-          pipx install gcovr==8.6
+          sudo apt-get install -y ninja-build g++-15
+          pipx install gcovr==8.8
       - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ${{ runner.temp }}/vcpkg-cache
@@ -242,20 +255,20 @@ jobs:
         run: cmake -DONLY=coverage -DSTRICT=ON -P tools/ci.cmake
 
   fuzz:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 60
     env:
-      CC: clang-18
-      CXX: clang++-18
+      CC: clang-22
+      CXX: clang++-22
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Install Clang 18
+      - name: Install Clang 22
         run: |
           sudo apt-get update
-          sudo apt-get install -y ninja-build clang-18
-          # Ubuntu 24.04 kernels use 32 random mmap bits, which ASan in Clang 18 can't map.
+          sudo apt-get install -y ninja-build clang-22
+          # Hosted runner kernels may use 32 random mmap bits, which ASan can't map.
           sudo sysctl vm.mmap_rnd_bits=28
       - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
@@ -358,7 +371,7 @@ jobs:
           NEPDATE_CPP_SOURCE: ${{ github.workspace }}
         run: |
           set -euo pipefail
-          pipx install conan==2.33.0  # pinned: the version the recipes were tested with
+          pipx install conan==2.34.0  # pinned: the version the recipes were tested with
           conan profile detect --force
           conan create conan/nepdate -s compiler.cppstd=20
           conan create conan/nepdate-patro -s compiler.cppstd=20
