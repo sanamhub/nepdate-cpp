@@ -274,15 +274,15 @@ differences from the original are the `D-xx` rows in
 ## Performance
 
 Every row is faster than C# NepDate and allocates nothing, measured with Google Benchmark on an
-idle machine, pinned to one core. B7 and B8 still miss their own targets. Details are in
+idle machine, pinned to one core. B8 still misses its own target. Details are in
 [`docs/benchmarks.md`](https://github.com/sanamhub/nepdate-cpp/blob/main/docs/benchmarks.md).
 
 | Operation | MSVC ns/op | C# ns/op |
 |---|---:|---:|
-| B1 BS to AD | 6.58 | 13.27 |
-| B2 AD to BS | 7.84 | 18.70 |
-| B6 strict parse | 10.01 | 21.13 |
-| B8 patro month grid | 503.55 | 3,274.50 |
+| B1 BS to AD | 6.76 | 13.27 |
+| B2 AD to BS | 8.15 | 18.70 |
+| B6 strict parse | 10.29 | 21.13 |
+| B8 patro month grid | 369.48 | 3,274.50 |
 
 ## More
 
