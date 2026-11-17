@@ -15,3 +15,4 @@ Edited on 2026-10-16 to remove links to internal plans and process wording befor
 | [0005](0005-releases.md) | Releases | Accepted |
 | [0006](0006-result-rvalue-accessors.md) | `result<T>` accessors return by value on an rvalue (amends 0003) | Accepted |
 | [0007](0007-clang-tidy-22.md) | The tidy gate runs clang-tidy 22 (amends 0004) | Accepted |
+| [0008](0008-patro-tables-in-a-header.md) | Patro tables in an installed header, lookups inline (supersedes part of 0001) | Accepted |

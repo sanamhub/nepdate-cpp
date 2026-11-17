@@ -4,11 +4,10 @@
 // section 3), so the mapped checks are noted. The interop rows live in tests/cs_phase4.cpp. This
 // file is UTF-8; the library headers are ASCII.
 
-#include "../src/patro_tables.hpp"
-
 #include "patro_summary.hpp"
 
 #include <nepdate/detail/calendar_tables.hpp>
+#include <nepdate/detail/patro_tables.hpp>
 #include <nepdate/patro.hpp>
 
 #include <catch2/catch_test_macros.hpp>
