@@ -164,7 +164,7 @@ TEST_CASE("diff agrees with days_until and with the section 8a definition", "[ar
     // n is the largest month count with add_months(n, clamp) <= the later date.
     const date lo = d.negative ? b : a;
     const date hi = d.negative ? a : b;
-    const int n = d.years * 12 + d.months;
+    const int n = (d.years * 12) + d.months;
     const date landed = lo.add_months(n).value();
     CHECK(landed <= hi);
     CHECK(landed.add_days(d.days) == hi);

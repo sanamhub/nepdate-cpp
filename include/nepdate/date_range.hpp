@@ -367,7 +367,7 @@ class date_interval_view : public std::ranges::view_interface<date_interval_view
     friend class date_range;
     constexpr date_interval_view(date first, date last, std::uint32_t step) noexcept
         : first_(detail::to_serial(first)), last_(detail::to_serial(last)), step_(step),
-          count_((detail::to_serial(last) - detail::to_serial(first)) / step + 1U) {}
+          count_(((detail::to_serial(last) - detail::to_serial(first)) / step) + 1U) {}
 
     std::uint32_t first_ = 0;
     std::uint32_t last_ = 0;
@@ -581,7 +581,7 @@ inline std::vector<date_range> date_range::split_by_fiscal_quarter() const {
         const int fiscal_year = month_no >= 4 ? current.year() : current.year() - 1;
         const int quarter_index = (month_no + 8) % 12 / 3; // 0..3 for Q1..Q4
         // Q1 ends in Ashoj (6), Q2 in Poush (9), Q3 in Chaitra (12), Q4 in Ashad (3).
-        const int end_month = quarter_index < 3 ? 6 + 3 * quarter_index : 3;
+        const int end_month = quarter_index < 3 ? 6 + (3 * quarter_index) : 3;
         const int end_year = quarter_index < 3 ? fiscal_year : fiscal_year + 1;
         const result<date> end_first = make_date(end_year, end_month, 1);
         if (!end_first) {
@@ -714,13 +714,14 @@ template <class Clock>
 
 // A date_range holds its two dates by value and its iterators hold serials, so an iterator outlives
 // the range it came from. The two views hold their own bounds and iterators likewise.
-// NOLINTBEGIN(cert-dcl58-cpp): enable_borrowed_range is the standard range customization point
+// NOLINTBEGIN(cert-dcl58-cpp,bugprone-std-namespace-modification): enable_borrowed_range is the
+// standard range customization point
 namespace std::ranges {
 template <> inline constexpr bool enable_borrowed_range<nepdate::date_range> = true;
 template <> inline constexpr bool enable_borrowed_range<nepdate::date_interval_view> = true;
 template <> inline constexpr bool enable_borrowed_range<nepdate::day_filter_view> = true;
 } // namespace std::ranges
-// NOLINTEND(cert-dcl58-cpp)
+// NOLINTEND(cert-dcl58-cpp,bugprone-std-namespace-modification)
 
 /// Hashes both bounds.
 template <> struct std::hash<nepdate::date_range> {

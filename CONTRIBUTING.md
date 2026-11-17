@@ -31,7 +31,7 @@ runs a subset. The gates are `format`, `ascii`, `codegen`, `build-and-test`, `no
 `tidy`, `sanitizers`, `coverage`, `isolation` and `docs`.
 
 - `format` needs clang-format 18.
-- `tidy` needs clang-tidy 18 and a toolchain whose standard library it can parse.
+- `tidy` needs clang-tidy 22 and a toolchain whose standard library it can parse.
 - `sanitizers` needs Clang with ASan and UBSan. ThreadSanitizer runs with `cmake --preset tsan`.
 - `coverage` needs GCC and gcovr.
 - `docs` is a plain CMake script and needs nothing.
@@ -39,6 +39,28 @@ runs a subset. The gates are `format`, `ascii`, `codegen`, `build-and-test`, `no
 On a machine where the default compiler is not the one you want, copy `CMakePresets.json` to the
 gitignored `CMakeUserPresets.json` and add `local-*` presets; the script picks them up when it sees
 `local-dev`.
+
+## CI jobs
+
+`.github/workflows/ci.yml` runs the gates on these toolchains. The ADRs record the versions at the
+time of each decision; this table and the workflow are the current ones.
+
+| Job | Runner | Toolchain | Runs |
+|---|---|---|---|
+| `msvc-2026` | `windows-2025-vs2026` | MSVC 14.5x, Debug and Release | gates 3 to 5, ASan |
+| `msvc-2022` | `windows-2022` | MSVC 19.44 (floor) | gates 4 and 5 |
+| `gcc` | `ubuntu-24.04`, `ubuntu-26.04` | GCC 12 (floor), 14 and 15 | gates 4 and 5 |
+| `clang` | `ubuntu-24.04`, `ubuntu-26.04` | Clang 16 (floor, libstdc++), Clang 18 and 22 with libc++ | gates 4 and 5 |
+| `apple` | `macos-15`, `macos-26` | Apple Clang | gates 4, 5 and 7 |
+| `lint` | `ubuntu-24.04` | Clang 18, clang-format 18 | gates 1, 2, 3 and 10 |
+| `tidy` | `ubuntu-26.04` | Clang 22, clang-tidy 22 | gate 6 |
+| `sanitizers` | `ubuntu-26.04` | Clang 22 | gate 7, ThreadSanitizer |
+| `coverage` | `ubuntu-26.04` | GCC 15, gcovr 8.8 | gate 8 |
+| `fuzz` | `ubuntu-26.04` | Clang 22 | 60 s per libFuzzer target |
+| `isolation` | `ubuntu-24.04`, `windows-2025-vs2026` | default | gate 9 |
+| `packages` | `ubuntu-24.04`, `windows-2025-vs2026` | default, Conan 2.34.0 | vcpkg overlay ports, `conan create` |
+
+`codeql.yml` runs CodeQL on `ubuntu-24.04`.
 
 ## Pull requests
 

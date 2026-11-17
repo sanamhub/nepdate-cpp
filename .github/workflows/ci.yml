@@ -184,9 +184,7 @@ jobs:
       - name: Install Clang 18 tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y ninja-build clang-18 clang-format-18 clang-tidy-18
-          # The tidy preset calls plain clang-tidy.
-          sudo ln -sf /usr/bin/clang-tidy-18 /usr/local/bin/clang-tidy
+          sudo apt-get install -y ninja-build clang-18 clang-format-18
       - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ${{ runner.temp }}/vcpkg-cache
@@ -194,8 +192,35 @@ jobs:
       - name: Set up vcpkg
         shell: bash
         run: .github/scripts/setup-vcpkg.sh
-      - name: Gates 1, 2, 3, 6 and 10
-        run: cmake -DONLY=format,ascii,codegen,tidy,docs -DSTRICT=ON -P tools/ci.cmake
+      - name: Gates 1, 2, 3 and 10
+        run: cmake -DONLY=format,ascii,codegen,docs -DSTRICT=ON -P tools/ci.cmake
+
+  # clang-tidy 22 comes from the Ubuntu 26.04 archive, like Clang 22 in the sanitizers job.
+  tidy:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 60
+    env:
+      CC: clang-22
+      CXX: clang++-22
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install clang-tidy 22 and Clang 22
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build clang-22 clang-tidy-22
+          # The tidy preset calls plain clang-tidy.
+          sudo ln -sf /usr/bin/clang-tidy-22 /usr/local/bin/clang-tidy
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/vcpkg-cache
+          key: vcpkg-tidy-${{ hashFiles('vcpkg.json') }}
+      - name: Set up vcpkg
+        shell: bash
+        run: .github/scripts/setup-vcpkg.sh
+      - name: Gate 6
+        run: cmake -DONLY=tidy -DSTRICT=ON -P tools/ci.cmake
 
   sanitizers:
     runs-on: ubuntu-26.04

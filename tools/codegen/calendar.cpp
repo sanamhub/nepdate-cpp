@@ -54,10 +54,10 @@ int epoch_unix_days() {
     const int m = 4;
     const int d = 11;
     const int era = y / 400;
-    const int yoe = y - era * 400;
-    const int doy = (153 * ((m + 9) % 12) + 2) / 5 + d - 1;
-    const int doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
-    return era * 146097 + doe - 719468;
+    const int yoe = y - (era * 400);
+    const int doy = (((153 * ((m + 9) % 12)) + 2) / 5) + d - 1;
+    const int doe = (yoe * 365) + (yoe / 4) - (yoe / 100) + doy;
+    return (era * 146097) + doe - 719468;
 }
 
 std::string hex64(std::uint64_t value) {
@@ -131,7 +131,7 @@ tables_result build_tables(const calendar& cal) {
     tables& t = result.value;
     std::uint32_t serial = 0;
     std::uint64_t hash = kFnvOffsetBasis;
-    t.month_start.reserve(cal.month_lengths.size() * kMonths + 1);
+    t.month_start.reserve((cal.month_lengths.size() * kMonths) + 1);
     for (const auto& year : cal.month_lengths) {
         for (const int length : year) {
             t.month_start.push_back(serial);
@@ -201,7 +201,7 @@ std::string render_calendar_tables(const calendar& cal, const tables& t) {
     for (std::size_t y = 0; y < cal.month_lengths.size(); ++y) {
         out += "   ";
         for (std::size_t m = 0; m < kMonths; ++m) {
-            out += " " + std::to_string(t.month_start.at(y * kMonths + m)) + ",";
+            out += " " + std::to_string(t.month_start.at((y * kMonths) + m)) + ",";
         }
         out += " // " + std::to_string(cal.min_year + static_cast<int>(y)) + "\n";
     }

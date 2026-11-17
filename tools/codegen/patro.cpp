@@ -47,7 +47,7 @@ bool parse_date_key(std::string_view key, int& year, int& month, int& day) {
             if (c < '0' || c > '9') {
                 return -1;
             }
-            value = value * 10 + (c - '0');
+            value = (value * 10) + (c - '0');
         }
         return value;
     };
@@ -242,16 +242,15 @@ patro_input_result parse_patro(const std::vector<std::string>& year_jsons) {
         }
     }
     // Files arrive in any order; the tables need date order.
-    std::sort(result.value.days.begin(), result.value.days.end(),
-              [](const patro_day& a, const patro_day& b) {
-                  if (a.year != b.year) {
-                      return a.year < b.year;
-                  }
-                  if (a.month != b.month) {
-                      return a.month < b.month;
-                  }
-                  return a.day < b.day;
-              });
+    std::ranges::sort(result.value.days, [](const patro_day& a, const patro_day& b) {
+        if (a.year != b.year) {
+            return a.year < b.year;
+        }
+        if (a.month != b.month) {
+            return a.month < b.month;
+        }
+        return a.day < b.day;
+    });
     return result;
 }
 
@@ -327,7 +326,7 @@ patro_tables_result build_patro_tables(const patro_input& input,
     const auto months = month_start.size() - 1;
     const auto serial_of = [&](const patro_day& d) -> std::uint32_t {
         const auto y = static_cast<std::uint32_t>(d.year) - static_cast<std::uint32_t>(kMinYear);
-        const auto i = y * kMonthsPerYear + static_cast<std::uint32_t>(d.month) - 1U;
+        const auto i = (y * kMonthsPerYear) + static_cast<std::uint32_t>(d.month) - 1U;
         if (i >= months) {
             return 0xFFFFFFFFU;
         }
@@ -335,7 +334,7 @@ patro_tables_result build_patro_tables(const patro_input& input,
     };
     const auto valid = [&](const patro_day& d) -> bool {
         const auto y = static_cast<std::uint32_t>(d.year) - static_cast<std::uint32_t>(kMinYear);
-        const auto i = y * kMonthsPerYear + static_cast<std::uint32_t>(d.month) - 1U;
+        const auto i = (y * kMonthsPerYear) + static_cast<std::uint32_t>(d.month) - 1U;
         return i < months && d.day >= 1 &&
                static_cast<std::uint32_t>(d.day) <= month_start[i + 1] - month_start[i];
     };
@@ -442,7 +441,7 @@ patro_tables_result build_patro_tables(const patro_input& input,
         }
     }
 
-    t.name_offsets.reserve(t.names.size() * 2 + 1);
+    t.name_offsets.reserve((t.names.size() * 2) + 1);
     for (const auto& [np, en] : t.names) {
         t.name_offsets.push_back(static_cast<std::uint32_t>(t.name_blob.size()));
         t.name_blob += np;
@@ -597,7 +596,7 @@ std::string render_patro_tables(const patro_tables& t,
             out += " " + hex(t.holiday_bits[j], 16) + ",";
         }
         out += " // days " + std::to_string(i * 64U) + ".." +
-               std::to_string(std::min(i * 64U + 63U, static_cast<std::size_t>(t.days) - 1U)) +
+               std::to_string(std::min((i * 64U) + 63U, static_cast<std::size_t>(t.days) - 1U)) +
                "\n";
     }
     out += "};\n";

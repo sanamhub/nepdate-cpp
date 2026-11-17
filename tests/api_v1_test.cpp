@@ -311,8 +311,9 @@ TEST_CASE("csharp-golden/format-matrix.tsv: orders, separators, pad and TryForma
         const date d = ymd(row[bs]);
         const lang l = lang_of(row[language]);
         if (row[kind] == "short") {
-            const short_format f{order_of(row[order]), separator_of(row[separator_column]),
-                                 row[pad] == "true"};
+            const short_format f{.order = order_of(row[order]),
+                                 .sep = separator_of(row[separator_column]),
+                                 .pad = row[pad] == "true"};
             CHECK(format_short(d, f, l) == row[result]);
         } else {
             const int size = std::stoi(row[capacity]);

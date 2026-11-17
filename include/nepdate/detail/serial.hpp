@@ -24,8 +24,8 @@ constexpr date from_serial(std::uint32_t s) noexcept {
     std::uint32_t i = kBlockMonth[s >> 5U];
     i += static_cast<std::uint32_t>(kMonthStart[i + 1] <= s);
     i += static_cast<std::uint32_t>(kMonthStart[i + 1] <= s);
-    const std::uint32_t year = static_cast<std::uint32_t>(kMinYear) + i / 12U;
-    const std::uint32_t month = i % 12U + 1U;
+    const std::uint32_t year = static_cast<std::uint32_t>(kMinYear) + (i / 12U);
+    const std::uint32_t month = (i % 12U) + 1U;
     const std::uint32_t day = s - kMonthStart[i] + 1U;
     return date_access::make(pack(year, month, day));
 }

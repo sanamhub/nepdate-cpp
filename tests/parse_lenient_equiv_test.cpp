@@ -107,7 +107,8 @@ TEST_CASE("split parse_lenient agrees with the reference on the fuzz corpus", "[
 
 TEST_CASE("split parse_lenient agrees with the reference on 200,000 generated inputs",
           "[parse][equiv]") {
-    // NOLINTNEXTLINE(cert-msc32-c,cert-msc51-cpp): a fixed seed keeps the test reproducible
+    // A fixed seed keeps the test reproducible.
+    // NOLINTNEXTLINE(cert-msc32-c,cert-msc51-cpp,bugprone-random-generator-seed)
     std::mt19937 rng(0xC7C7'0202U);
     for (int i = 0; i < 200'000; ++i) {
         check_equiv(generated_input(rng));

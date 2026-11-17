@@ -11,6 +11,7 @@
 
 #include <chrono>
 #include <cstdint>
+#include <utility>
 
 using nepdate::date;
 using nepdate::detail::from_serial;
@@ -38,8 +39,8 @@ TEST_CASE("Neri-Schneider agrees with Hinnant on every supported day", "[exhaust
         const int days = static_cast<int>(s) + kEpochUnixDays;
         const auto ns = nepdate::detail::civil_from_days(days);
         const auto hh = nepdate_test::civil_from_days(days);
-        const bool ok = ns.year == hh.y && static_cast<int>(ns.month) == hh.m &&
-                        static_cast<int>(ns.day) == hh.d &&
+        const bool ok = ns.year == hh.y && std::cmp_equal(ns.month, hh.m) &&
+                        std::cmp_equal(ns.day, hh.d) &&
                         nepdate::detail::days_from_civil(ns.year, ns.month, ns.day) == days &&
                         nepdate_test::days_from_civil(hh.y, hh.m, hh.d) == days;
         failures += ok ? 0U : 1U;

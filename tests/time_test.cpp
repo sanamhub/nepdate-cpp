@@ -34,7 +34,7 @@ TEST_CASE("from_sys_time adds the offset first", "[time]") {
     CHECK(nepdate::from_sys_time(t, chr::minutes{0}) == make_date(2081, 4, 15));
     CHECK(nepdate::from_sys_time(t, nepdate::nepal_utc_offset) == make_date(2081, 4, 16));
     // Nepal's offset is +05:45; 18:30 + 05:45 is past midnight.
-    CHECK(nepdate::nepal_utc_offset == chr::minutes{5 * 60 + 45});
+    CHECK(nepdate::nepal_utc_offset == chr::minutes{(5 * 60) + 45});
 }
 
 TEST_CASE("to_sys_days and from_sys_days round-trip every serial", "[time][exhaustive]") {

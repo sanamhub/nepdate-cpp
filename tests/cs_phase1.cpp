@@ -46,7 +46,7 @@ date d3() {
 // C#'s SortedSet, Array.Sort and List.Sort rows all become one std::sort.
 void check_sorts() {
     std::array<date, 3> dates = {d3(), d1(), d2()};
-    std::sort(dates.begin(), dates.end());
+    std::ranges::sort(dates);
     CHECK(dates[0] == d1());
     CHECK(dates[1] == d2());
     CHECK(dates[2] == d3());

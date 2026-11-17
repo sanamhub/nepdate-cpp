@@ -27,9 +27,9 @@ to_chars_number(char* first, char* last, unsigned value, int min_width, lang l) 
     char* const end =
         detail::write_number(first, last, static_cast<std::uint32_t>(value), min_width, l);
     if (end == nullptr) {
-        return {last, std::errc::value_too_large};
+        return {.ptr = last, .ec = std::errc::value_too_large};
     }
-    return {end, std::errc{}};
+    return {.ptr = end, .ec = std::errc{}};
 }
 
 /// Returns the month's name (FORMATTING section 1): "Shrawan" or the Nepali name. Returns ""
@@ -133,9 +133,9 @@ struct span_sink {
     }
     [[nodiscard]] constexpr std::to_chars_result result() const noexcept {
         if (!ok) {
-            return {last, std::errc::value_too_large};
+            return {.ptr = last, .ec = std::errc::value_too_large};
         }
-        return {p, std::errc{}};
+        return {.ptr = p, .ec = std::errc{}};
     }
 };
 
@@ -246,7 +246,8 @@ constexpr void write_pattern(Sink& out, date d, std::string_view p, lang l) noex
         return;
     }
     if (p == "s") {
-        write_short(out, d, short_format{date_order::ymd, separator::dash, true}, l);
+        write_short(out, d,
+                    short_format{.order = date_order::ymd, .sep = separator::dash, .pad = true}, l);
         return;
     }
     const auto year = static_cast<std::uint32_t>(d.year());
@@ -317,7 +318,7 @@ constexpr void write_pattern(Sink& out, date d, std::string_view p, lang l) noex
 /// enumerators counts as ymd or slash.
 [[nodiscard]] constexpr std::to_chars_result to_chars_short(char* first, char* last, date d,
                                                             short_format f, lang l) noexcept {
-    detail::span_sink out{first, last};
+    detail::span_sink out{.p = first, .last = last};
     detail::write_short(out, d, f, l);
     return out.result();
 }
@@ -330,14 +331,15 @@ constexpr void write_pattern(Sink& out, date d, std::string_view p, lang l) noex
 /// Writes "2081-04-15", the interchange form (D-11).
 [[nodiscard]] constexpr std::to_chars_result to_chars_iso(char* first, char* last,
                                                           date d) noexcept {
-    return to_chars_short(first, last, d, short_format{date_order::ymd, separator::dash, true},
-                          lang::en);
+    return to_chars_short(
+        first, last, d, short_format{.order = date_order::ymd, .sep = separator::dash, .pad = true},
+        lang::en);
 }
 
 /// Writes the long format of d (FORMATTING section 4), for example "Tuesday, Shrawan 15, 2081".
 [[nodiscard]] constexpr std::to_chars_result to_chars_long(char* first, char* last, date d,
                                                            long_format f, lang l) noexcept {
-    detail::span_sink out{first, last};
+    detail::span_sink out{.p = first, .last = last};
     detail::write_long(out, d, f, l);
     return out.result();
 }
@@ -348,7 +350,7 @@ constexpr void write_pattern(Sink& out, date d, std::string_view p, lang l) noex
 /// follow l; other characters are copied.
 [[nodiscard]] constexpr std::to_chars_result
 to_chars_pattern(char* first, char* last, date d, std::string_view pattern, lang l) noexcept {
-    detail::span_sink out{first, last};
+    detail::span_sink out{.p = first, .last = last};
     detail::write_pattern(out, d, pattern, l);
     return out.result();
 }
@@ -356,7 +358,7 @@ to_chars_pattern(char* first, char* last, date d, std::string_view pattern, lang
 /// Writes both ends of r with the same short format, separated by " - " (D-15).
 [[nodiscard]] constexpr std::to_chars_result to_chars_range(char* first, char* last, date_range r,
                                                             short_format f, lang l) noexcept {
-    detail::span_sink out{first, last};
+    detail::span_sink out{.p = first, .last = last};
     detail::write_short(out, r.first(), f, l);
     out.write(" - ");
     detail::write_short(out, r.last(), f, l);
@@ -404,7 +406,7 @@ to_chars_pattern(char* first, char* last, date d, std::string_view pattern, lang
     detail::count_sink count;
     detail::write_pattern(count, d, pattern, l);
     std::string out(count.n, '\0');
-    detail::span_sink sink{out.data(), out.data() + out.size()};
+    detail::span_sink sink{.p = out.data(), .last = out.data() + out.size()};
     detail::write_pattern(sink, d, pattern, l);
     return out;
 }
@@ -454,7 +456,7 @@ template <class OutputIt> struct iterator_sink {
                 flush();
             }
             const std::size_t k = std::min(buf.size() - n, s.size());
-            std::copy_n(s.data(), k, buf.data() + n);
+            std::copy_n(s.begin(), k, buf.data() + n);
             n += k;
             s.remove_prefix(k);
         }
@@ -462,7 +464,7 @@ template <class OutputIt> struct iterator_sink {
     void number(std::uint32_t value, int min_width, lang l) {
         // Pattern tokens ask for at most 4 digits of a value below 2^32: 30 bytes at most.
         std::array<char, 32> digits{};
-        char* const end =
+        const char* const end =
             write_number(digits.data(), digits.data() + digits.size(), value, min_width, l);
         if (end != nullptr) {
             write(std::string_view(digits.data(), static_cast<std::size_t>(end - digits.data())));
@@ -491,7 +493,7 @@ template <> struct std::formatter<nepdate::date, char> {
     }
 
     template <class FormatContext>
-    typename FormatContext::iterator format(nepdate::date d, FormatContext& ctx) const {
+    FormatContext::iterator format(nepdate::date d, FormatContext& ctx) const {
         nepdate::detail::iterator_sink<typename FormatContext::iterator> sink{ctx.out()};
         nepdate::detail::write_pattern(sink, d, pattern, nepdate::lang::en);
         sink.flush();
@@ -518,7 +520,7 @@ template <> struct std::formatter<nepdate::date_range, char> {
     }
 
     template <class FormatContext>
-    typename FormatContext::iterator format(nepdate::date_range r, FormatContext& ctx) const {
+    FormatContext::iterator format(nepdate::date_range r, FormatContext& ctx) const {
         nepdate::detail::iterator_sink<typename FormatContext::iterator> sink{ctx.out()};
         if (pattern.empty()) {
             nepdate::detail::write_short(sink, r.first(), nepdate::short_format{},

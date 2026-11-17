@@ -128,7 +128,7 @@ TEST_CASE("every 2081 output fits the size bounds; one byte less fails without o
             for (const bool pad : {true, false}) {
                 for (const date_order o : kOrders) {
                     for (const separator s : kSeparators) {
-                        const short_format f{o, s, pad};
+                        const short_format f{.order = o, .sep = s, .pad = pad};
                         buf.fill(kCanary);
                         auto r = nepdate::to_chars_short(
                             buf.data(), buf.data() + nepdate::max_short_size, d, f, l);
@@ -144,7 +144,7 @@ TEST_CASE("every 2081 output fits the size bounds; one byte less fails without o
                 }
                 for (const bool weekday : {true, false}) {
                     for (const bool year : {true, false}) {
-                        const long_format f{weekday, year, pad};
+                        const long_format f{.weekday = weekday, .year = year, .pad = pad};
                         buf.fill(kCanary);
                         auto r = nepdate::to_chars_long(
                             buf.data(), buf.data() + nepdate::max_long_size, d, f, l);
