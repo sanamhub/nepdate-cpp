@@ -2,7 +2,9 @@
 #define NEPDATE_PATRO_HPP
 
 // The patro (PATRO.md): tithi, holidays and events. This package depends on the core; the core
-// never mentions it (gate 9). The tables live only in patro.cpp (ADR-0002 section 7).
+// never mentions it (gate 9). The lookups and name accessors are inline over the generated tables
+// in <nepdate/detail/patro_tables.hpp> (ADR-0002 section 7, ADR-0007); coverage() and
+// public_holidays() stay in the compiled library.
 
 #include <nepdate/date.hpp>         // IWYU pragma: export
 #include <nepdate/date_range.hpp>   // IWYU pragma: export
@@ -29,7 +31,7 @@ class tithi {
     constexpr tithi(detail::tag /*unused*/, std::uint8_t index) noexcept : index_(index) {}
 
     /// Returns the tithi's name (PATRO section 2): np for lang::ne, en for lang::en.
-    [[nodiscard]] PATRO_EXPORT std::string_view name(lang l) const noexcept;
+    [[nodiscard]] std::string_view name(lang l) const noexcept;
 
     friend constexpr bool operator==(tithi, tithi) noexcept = default;
 
@@ -47,7 +49,7 @@ class event {
     constexpr event(detail::tag /*unused*/, std::uint16_t index) noexcept : index_(index) {}
 
     /// Returns the event's name (PATRO section 2): np for lang::ne, en for lang::en.
-    [[nodiscard]] PATRO_EXPORT std::string_view name(lang l) const noexcept;
+    [[nodiscard]] std::string_view name(lang l) const noexcept;
 
     friend constexpr bool operator==(event, event) noexcept = default;
 
@@ -79,7 +81,7 @@ class day_info {
     }
 
   private:
-    friend PATRO_EXPORT day_info info(date d) noexcept;
+    friend day_info info(date d) noexcept;
 
     constexpr day_info(detail::tag /*unused*/, const event* first, std::uint16_t count,
                        std::uint8_t tithi_index, bool holiday) noexcept
@@ -95,14 +97,52 @@ static_assert(sizeof(day_info) == 16);
 static_assert(std::is_trivially_copyable_v<day_info>);
 
 /// Returns what the patro says about d: empty outside the coverage. Never fails. The lookup is a
-/// range check, three table reads and one bit test (ADR-0002 section 7).
-[[nodiscard]] PATRO_EXPORT day_info info(date d) noexcept;
+/// range check, three table reads and one bit test (ADR-0002 section 7), inline so a loop over a
+/// month's days compiles to direct table reads (ADR-0007).
+[[nodiscard]] inline day_info info(date d) noexcept;
 
 /// Returns the smallest BS range containing every day with metadata in the bundled data.
 [[nodiscard]] PATRO_EXPORT date_range coverage() noexcept;
 
 /// Returns the bundled data's public holiday dates, ascending.
 [[nodiscard]] PATRO_EXPORT std::span<const date> public_holidays() noexcept;
+
+} // namespace nepdate::patro
+
+// The tables hold tithi, event and date values, so they come after those types.
+// NOLINTNEXTLINE(misc-header-include-cycle): split-header pair, see detail/patro_tables.hpp
+#include <nepdate/detail/patro_tables.hpp> // IWYU pragma: keep
+
+namespace nepdate::patro {
+
+namespace detail {
+// Name k of the name table (ADR-0002 section 7) in language l: np for lang::ne, en for lang::en.
+[[nodiscard]] inline std::string_view name_of(std::uint32_t k, lang l) noexcept {
+    const std::uint32_t i = k * 2U + (l == lang::ne ? 0U : 1U);
+    const std::uint32_t from = kNameOffsets[i];
+    return std::string_view{kNameBlob.data() + from, kNameOffsets[i + 1] - from};
+}
+} // namespace detail
+
+inline std::string_view tithi::name(lang l) const noexcept {
+    return detail::name_of(index_, l);
+}
+
+inline std::string_view event::name(lang l) const noexcept {
+    return detail::name_of(index_, l);
+}
+
+inline day_info info(date d) noexcept {
+    const std::uint32_t offset = nepdate::detail::to_serial(d) - detail::kFirst;
+    if (offset >= detail::kDays) {
+        return day_info{detail::tag{}, nullptr, 0, 0xFFU, false};
+    }
+    const std::uint16_t first = detail::kDayEventStart[offset];
+    const auto count = static_cast<std::uint16_t>(detail::kDayEventStart[offset + 1] - first);
+    const bool holiday = ((detail::kHolidayBits[offset / 64U] >> (offset % 64U)) & 1U) != 0U;
+    return day_info{detail::tag{}, detail::kEvents.data() + first, count, detail::kDayTithi[offset],
+                    holiday};
+}
 
 } // namespace nepdate::patro
 

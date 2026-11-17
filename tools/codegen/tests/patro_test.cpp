@@ -10,6 +10,7 @@
 #include <catch2/matchers/catch_matchers.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
+#include <algorithm>
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -286,11 +287,14 @@ TEST_CASE("rendering is deterministic and names the PATRO section 4 anchors", "[
     const std::string once = cg::render_patro_tables(b.tables, b.core_tables.month_start);
     const std::string twice = cg::render_patro_tables(b.tables, b.core_tables.month_start);
     CHECK(once == twice);
-    // The readable Nepali is in comments; the strings themselves are octal escapes.
+    // The header is installed, so it is 7-bit ASCII: Nepali names are octal escapes in string
+    // literals, and the comments carry the English names (ADR-0001 section 6).
     CHECK_THAT(once, ContainsSubstring("Panchami"));
-    CHECK_THAT(once, ContainsSubstring("पञ्चमी"));
     CHECK_THAT(once, ContainsSubstring("World Day Against Human Trafficking"));
-    CHECK_THAT(once, ContainsSubstring("'\\340','\\244','\\252'"));
+    CHECK_THAT(once, ContainsSubstring("\"\\340\\244\\252\\340\\244\\236"));
+    const auto non_ascii = std::find_if(
+        once.begin(), once.end(), [](char c) { return static_cast<unsigned char>(c) >= 0x80U; });
+    CHECK(non_ascii == once.end());
     const std::string config = cg::render_patro_config(b.core_tables.fingerprint);
     std::string fingerprint = "0x";
     constexpr std::string_view hex_digits = "0123456789abcdef";

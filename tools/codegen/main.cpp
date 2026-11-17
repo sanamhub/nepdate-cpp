@@ -165,7 +165,7 @@ int main(int argc, char** argv) {
          .content = nepdate::codegen::render_calendar_tables(parsed.value, built.value)},
         {.relative = fs::path("include/nepdate/detail/names_tables.hpp"),
          .content = nepdate::codegen::render_names_tables()},
-        {.relative = fs::path("patro/src/patro_tables.hpp"),
+        {.relative = fs::path("patro/include/nepdate/detail/patro_tables.hpp"),
          .content = nepdate::codegen::render_patro_tables(patro.value, built.value.month_start)},
         {.relative = fs::path("patro/include/nepdate/patro_config.hpp"),
          .content = nepdate::codegen::render_patro_config(built.value.fingerprint)},

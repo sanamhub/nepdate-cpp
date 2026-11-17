@@ -53,12 +53,6 @@ nepdate_set_warnings(nepdate_patro)
 if(COMMAND nepdate_set_instrumentation)
     nepdate_set_instrumentation(nepdate_patro)
 endif()
-if(MSVC)
-    # The generated patro_tables.hpp carries readable UTF-8 comments; the public headers
-    # stay 7-bit ASCII, so /utf-8 is private to this target and never propagates to users.
-    target_compile_options(nepdate_patro PRIVATE /utf-8)
-endif()
-
 # <nepdate/patro_export.hpp>, generated at configure time. Only functions are exported, never data
 # (ADR-0001 section 2; a dumpbin check verifies the shared build).
 include(GenerateExportHeader)
@@ -80,6 +74,9 @@ install(FILES
     "${CMAKE_CURRENT_BINARY_DIR}/include/nepdate/patro_export.hpp"
     include/nepdate/patro_config.hpp
     DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/nepdate")
+# The generated tables patro.hpp reads inline (ADR-0007); not public API.
+install(FILES include/nepdate/detail/patro_tables.hpp
+    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/nepdate/detail")
 install(EXPORT nepdatePatroTargets
     NAMESPACE nepdate::
     DESTINATION "${NEPDATE_PATRO_CONFIG_INSTALL_DIR}")

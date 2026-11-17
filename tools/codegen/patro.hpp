@@ -102,8 +102,8 @@ struct patro_summary_result {
 [[nodiscard]] std::string validate_patro_tables(const patro_tables& t, const patro_summary& summary,
                                                 const std::vector<std::uint32_t>& month_start);
 
-// The bytes of patro/src/patro_tables.hpp: octal escapes for the strings (ADR-0001 section 6),
-// readable Devanagari only in comments, LF line endings, no timestamps. month_start provides the
+// The bytes of patro/include/nepdate/detail/patro_tables.hpp: 7-bit ASCII with octal escapes for
+// the strings (ADR-0001 section 6), LF line endings, no timestamps. month_start provides the
 // BS date of each rendered day block.
 [[nodiscard]] std::string render_patro_tables(const patro_tables& t,
                                               const std::vector<std::uint32_t>& month_start);

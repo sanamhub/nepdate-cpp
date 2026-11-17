@@ -10,8 +10,6 @@ target_link_libraries(nepdate_patro_tests PRIVATE nepdate::patro Catch2::Catch2W
                                               Threads::Threads)
 target_compile_definitions(nepdate_patro_tests PRIVATE
     NEPDATE_SHARED_DIR="${PROJECT_SOURCE_DIR}/shared")
-# The catalogue rows check the port's generated tables directly.
-target_include_directories(nepdate_patro_tests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../src")
 nepdate_set_warnings(nepdate_patro_tests)
 nepdate_set_instrumentation(nepdate_patro_tests)
 if(NEPDATE_NO_EXCEPTIONS)
