@@ -229,9 +229,14 @@ endif()
 
 # ---- gate 6: clang-tidy ----
 if("tidy" IN_LIST gates)
-    find_program(clang_tidy NAMES clang-tidy-18 clang-tidy)
-    if(NOT clang_tidy)
-        ci_skip(tidy "clang-tidy not found")
+    # The tidy preset runs plain clang-tidy, so that is the one whose version counts.
+    find_program(clang_tidy NAMES clang-tidy)
+    set(tidy_version "")
+    if(clang_tidy)
+        execute_process(COMMAND "${clang_tidy}" --version OUTPUT_VARIABLE tidy_version)
+    endif()
+    if(NOT tidy_version MATCHES "version 22\\.")
+        ci_skip(tidy "clang-tidy 22 not found")
     else()
         ci_preset(tidy NO_TEST)
         if(NOT ci_rc EQUAL 0)

@@ -13,6 +13,7 @@
 #include <limits>
 #include <optional>
 #include <tuple>
+#include <utility>
 
 namespace nepdate {
 
@@ -121,7 +122,7 @@ class date {
 
     /// Returns the packed YYYYMMDD integer, for example 20810415 (D-11).
     [[nodiscard]] constexpr int to_ymd_int() const noexcept {
-        return year() * 10'000 + static_cast<int>(month()) * 100 + day();
+        return (year() * 10'000) + (static_cast<int>(month()) * 100) + day();
     }
 
     /// Returns the weekday (ALGORITHM section 7).
@@ -255,7 +256,7 @@ constexpr std::uint32_t detail::date_access::packed(date d) noexcept {
 
 constexpr std::uint32_t detail::month_index(date d) noexcept {
     const std::uint32_t v = date_access::packed(d);
-    return ((v >> 16U) - static_cast<std::uint32_t>(kMinYear)) * 12U + ((v >> 8U) & 0xFFU) - 1U;
+    return (((v >> 16U) - static_cast<std::uint32_t>(kMinYear)) * 12U) + ((v >> 8U) & 0xFFU) - 1U;
 }
 
 /// result<date> is 4 bytes (ADR-0002 section 1): every valid date has a year of at least 1901 in
@@ -360,7 +361,7 @@ constexpr result<date> date::add_days(int n) const noexcept {
 constexpr date detail::in_month_clamped(date d, std::uint32_t i) noexcept {
     const std::uint32_t length = month_days(i);
     const std::uint32_t day = date_access::packed(d) & 0xFFU;
-    return date_access::make(pack(static_cast<std::uint32_t>(kMinYear) + i / 12U, i % 12U + 1U,
+    return date_access::make(pack(static_cast<std::uint32_t>(kMinYear) + (i / 12U), (i % 12U) + 1U,
                                   day < length ? day : length));
 }
 
@@ -385,7 +386,7 @@ constexpr result<date> date::add_months(int n, overflow o) const noexcept {
         return errc::out_of_range;
     }
     return detail::date_access::make(
-        detail::pack(static_cast<std::uint32_t>(detail::kMinYear) + j / 12U, j % 12U + 1U,
+        detail::pack(static_cast<std::uint32_t>(detail::kMinYear) + (j / 12U), (j % 12U) + 1U,
                      static_cast<std::uint32_t>(day() - target.day())));
 }
 
@@ -415,8 +416,11 @@ constexpr date_diff date::diff(date other) const noexcept {
         --n;
         landed = detail::in_month_clamped(a, ib - 1U);
     }
-    return date_diff{negative, static_cast<int>(n / 12U), static_cast<int>(n % 12U),
-                     landed.days_until(b), days_until(other)};
+    return date_diff{.negative = negative,
+                     .years = static_cast<int>(n / 12U),
+                     .months = static_cast<int>(n % 12U),
+                     .days = landed.days_until(b),
+                     .total_days = days_until(other)};
 }
 
 constexpr std::optional<date> date::next() const noexcept {
@@ -447,7 +451,7 @@ constexpr std::optional<date> date::prev() const noexcept {
     if (m >= 12U) {
         return errc::invalid_month;
     }
-    const unsigned i = y * 12U + m;
+    const unsigned i = (y * 12U) + m;
     const unsigned d = static_cast<unsigned>(day) - 1U;
     if (d >= detail::kMonthStart[i + 1] - detail::kMonthStart[i]) {
         return errc::invalid_day;
@@ -479,7 +483,7 @@ namespace detail {
 // Returns the BS date of a Unix day, or out_of_range outside AD 1844-04-11..2143-04-15.
 [[nodiscard]] constexpr result<date> from_unix_days(std::int64_t days) noexcept {
     const std::int64_t serial = days - kEpochUnixDays;
-    if (serial < 0 || serial > static_cast<std::int64_t>(kMaxSerial)) {
+    if (serial < 0 || std::cmp_greater(serial, kMaxSerial)) {
         return errc::out_of_range;
     }
     return from_serial(static_cast<std::uint32_t>(serial));

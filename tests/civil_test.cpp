@@ -56,11 +56,11 @@ TEST_CASE("ALGORITHM section 9 reference values", "[civil]") {
         unsigned weekday; // 0 = Sunday
     };
     constexpr std::array<row, 5> rows = {{
-        {1901, 1, 1, 1844, 4, 11, 4},
-        {2081, 1, 1, 2024, 4, 13, 6},
-        {2082, 1, 1, 2025, 4, 14, 1},
-        {2083, 1, 1, 2026, 4, 14, 2},
-        {2199, 12, 30, 2143, 4, 15, 9},
+        {.bs_y = 1901, .bs_m = 1, .bs_d = 1, .ad_y = 1844, .ad_m = 4, .ad_d = 11, .weekday = 4},
+        {.bs_y = 2081, .bs_m = 1, .bs_d = 1, .ad_y = 2024, .ad_m = 4, .ad_d = 13, .weekday = 6},
+        {.bs_y = 2082, .bs_m = 1, .bs_d = 1, .ad_y = 2025, .ad_m = 4, .ad_d = 14, .weekday = 1},
+        {.bs_y = 2083, .bs_m = 1, .bs_d = 1, .ad_y = 2026, .ad_m = 4, .ad_d = 14, .weekday = 2},
+        {.bs_y = 2199, .bs_m = 12, .bs_d = 30, .ad_y = 2143, .ad_m = 4, .ad_d = 15, .weekday = 9},
     }};
     for (const row& r : rows) {
         const date bs = make_date(r.bs_y, r.bs_m, r.bs_d).value();

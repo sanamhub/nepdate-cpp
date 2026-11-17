@@ -1,4 +1,4 @@
-# clang-tidy 18 (gate 6, ADR-0004 §1). Disabled checks and why:
+# clang-tidy 22 (gate 6, ADR-0007). Disabled checks and why:
 # - cppcoreguidelines-avoid-magic-numbers, readability-magic-numbers: calendar code is full of
 #   numbers the spec names (1901, 12, 32); a constant for each would hide them, not explain them.
 # - cppcoreguidelines-pro-bounds-constant-array-index: tables are indexed after a range check
@@ -18,6 +18,14 @@
 #   day), a documented, spec-mandated order that the exhaustive round-trip and catalogue tests
 #   cover; the detail helpers use the (first, last, ...) iterator-pair convention. The check cannot
 #   be satisfied without wrapping primitives or renaming to less informative names.
+# - cppcoreguidelines-pro-bounds-avoid-unchecked-container-access: the same rule as
+#   pro-bounds-constant-array-index for std::array and std::vector: tables are indexed after a
+#   range check (ADR-0002 section 3), and .at() would check twice. Off in tests too.
+# - bugprone-invalid-enum-default-initialization: errc{} is the documented "no error" value
+#   (detail/result.hpp: the value 0 is never an error). A zero enumerator would change the public
+#   enum.
+# - bugprone-derived-method-shadowing-base-method: the range views define size() on purpose;
+#   std::ranges::view_interface is a CRTP base that expects the derived class to supply it.
 Checks: >
   -*,
   bugprone-*,
@@ -26,7 +34,10 @@ Checks: >
   -cppcoreguidelines-avoid-magic-numbers,
   -cppcoreguidelines-pro-bounds-constant-array-index,
   -cppcoreguidelines-pro-bounds-pointer-arithmetic,
+  -cppcoreguidelines-pro-bounds-avoid-unchecked-container-access,
   -bugprone-easily-swappable-parameters,
+  -bugprone-invalid-enum-default-initialization,
+  -bugprone-derived-method-shadowing-base-method,
   modernize-*,
   -modernize-use-trailing-return-type,
   performance-*,

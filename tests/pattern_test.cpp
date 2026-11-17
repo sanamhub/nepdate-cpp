@@ -13,6 +13,7 @@
 #include <string>
 #include <string_view>
 #include <system_error>
+#include <utility>
 
 using nepdate::date;
 using nepdate::format_pattern;
@@ -95,10 +96,10 @@ TEST_CASE("count_sink measures exactly what span_sink writes", "[format][vectors
             INFO(row[bs] << " " << row[pattern] << " " << static_cast<int>(l));
             nepdate::detail::count_sink count;
             nepdate::detail::write_pattern(count, d, row[pattern], l);
-            nepdate::detail::span_sink sink{buf.data(), buf.data() + buf.size()};
+            nepdate::detail::span_sink sink{.p = buf.data(), .last = buf.data() + buf.size()};
             nepdate::detail::write_pattern(sink, d, row[pattern], l);
             REQUIRE(sink.ok);
-            CHECK(count.n == static_cast<std::size_t>(sink.p - buf.data()));
+            CHECK(std::cmp_equal(count.n, sink.p - buf.data()));
             ++checked;
         }
     }

@@ -10,6 +10,7 @@
 #include <iterator>
 #include <ranges>
 #include <type_traits>
+#include <utility>
 
 // NOLINTBEGIN(bugprone-unchecked-optional-access): every std::optional is dereferenced
 // after a REQUIRE(has_value()) guard, which the purely syntactic check cannot see.
@@ -94,7 +95,7 @@ TEST_CASE("the iterator walks of_year(2081) like add_days", "[range]") {
     const date_range r = date_range::of_year(2081).value();
     CHECK(std::ranges::distance(r) == static_cast<std::ptrdiff_t>(r.size()));
     const auto first = r.begin();
-    for (std::ptrdiff_t k = 0; k < static_cast<std::ptrdiff_t>(r.size()); ++k) {
+    for (std::ptrdiff_t k = 0; std::cmp_less(k, r.size()); ++k) {
         CHECK(first[k] == r.first().add_days(static_cast<int>(k)));
     }
     auto it = r.end();

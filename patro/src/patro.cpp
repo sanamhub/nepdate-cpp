@@ -15,7 +15,7 @@ namespace {
 
 // Name k of the table (0 = np, 1 = en) through the blob and its offsets.
 std::string_view name_of(std::uint16_t k, lang l) noexcept {
-    const std::size_t i = static_cast<std::size_t>(k) * 2U + (l == lang::ne ? 0U : 1U);
+    const std::size_t i = (static_cast<std::size_t>(k) * 2U) + (l == lang::ne ? 0U : 1U);
     const std::uint32_t from = kNameOffsets[i];
     const std::uint32_t to = kNameOffsets[i + 1];
     return {kNameBlob.data() + from, to - from};
