@@ -15,8 +15,8 @@ Bikram Sambat dates for C++20. `nepdate` converts between the Bikram Sambat (Nep
 Gregorian calendars for BS 1901-01-01 to 2199-12-30 (AD 1844-04-11 to 2143-04-15), with
 arithmetic, ranges, fiscal years, formatting and parsing. The core is header-only with no
 dependencies, the `to_chars` and parse paths allocate nothing (0 bytes, checked by the allocation
-tests), and conversion is `constexpr`, so it also runs at compile time. BS to AD takes 7.09 ns on
-MSVC and 5.58 ns on Clang, against 13.29 ns for C# NepDate ([`docs/benchmarks.md`](https://github.com/sanamhub/nepdate-cpp/blob/main/docs/benchmarks.md)).
+tests), and conversion is `constexpr`, so it also runs at compile time. BS to AD takes 6.58 ns on
+MSVC, against 13.27 ns for C# NepDate ([`docs/benchmarks.md`](https://github.com/sanamhub/nepdate-cpp/blob/main/docs/benchmarks.md)).
 
 ```cpp
 #include <nepdate/nepdate.hpp>
@@ -271,16 +271,16 @@ differences from the original are the `D-xx` rows in
 
 ## Performance
 
-Every row is faster than C# NepDate and allocates nothing, measured with Google Benchmark on a
-laptop that was not idle. B8 still misses its own 250 ns target. Details are in
+Every row is faster than C# NepDate and allocates nothing, measured with Google Benchmark on an
+idle machine, pinned to one core. B7 and B8 still miss their own targets. Details are in
 [`docs/benchmarks.md`](https://github.com/sanamhub/nepdate-cpp/blob/main/docs/benchmarks.md).
 
-| Operation | MSVC ns/op | Clang ns/op | C# ns/op |
-|---|---|---:|---:|
-| B1 BS to AD | 7.09 | 5.58 | 13.29 |
-| B2 AD to BS | 8.94 | 6.23 | 18.64 |
-| B6 strict parse | 12.13 | 10.13 | 21.55 |
-| B8 patro month grid | 516.64 | about 450 | 3,132.66 |
+| Operation | MSVC ns/op | C# ns/op |
+|---|---:|---:|
+| B1 BS to AD | 6.58 | 13.27 |
+| B2 AD to BS | 7.84 | 18.70 |
+| B6 strict parse | 10.01 | 21.13 |
+| B8 patro month grid | 503.55 | 3,274.50 |
 
 ## More
 
