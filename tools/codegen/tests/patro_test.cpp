@@ -295,8 +295,8 @@ TEST_CASE("rendering is deterministic and names the PATRO section 4 anchors", "[
     CHECK_THAT(once, ContainsSubstring("Panchami"));
     CHECK_THAT(once, ContainsSubstring("World Day Against Human Trafficking"));
     CHECK_THAT(once, ContainsSubstring("\"\\340\\244\\252\\340\\244\\236"));
-    const bool ascii = std::ranges::none_of(
-        once, [](char c) { return static_cast<unsigned char>(c) >= 0x80U; });
+    const bool ascii =
+        std::ranges::none_of(once, [](char c) { return static_cast<unsigned char>(c) >= 0x80U; });
     CHECK(ascii);
     const std::string config = cg::render_patro_config(b.core_tables.fingerprint);
     std::string fingerprint = "0x";
