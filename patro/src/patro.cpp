@@ -1,5 +1,5 @@
 // The patro queries that stay compiled (PATRO section 2). info() and the name accessors are inline
-// in patro.hpp over the generated tables (ADR-0007).
+// in patro.hpp over the generated tables (ADR-0008).
 #include <nepdate/patro.hpp>
 
 #include <span>

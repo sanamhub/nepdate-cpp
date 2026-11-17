@@ -63,13 +63,16 @@ built build_all() {
     REQUIRE(parsed_patro.error.empty());
     const auto tables = cg::build_patro_tables(parsed_patro.value, core.value.month_start);
     REQUIRE(tables.error.empty());
-    return built{parsed.value, core.value, parsed_patro.value, tables.value};
+    return built{.calendar = parsed.value,
+                 .core_tables = core.value,
+                 .input = parsed_patro.value,
+                 .tables = tables.value};
 }
 
 // Serial of a BS date through the month-start table (ALGORITHM section 4).
 std::uint32_t serial(const built& b, int year, int month, int day) {
     const std::size_t i =
-        static_cast<std::size_t>(year - 1901) * 12U + static_cast<std::size_t>(month - 1);
+        (static_cast<std::size_t>(year - 1901) * 12U) + static_cast<std::size_t>(month - 1);
     return b.core_tables.month_start.at(i) + static_cast<std::uint32_t>(day) - 1U;
 }
 
@@ -78,7 +81,7 @@ std::string date_of_serial(const built& b, std::uint32_t serial_value) {
     while (b.core_tables.month_start[i + 1] <= serial_value) {
         ++i;
     }
-    const int year = 1901 + static_cast<int>(i) / 12;
+    const int year = 1901 + (static_cast<int>(i) / 12);
     const int month = static_cast<int>(i % 12U) + 1;
     const int day = static_cast<int>(serial_value - b.core_tables.month_start[i]) + 1;
     const auto pad = [](int value) {
@@ -165,7 +168,7 @@ TEST_CASE("the patro tables match the hub summary", "[patro]") {
     CHECK(event_names_of(t) == summary.event_names);
     CHECK(t.name_blob.size() == summary.name_bytes);
     CHECK(t.holiday_bits.size() == (t.days + 63U) / 64U);
-    CHECK(t.name_offsets.size() == t.names.size() * 2U + 1U);
+    CHECK(t.name_offsets.size() == (t.names.size() * 2U) + 1U);
     CHECK(t.name_offsets.back() == t.name_blob.size());
     CHECK(cg::validate_patro_tables(t, summary, b.core_tables.month_start).empty());
 }
@@ -252,8 +255,8 @@ TEST_CASE("every name resolves through the blob to non-empty text", "[patro]") {
     for (std::size_t k = 0; k < t.names.size(); ++k) {
         CAPTURE(k);
         const std::uint32_t np = t.name_offsets[2 * k];
-        const std::uint32_t en = t.name_offsets[2 * k + 1];
-        const std::uint32_t end = t.name_offsets[2 * k + 2];
+        const std::uint32_t en = t.name_offsets[(2 * k) + 1];
+        const std::uint32_t end = t.name_offsets[(2 * k) + 2];
         CHECK(np < en);
         CHECK(en <= end);
         CHECK(end <= t.name_blob.size());

@@ -30,21 +30,23 @@ struct scanned_char {
                                                std::string_view separators) noexcept {
     const auto c = static_cast<unsigned char>(s[i]);
     if (c >= '0' && c <= '9') {
-        return {char_kind::digit, static_cast<std::uint8_t>(c - '0'), 1};
+        return {.kind = char_kind::digit, .digit = static_cast<std::uint8_t>(c - '0'), .size = 1};
     }
     if (c == 0xE0U && s.size() - i >= 3 && static_cast<unsigned char>(s[i + 1]) == 0xA5U) {
         const auto third = static_cast<unsigned char>(s[i + 2]);
         if (third >= 0xA6U && third <= 0xAFU) {
-            return {char_kind::digit, static_cast<std::uint8_t>(third - 0xA6U), 3};
+            return {.kind = char_kind::digit,
+                    .digit = static_cast<std::uint8_t>(third - 0xA6U),
+                    .size = 3};
         }
         if (third == 0xA4U) {
-            return {char_kind::separator, 0, 3};
+            return {.kind = char_kind::separator, .digit = 0, .size = 3};
         }
     }
     if (c < 0x80U && separators.find(static_cast<char>(c)) != std::string_view::npos) {
-        return {char_kind::separator, 0, 1};
+        return {.kind = char_kind::separator, .digit = 0, .size = 1};
     }
-    return {char_kind::other, 0, 1};
+    return {.kind = char_kind::other, .digit = 0, .size = 1};
 }
 
 [[nodiscard]] constexpr bool is_ascii_digit(char c) noexcept {
@@ -113,7 +115,7 @@ constexpr void read_digits(std::string_view t, int& digits, int& value) noexcept
         i += size;
         ++digits;
         if (digits <= 4) {
-            value = value * 10 + d;
+            value = (value * 10) + d;
         }
     }
 }
@@ -324,7 +326,7 @@ constexpr void classify_word(std::string_view token, lenient_state& st) noexcept
             if (digits == 4) {
                 return errc::number_too_long;
             }
-            groups[group] = groups[group] * 10 + c.digit;
+            groups[group] = (groups[group] * 10) + c.digit;
             ++digits;
         } else if (c.kind == detail::char_kind::separator) {
             if (digits > 0) {

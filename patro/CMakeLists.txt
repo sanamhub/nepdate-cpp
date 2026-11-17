@@ -74,7 +74,7 @@ install(FILES
     "${CMAKE_CURRENT_BINARY_DIR}/include/nepdate/patro_export.hpp"
     include/nepdate/patro_config.hpp
     DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/nepdate")
-# The generated tables patro.hpp reads inline (ADR-0007); not public API.
+# The generated tables patro.hpp reads inline (ADR-0008); not public API.
 install(FILES include/nepdate/detail/patro_tables.hpp
     DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/nepdate/detail")
 install(EXPORT nepdatePatroTargets

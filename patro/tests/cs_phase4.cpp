@@ -42,7 +42,7 @@ date d(int y, int m, int day) {
 }
 
 std::string_view name_of(std::size_t k, lang l) {
-    const std::uint32_t i = static_cast<std::uint32_t>(k) * 2U + (l == lang::ne ? 0U : 1U);
+    const std::uint32_t i = (static_cast<std::uint32_t>(k) * 2U) + (l == lang::ne ? 0U : 1U);
     return {detail::kNameBlob.data() + detail::kNameOffsets[i],
             detail::kNameOffsets[i + 1] - detail::kNameOffsets[i]};
 }
@@ -67,7 +67,7 @@ TEST_CASE("CalendarDataTests.CalendarStrings_Pool_AllEntriesHaveNonEmptyNpAndEn"
 TEST_CASE("CalendarDataTests.CalendarOffsets_MonthStart_HasExpectedLength", "[cs]") {
     // The port's calendar is 1901..2199 (ALGORITHM section 1): 299 years of 12 months, plus the
     // total as a sentinel.
-    CHECK(nepdate::detail::kMonthStart.size() == 299U * 12U + 1U);
+    CHECK(nepdate::detail::kMonthStart.size() == (299U * 12U) + 1U);
 }
 
 TEST_CASE("CalendarDataTests.CalendarOffsets_MonthStart_IsStrictlyMonotonic", "[cs]") {

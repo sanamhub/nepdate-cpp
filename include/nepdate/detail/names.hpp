@@ -36,10 +36,12 @@ namespace nepdate::detail {
     // min_width can be any int; widening keeps width * 3 from overflowing.
     const auto width = static_cast<std::size_t>(min_width > count ? min_width : count);
     const std::size_t bytes = width * digit_bytes(l);
-    if (bytes / digit_bytes(l) != width || bytes > static_cast<std::size_t>(last - first)) {
+    const auto room = static_cast<std::size_t>(last - first); // first <= last
+    if (bytes / digit_bytes(l) != width || bytes > room) {
         return nullptr;
     }
     char* const end = first + bytes;
+    // NOLINTNEXTLINE(misc-const-correctness): the loops below write through *--p
     char* p = end;
     if (l == lang::ne) {
         // Devanagari digit k is U+0966 + k: the bytes E0 A5 (A6 + k).

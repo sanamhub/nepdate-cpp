@@ -1,4 +1,4 @@
-# ADR-0007: Patro tables in an installed header, lookups inline
+# ADR-0008: Patro tables in an installed header, lookups inline
 
 - Status: Accepted
 - Date: 2026-11-17

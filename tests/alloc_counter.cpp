@@ -26,7 +26,7 @@ void* allocate_aligned(std::size_t size, std::align_val_t align) noexcept {
     const auto alignment = static_cast<std::size_t>(align);
     const std::size_t rounded =
         size == 0 ? alignment : (size + alignment - 1) / alignment * alignment;
-#if defined(_WIN32)
+#ifdef _WIN32
     return _aligned_malloc(rounded, alignment);
 #else
     return std::aligned_alloc(alignment, rounded);
@@ -45,7 +45,7 @@ void release(void* p) noexcept {
 }
 
 void release_aligned(void* p) noexcept {
-#if defined(_WIN32)
+#ifdef _WIN32
     _aligned_free(p);
 #else
     std::free(p);

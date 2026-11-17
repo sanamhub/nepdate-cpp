@@ -20,7 +20,7 @@ struct civil {
 // The shift moves every year of interest to a positive count of 400-year eras, so all arithmetic
 // is unsigned 32-bit: s = 82, K = 719468 + 146097 * s, L = 400 * s.
 inline constexpr std::uint32_t kCivilShift = 82;
-inline constexpr std::uint32_t kCivilK = 719468U + 146097U * kCivilShift;
+inline constexpr std::uint32_t kCivilK = 719468U + (146097U * kCivilShift);
 inline constexpr std::uint32_t kCivilL = 400U * kCivilShift;
 
 // Unix days of a valid Gregorian date. Precondition: year in -32800..1000000 or so; the library
@@ -31,8 +31,8 @@ inline constexpr std::uint32_t kCivilL = 400U * kCivilShift;
     const std::uint32_t m = j != 0U ? month + 12U : month;
     const std::uint32_t d = day - 1U;
     const std::uint32_t c = y / 100U;
-    const std::uint32_t y_days = 1461U * y / 4U - c + c / 4U;
-    const std::uint32_t m_days = (979U * m - 2919U) / 32U;
+    const std::uint32_t y_days = (1461U * y / 4U) - c + (c / 4U);
+    const std::uint32_t m_days = ((979U * m) - 2919U) / 32U;
     const std::uint32_t n = y_days + m_days + d;
     return static_cast<int>(n) - static_cast<int>(kCivilK);
 }
@@ -41,23 +41,24 @@ inline constexpr std::uint32_t kCivilL = 400U * kCivilShift;
 [[nodiscard]] constexpr civil civil_from_days(int days) noexcept {
     const std::uint32_t n = static_cast<std::uint32_t>(days) + kCivilK;
     // Century and day of the century.
-    const std::uint32_t n1 = 4U * n + 3U;
+    const std::uint32_t n1 = (4U * n) + 3U;
     const std::uint32_t c = n1 / 146097U;
     const std::uint32_t nc = n1 % 146097U / 4U;
     // Year of the century and day of the year: one 64-bit product.
-    const std::uint32_t n2 = 4U * nc + 3U;
+    const std::uint32_t n2 = (4U * nc) + 3U;
     const std::uint64_t p2 = std::uint64_t{2939745U} * n2;
     const auto z = static_cast<std::uint32_t>(p2 >> 32U);
     const std::uint32_t ny = static_cast<std::uint32_t>(p2) / 2939745U / 4U;
-    const std::uint32_t y = 100U * c + z;
+    const std::uint32_t y = (100U * c) + z;
     // Month and day, counting from March.
-    const std::uint32_t n3 = 2141U * ny + 197913U;
+    const std::uint32_t n3 = (2141U * ny) + 197913U;
     const std::uint32_t m = n3 >> 16U;
     const std::uint32_t d = (n3 & 0xFFFFU) / 2141U;
     // January and February belong to the next year.
     const std::uint32_t j = ny >= 306U ? 1U : 0U;
-    return civil{static_cast<int>(y + j) - static_cast<int>(kCivilL), j != 0U ? m - 12U : m,
-                 d + 1U};
+    return civil{.year = static_cast<int>(y + j) - static_cast<int>(kCivilL),
+                 .month = j != 0U ? m - 12U : m,
+                 .day = d + 1U};
 }
 
 // Days in a Gregorian month. Precondition: month in 1..12.

@@ -23,12 +23,12 @@ enum class quarter : std::uint8_t { q1 = 1, q2, q3, q4 };
 [[nodiscard]] constexpr quarter quarter_of(date d) noexcept {
     // Shrawan (4) maps to 0, so whole quarters are runs of three from there.
     const auto m = static_cast<unsigned>(d.month());
-    return static_cast<quarter>((m + 8U) % 12U / 3U + 1U);
+    return static_cast<quarter>(((m + 8U) % 12U / 3U) + 1U);
 }
 
 /// Returns the three months of q in calendar order. Precondition: q is q1..q4.
 [[nodiscard]] constexpr std::array<month, 3> months_of(quarter q) noexcept {
-    const unsigned first = 3U * static_cast<unsigned>(q) % 12U + 1U;
+    const unsigned first = (3U * static_cast<unsigned>(q) % 12U) + 1U;
     return {static_cast<month>(first), static_cast<month>(first + 1U),
             static_cast<month>(first + 2U)};
 }
@@ -104,7 +104,7 @@ class fiscal_year {
     /// the buffer is too small. A negative start year gets a leading '-'.
     [[nodiscard]] constexpr std::to_chars_result to_chars_label(char* first, char* last,
                                                                 lang l) const noexcept {
-        const std::to_chars_result too_small{last, std::errc::value_too_large};
+        const std::to_chars_result too_small{.ptr = last, .ec = std::errc::value_too_large};
         if (y_ < 0) {
             if (first == last) {
                 return too_small;
@@ -126,7 +126,7 @@ class fiscal_year {
         if (p == nullptr) {
             return too_small;
         }
-        return {p, std::errc{}};
+        return {.ptr = p, .ec = std::errc{}};
     }
 
     /// Returns the label that to_chars_label writes. Allocates only the returned string.

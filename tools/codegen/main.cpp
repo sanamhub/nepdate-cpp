@@ -128,7 +128,7 @@ int main(int argc, char** argv) {
             patro_paths.push_back(entry.path());
         }
     }
-    std::sort(patro_paths.begin(), patro_paths.end());
+    std::ranges::sort(patro_paths);
     if (patro_paths.empty()) {
         std::cerr << "no patro year files under " << patro_dir.generic_string() << '\n';
         return 2;

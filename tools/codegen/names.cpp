@@ -108,7 +108,7 @@ std::vector<std::string_view> spellings(std::string_view row) {
             end = row.size();
         }
         const std::string_view word = row.substr(start, end - start);
-        if (std::find(out.begin(), out.end(), word) == out.end()) {
+        if (std::ranges::find(out, word) == out.end()) {
             out.push_back(word);
         }
         start = end + 2;
@@ -143,8 +143,8 @@ std::string render_names_tables() {
         if (n % kPairsPerLine == 0) {
             out += "    \"";
         }
-        out += static_cast<char>('0' + n / 10);
-        out += static_cast<char>('0' + n % 10);
+        out += static_cast<char>('0' + (n / 10));
+        out += static_cast<char>('0' + (n % 10));
         if (n % kPairsPerLine == kPairsPerLine - 1) {
             out += n == 99 ? "\";\n" : "\"\n";
         }
@@ -183,7 +183,8 @@ std::string render_names_tables() {
     out += "inline constexpr std::array<month_spelling, " + std::to_string(all.size()) +
            "> kMonthSpellings = {{\n";
     for (const auto& [word, month] : all) {
-        std::string line = "    {" + literal(word) + ", " + std::to_string(month) + "},";
+        std::string line =
+            "    {.text = " + literal(word) + ", .month = " + std::to_string(month) + "},";
         const std::string cps = code_points(word);
         if (!cps.empty()) {
             line += " // " + cps;

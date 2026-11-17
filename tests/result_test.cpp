@@ -60,7 +60,7 @@ struct pair {
 } // namespace
 
 TEST_CASE("operator-> reaches the value", "[result]") {
-    constexpr result<pair> r = pair{1, 2};
+    constexpr result<pair> r = pair{.a = 1, .b = 2};
     STATIC_REQUIRE(r->b == 2);
     STATIC_REQUIRE(r == result<pair>{pair{1, 2}});
 }
@@ -112,7 +112,7 @@ TEST_CASE("errc integrates with std::error_code and std::error_condition", "[res
     CHECK(nepdate::errc_category().name() == std::string("nepdate"));
 }
 
-#if !defined(CATCH_CONFIG_DISABLE_EXCEPTIONS)
+#ifndef CATCH_CONFIG_DISABLE_EXCEPTIONS
 TEST_CASE("result::value throws bad_result_access on an error", "[result][error]") {
     CHECK_THROWS_AS(nepdate::make_date(2081, 4, 33).value(), nepdate::bad_result_access);
     CHECK_THROWS_AS(result<int>{errc::out_of_range}.value(), nepdate::bad_result_access);

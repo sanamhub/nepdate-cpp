@@ -3,7 +3,7 @@
 
 // The patro (PATRO.md): tithi, holidays and events. This package depends on the core; the core
 // never mentions it (gate 9). The lookups and name accessors are inline over the generated tables
-// in <nepdate/detail/patro_tables.hpp> (ADR-0002 section 7, ADR-0007); coverage() and
+// in <nepdate/detail/patro_tables.hpp> (ADR-0002 section 7, ADR-0008); coverage() and
 // public_holidays() stay in the compiled library.
 
 #include <nepdate/date.hpp>         // IWYU pragma: export
@@ -98,7 +98,7 @@ static_assert(std::is_trivially_copyable_v<day_info>);
 
 /// Returns what the patro says about d: empty outside the coverage. Never fails. The lookup is a
 /// range check, three table reads and one bit test (ADR-0002 section 7), inline so a loop over a
-/// month's days compiles to direct table reads (ADR-0007).
+/// month's days compiles to direct table reads (ADR-0008).
 [[nodiscard]] inline day_info info(date d) noexcept;
 
 /// Returns the smallest BS range containing every day with metadata in the bundled data.
@@ -118,7 +118,7 @@ namespace nepdate::patro {
 namespace detail {
 // Name k of the name table (ADR-0002 section 7) in language l: np for lang::ne, en for lang::en.
 [[nodiscard]] inline std::string_view name_of(std::uint32_t k, lang l) noexcept {
-    const std::uint32_t i = k * 2U + (l == lang::ne ? 0U : 1U);
+    const std::uint32_t i = (k * 2U) + (l == lang::ne ? 0U : 1U);
     const std::uint32_t from = kNameOffsets[i];
     return std::string_view{kNameBlob.data() + from, kNameOffsets[i + 1] - from};
 }

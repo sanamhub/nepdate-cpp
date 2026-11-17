@@ -46,15 +46,15 @@ template <class F> std::size_t allocations_of(F f) {
 
 TEST_CASE("make_date allocates nothing", "[alloc]") {
     const auto n = allocations_of([](int i) {
-        sink(static_cast<std::size_t>(make_date(2081, 1 + i % 12, 1 + i % 28).has_value()));
+        sink(static_cast<std::size_t>(make_date(2081, 1 + (i % 12), 1 + (i % 28)).has_value()));
     });
     CHECK(n == 0);
 }
 
 TEST_CASE("from_gregorian allocates nothing", "[alloc]") {
     const auto n = allocations_of([](int i) {
-        sink(
-            static_cast<std::size_t>(nepdate::from_gregorian(2024, 1 + i % 12, 1 + i % 28)->day()));
+        sink(static_cast<std::size_t>(
+            nepdate::from_gregorian(2024, 1 + (i % 12), 1 + (i % 28))->day()));
     });
     CHECK(n == 0);
 }
@@ -85,7 +85,7 @@ TEST_CASE("comparison and std::hash allocate nothing", "[alloc]") {
 TEST_CASE("add_days, next, prev and days_until allocate nothing", "[alloc]") {
     const date d = make_date(2081, 4, 15).value();
     const auto add = allocations_of(
-        [d](int i) { sink(static_cast<std::size_t>(d.add_days(i - kRuns / 2)->day())); });
+        [d](int i) { sink(static_cast<std::size_t>(d.add_days(i - (kRuns / 2))->day())); });
     const auto next =
         allocations_of([d](int /*i*/) { sink(static_cast<std::size_t>(d.next()->day())); });
     const auto prev =
@@ -101,10 +101,11 @@ TEST_CASE("add_days, next, prev and days_until allocate nothing", "[alloc]") {
 TEST_CASE("add_months and add_years allocate nothing", "[alloc]") {
     const date d = make_date(2081, 4, 32).value();
     const auto months = allocations_of([d](int i) {
-        sink(static_cast<std::size_t>(d.add_months(i % 100 - 50, nepdate::overflow::spill)->day()));
+        sink(static_cast<std::size_t>(
+            d.add_months((i % 100) - 50, nepdate::overflow::spill)->day()));
     });
     const auto years = allocations_of(
-        [d](int i) { sink(static_cast<std::size_t>(d.add_years(i % 100 - 50)->day())); });
+        [d](int i) { sink(static_cast<std::size_t>(d.add_years((i % 100) - 50)->day())); });
     CHECK(months == 0);
     CHECK(years == 0);
 }
@@ -112,7 +113,7 @@ TEST_CASE("add_months and add_years allocate nothing", "[alloc]") {
 TEST_CASE("diff allocates nothing", "[alloc]") {
     const date a = make_date(2081, 4, 32).value();
     const auto n = allocations_of([a](int i) {
-        const date b = a.add_days(i * 37 - 18000).value();
+        const date b = a.add_days((i * 37) - 18000).value();
         sink(static_cast<std::size_t>(a.diff(b).days));
     });
     CHECK(n == 0);
@@ -124,7 +125,7 @@ TEST_CASE("date_range construction and a full iteration of of_year(2081) allocat
     const auto build = allocations_of([a](int i) {
         const auto r = nepdate::date_range::make(a, a.add_days(i).value());
         const auto month = nepdate::date_range::of_month(2081, nepdate::month::shrawan);
-        const auto year = nepdate::date_range::of_year(1901 + i % 299);
+        const auto year = nepdate::date_range::of_year(1901 + (i % 299));
         sink(r->size() + month->size() + year->size() + static_cast<std::size_t>(r->contains(a)));
     });
     const auto iterate = allocations_of([](int /*i*/) {
@@ -161,7 +162,8 @@ TEST_CASE("every to_chars_* writes without allocating", "[alloc]") {
         const auto b = nepdate::to_chars_iso(buf.data(), buf.data() + buf.size(), d);
         const auto c = nepdate::to_chars_short(
             buf.data(), buf.data() + buf.size(), d,
-            {nepdate::date_order::dmy, nepdate::separator::dash, false}, nepdate::lang::ne);
+            {.order = nepdate::date_order::dmy, .sep = nepdate::separator::dash, .pad = false},
+            nepdate::lang::ne);
         const auto e = nepdate::to_chars_long(buf.data(), buf.data() + buf.size(), d,
                                               {.weekday = true}, nepdate::lang::ne);
         const auto f = nepdate::to_chars_pattern(buf.data(), buf.data() + buf.size(), d,
@@ -178,7 +180,7 @@ TEST_CASE("every to_chars_* writes without allocating", "[alloc]") {
 TEST_CASE("month and weekday names allocate nothing", "[alloc]") {
     const date d = make_date(2081, 4, 15).value();
     const auto n = allocations_of([d](int i) {
-        const auto m = static_cast<nepdate::month>(1 + i % 12);
+        const auto m = static_cast<nepdate::month>(1 + (i % 12));
         sink(nepdate::month_name(m, nepdate::lang::en).size() +
              nepdate::month_name(m, nepdate::lang::ne).size() +
              nepdate::month_short_name(m, nepdate::lang::en).size() +

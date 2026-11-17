@@ -9,7 +9,7 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - `patro::info`, `patro::tithi::name` and `patro::event::name` are now inline over generated
   tables in an installed header, so a loop over a month's days compiles to direct table reads
-  (ADR-0007). The public API and headers are unchanged. A shared `nepdate-patro` library no
+  (ADR-0008). The public API and headers are unchanged. A shared `nepdate-patro` library no
   longer exports these three functions; rebuild code that uses it, as every release already
   requires.
 
