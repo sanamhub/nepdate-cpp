@@ -50,7 +50,7 @@ With CMake `FetchContent`, pinned to the release tag:
 include(FetchContent)
 FetchContent_Declare(nepdate
     GIT_REPOSITORY https://github.com/sanamhub/nepdate-cpp.git
-    GIT_TAG v1.0.0-rc.1)
+    GIT_TAG v1.0.0)
 FetchContent_MakeAvailable(nepdate)
 target_link_libraries(your_app PRIVATE nepdate::nepdate nepdate::patro)
 ```
