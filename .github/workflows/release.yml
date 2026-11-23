@@ -169,7 +169,7 @@ jobs:
         with:
           subject-path: "dist/nepdate-cpp-${{ env.VERSION }}.tar.gz"
       - name: GitHub Release
-        uses: softprops/action-gh-release@28ab305d0ffa26d60ec4bd614126329e26c7a0ec # v3.0.4
+        uses: softprops/action-gh-release@8a0cd651e5b2365bd640854a3fa5dfc70e4875f3 # v3.0.4
         with:
           name: "v${{ env.VERSION }}"
           body_path: release-notes.md
