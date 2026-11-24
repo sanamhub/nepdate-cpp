@@ -5,7 +5,7 @@ Time and allocation of the C++ library on operations B1 to B8 of
 through [`bench/`](../bench/). C++ has no mature competitor that passes
 [`docs/competitors.md`](competitors.md), so this run reports this port only. The C# column is copied
 from the hub's [`docs/benchmarks/dotnet.md`](https://github.com/sanamhub/nepdate/blob/main/docs/benchmarks/dotnet.md)
-(.NET 10 column, NepDate 2.0.7, run 2026-11-16).
+(.NET 10 column, NepDate 2.1.0, run 2026-11-20).
 
 ## Machine
 
@@ -63,16 +63,16 @@ operation.
 
 | ID | Operation | nepdate ns/op | std ns | bytes/op | C# .NET 10 ns/op | C# bytes/op | ADR-0004 target ns/op |
 |---|---|---:|---:|---:|---:|---:|---:|
-| B1 | BS to AD | 6.76 | 0.21 | 0 | 13.27 | 0 | ≤ 8 |
-| B2 | AD to BS | 8.15 | 0.17 | 0 | 18.70 | 0 | ≤ 8 |
-| B3 | add 1000 days | 6.97 | 0.09 | 0 | 20.06 | 0 | ≤ 8 |
-| B4 | add 13 months, Clamp | 4.73 | 0.15 | 0 | 19.30 | 0 | ≤ 8 |
-| B5 | long Nepali date with weekday | 22.71 | 0.70 | 0 | 139.04 | 435 | ≤ 40 |
-| B6 | strict parse `YYYY/MM/DD` | 10.29 | 0.17 | 0 | 21.13 | 0 | ≤ 20 |
-| B7 | patro info of a day | 9.44 | 0.15 | 0 | 48.63 | 51 | ≤ 10 |
-| B8 | patro month grid | 369.48 | 5.17 | 0 | 3,274.50 | 1,429 | ≤ 250 |
+| B1 | BS to AD | 6.76 | 0.21 | 0 | 5.60 | 0 | ≤ 8 |
+| B2 | AD to BS | 8.15 | 0.17 | 0 | 5.90 | 0 | ≤ 8 |
+| B3 | add 1000 days | 6.97 | 0.09 | 0 | 2.79 | 0 | ≤ 8 |
+| B4 | add 13 months, Clamp | 4.73 | 0.15 | 0 | 2.45 | 0 | ≤ 8 |
+| B5 | long Nepali date with weekday | 22.71 | 0.70 | 0 | 29.96 | 69 | ≤ 40 |
+| B6 | strict parse `YYYY/MM/DD` | 10.29 | 0.17 | 0 | 7.28 | 0 | ≤ 20 |
+| B7 | patro info of a day | 9.44 | 0.15 | 0 | 16.46 | 51 | ≤ 10 |
+| B8 | patro month grid | 369.48 | 5.17 | 0 | 633.13 | 1,429 | ≤ 250 |
 
-Every B-row beats the C# column and allocates 0 bytes. B7 now meets its ADR-0004 target of 10 ns
+B5, B7 and B8 beat the C# column, B1 to B4 and B6 do not, and every row allocates 0 bytes. B7 now meets its ADR-0004 target of 10 ns
 (9.44 ns). B8 still misses 250 ns (369.48 ns); this is reported, not hidden.
 
 ## Notes

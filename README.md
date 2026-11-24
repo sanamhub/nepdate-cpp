@@ -16,7 +16,7 @@ Gregorian calendars for BS 1901-01-01 to 2199-12-30 (AD 1844-04-11 to 2143-04-15
 arithmetic, ranges, fiscal years, formatting and parsing. The core is header-only with no
 dependencies, the `to_chars` and parse paths allocate nothing (0 bytes, checked by the allocation
 tests), and conversion is `constexpr`, so it also runs at compile time. BS to AD takes 6.58 ns on
-MSVC, against 13.27 ns for C# NepDate ([`docs/benchmarks.md`](https://github.com/sanamhub/nepdate-cpp/blob/main/docs/benchmarks.md)).
+MSVC, against 5.60 ns for C# NepDate ([`docs/benchmarks.md`](https://github.com/sanamhub/nepdate-cpp/blob/main/docs/benchmarks.md)).
 
 ```cpp
 #include <nepdate/nepdate.hpp>
@@ -273,16 +273,16 @@ differences from the original are the `D-xx` rows in
 
 ## Performance
 
-Every row is faster than C# NepDate and allocates nothing, measured with Google Benchmark on an
+Every row allocates nothing, and B8 is faster than C# NepDate while B1, B2 and B6 are slower, measured with Google Benchmark on an
 idle machine, pinned to one core. B8 still misses its own target. Details are in
 [`docs/benchmarks.md`](https://github.com/sanamhub/nepdate-cpp/blob/main/docs/benchmarks.md).
 
 | Operation | MSVC ns/op | C# ns/op |
 |---|---:|---:|
-| B1 BS to AD | 6.76 | 13.27 |
-| B2 AD to BS | 8.15 | 18.70 |
-| B6 strict parse | 10.29 | 21.13 |
-| B8 patro month grid | 369.48 | 3,274.50 |
+| B1 BS to AD | 6.76 | 5.60 |
+| B2 AD to BS | 8.15 | 5.90 |
+| B6 strict parse | 10.29 | 7.28 |
+| B8 patro month grid | 369.48 | 633.13 |
 
 ## More
 
